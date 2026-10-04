@@ -29,6 +29,9 @@ class ResultadoModulo(BaseModel):
     analisis: str                        # "liquidez", "endeudamiento", ...
     fecha_corte: date | None = None
     indicadores: list[Indicador] = Field(default_factory=list)
+    # Conclusiones calculadas por el módulo y redactadas como frase, para que el
+    # LLM no tenga que comparar números por su cuenta (punto débil de un 8B).
+    hallazgos: list[str] = Field(default_factory=list)
     supuestos: list[str] = Field(default_factory=list)
     fuentes: list[str] = Field(default_factory=list)
     advertencias: list[str] = Field(default_factory=list)

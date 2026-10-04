@@ -33,3 +33,29 @@ def hacer_historial(balance: dict | None = None, resultados: dict | None = None,
 @pytest.fixture
 def historial():
     return hacer_historial()
+
+
+def periodo_2023() -> EstadoFinanciero:
+    """
+    Cierre anterior de la empresa de referencia.
+    Activo 1.840 (corriente 390) | Pasivo 880 (corriente 230) | Patrimonio 960
+    Ingresos 800 | Utilidad neta 60
+    """
+    return EstadoFinanciero(
+        fecha_corte=date(2023, 12, 31),
+        balance=BalanceGeneral(
+            efectivo=200, deudores_comerciales=160, inventarios=30, ppe=1_450,
+            obligaciones_financieras_cp=130, proveedores=100,
+            obligaciones_financieras_lp=650,
+            capital=1_000, resultados_acumulados=-100, resultado_ejercicio=60),
+        resultados=EstadoResultados(
+            ingresos_operacionales=800, costo_ventas=340, gastos_administracion=230,
+            gastos_ventas=90, gastos_financieros=60, impuesto_renta=20,
+            depreciacion_amortizacion=70),
+    )
+
+
+@pytest.fixture
+def historial_dos_periodos():
+    h = hacer_historial()
+    return HistorialFinanciero(empresa=h.empresa, periodos=[periodo_2023(), h.ultimo])
