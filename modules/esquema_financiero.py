@@ -201,6 +201,9 @@ class EstadoFinanciero(BaseModel):
     balance: BalanceGeneral
     resultados: EstadoResultados
     flujo: FlujoEfectivo | None = None
+    # Supuestos que registra el cargador al traducir la fuente (p. ej. PUC sin
+    # separación corriente / no corriente). Los módulos los trasladan al resultado.
+    supuestos_carga: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _verificar_cuadre(self) -> "EstadoFinanciero":
