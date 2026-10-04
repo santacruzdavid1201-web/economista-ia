@@ -1,0 +1,57 @@
+# Mapeo del Plan Único de Cuentas (Decreto 2650 de 1993) al esquema canónico.
+#
+# Reglas para el cargador:
+# 1. Gana el prefijo más largo: 1305 se asigna antes que 13.
+# 2. Se toma el valor absoluto según la naturaleza de la cuenta
+#    (clases 2, 3 y 4 son de naturaleza crédito), excepto en patrimonio,
+#    donde una pérdida se conserva negativa.
+# 3. El PUC NO distingue corriente de no corriente. Cuando la empresa no
+#    entregue esa separación, se aplican los supuestos marcados abajo y el
+#    módulo los reporta en `supuestos`.
+
+balance:
+  "11":   efectivo
+  "12":   inversiones_cp               # supuesto: corto plazo
+  "1305": deudores_comerciales         # clientes
+  "13":   otros_deudores_cp            # supuesto: corto plazo
+  "14":   inventarios
+  "15":   ppe
+  "16":   intangibles
+  "1705": otros_activos_cp             # gastos pagados por anticipado
+  "17":   otros_activos_lp
+  "18":   otros_activos_lp
+  "19":   null                         # valorizaciones: no aplican bajo NIIF
+  "21":   obligaciones_financieras_cp  # supuesto: corto plazo
+  "22":   proveedores
+  "23":   otras_cuentas_por_pagar_cp
+  "24":   impuestos_por_pagar
+  "25":   obligaciones_laborales
+  "26":   otros_pasivos_cp             # supuesto: corto plazo
+  "27":   otros_pasivos_cp
+  "28":   otros_pasivos_cp
+  "29":   obligaciones_financieras_lp  # bonos y papeles comerciales
+  "31":   capital
+  "32":   otro_patrimonio              # superávit de capital
+  "33":   reservas
+  "34":   otro_patrimonio
+  "36":   resultado_ejercicio
+  "37":   resultados_acumulados
+  "38":   otro_patrimonio
+
+resultados:
+  "41":   ingresos_operacionales
+  "4210": ingresos_financieros
+  "42":   otros_ingresos
+  "51":   gastos_administracion
+  "52":   gastos_ventas
+  "5305": gastos_financieros
+  "53":   otros_gastos
+  "54":   impuesto_renta
+  "61":   costo_ventas
+
+# Se leen aparte solo para el EBITDA; ya están dentro de 51 y 52.
+informativo:
+  "5160": depreciacion_amortizacion
+  "5165": depreciacion_amortizacion
+  "5260": depreciacion_amortizacion
+  "5265": depreciacion_amortizacion
