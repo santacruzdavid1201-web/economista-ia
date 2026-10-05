@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Entornos virtuales
+.venv*/
+
+# Secretos
+.env
+
+# Datos (pesados o privados de las empresas)
+data/raw/*
+!data/raw/.gitkeep
+
+# Salidas de exploración regenerables (se versiona solo el catálogo)
+exploracion/salidas/*/
+exploracion/salidas/log_*.txt
+
+# Grafo de conocimiento (graphify), se regenera
+graphify-out/

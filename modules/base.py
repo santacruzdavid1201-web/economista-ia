@@ -13,7 +13,8 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 # "proporcion" se guarda como fracción (0.42); la interfaz la muestra como 42 %.
-Unidad = Literal["veces", "proporcion", "dias", "pesos"]
+# "percentil" va de 0 a 100.
+Unidad = Literal["veces", "proporcion", "dias", "pesos", "percentil"]
 
 
 class Indicador(BaseModel):
