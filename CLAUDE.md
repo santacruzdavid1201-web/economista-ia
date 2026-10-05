@@ -19,7 +19,8 @@ y redacta el resultado. Todo número sale de funciones de Python probadas.
   (presentación NIIF corriente / no corriente). Toda fuente (PUC, Excel,
   Supersociedades) se traduce a este esquema; las fórmulas solo lo conocen.
 - `config/`: mapeos y configuración (PUC → esquema, grupos CIIU, prompts).
-- `data_sources/`: cargadores de datos de empresa y fuentes externas.
+- `data_sources/`: cargadores de datos de empresa (`empresa/puc.py`) y fuentes
+  externas (`externos/supersociedades.py`, `externos/referencia.py`).
 - `exploracion/`: scripts exploratorios, no forman parte del sistema.
 - Futuro: `app/` (FastAPI + orquestador LangGraph o enrutador propio),
   `frontend/` (Streamlit), PostgreSQL + pgvector, Docker.
@@ -48,7 +49,7 @@ y redacta el resultado. Todo número sale de funciones de Python probadas.
 
 ## Estado actual
 
-Hecho y probado (77 tests): esquema canónico, mapeo PUC, razones de liquidez,
+Hecho y probado (92 tests): esquema canónico, mapeo PUC, razones de liquidez,
 endeudamiento, rentabilidad y actividad, ciclo de conversión de efectivo,
 DuPont (con descomposición logarítmica de la variación del ROE), Z'' de
 Altman para mercados emergentes (zonas 4,35 / 5,85 y equivalencia de
@@ -86,8 +87,11 @@ servicios (`no_comparables` en `ciiu_sectores.yaml`). Los hallazgos formatean
 valores por unidad ("2,4 %", "53 días") para que el 8B no los malinterprete.
 
 Pendiente, en orden (acordado el 5/10/2026):
-1. Cargador de la empresa: PUC y Excel → esquema canónico
-   (`data_sources/empresa/loaders.py`, usa `config/mapeo_puc.yaml`).
+1. ~~Cargador PUC~~ hecho: `data_sources/empresa/puc.py` lee el balance de
+   prueba (Excel/CSV, saldo con signo o débito/crédito), suma solo cuentas
+   hoja, exige que las clases 1-7 sumen cero, rechaza balances posteriores al
+   cierre y acepta reclasificaciones de corto a largo plazo. Falta: plantilla
+   Excel propia para empresas sin software contable.
 2. Versión delgada de punta a punta solo con balance: metaprompt, enrutador,
    cliente Ollama (Qwen 7-8B), registro de herramientas, Streamlit mínimo y
    preguntas de evaluación. Valida el supuesto más riesgoso: que un 8B elija

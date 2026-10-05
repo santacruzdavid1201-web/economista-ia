@@ -1,53 +1,67 @@
 # Mapeo del Plan Único de Cuentas (Decreto 2650 de 1993) al esquema canónico.
+# Lo usa data_sources/empresa/puc.py sobre un balance de prueba.
 #
 # Reglas para el cargador:
-# 1. Gana el prefijo más largo: 1305 se asigna antes que 13.
-# 2. Se toma el valor absoluto según la naturaleza de la cuenta
-#    (clases 2, 3 y 4 son de naturaleza crédito), excepto en patrimonio,
-#    donde una pérdida se conserva negativa.
-# 3. El PUC NO distingue corriente de no corriente. Cuando la empresa no
-#    entregue esa separación, se aplican los supuestos marcados abajo y el
-#    módulo los reporta en `supuestos`.
+# 1. Solo se suman las cuentas hoja (sin subcuentas en el archivo): las filas
+#    de clase, grupo y cuenta ya contienen la suma de sus hijas.
+# 2. Gana el prefijo más largo: 1305 se asigna antes que 13.
+# 3. Saldos con signo (débito positivo). El signo se voltea por clase: activos
+#    y gastos/costos (1, 5, 6, 7) quedan como vienen; pasivos, patrimonio e
+#    ingresos (2, 3, 4) se multiplican por −1. Así las cuentas correctoras
+#    (1592 depreciación acumulada, 1399 provisiones) restan solas; con valor
+#    absoluto se sumarían.
+# 4. Un prefijo mapeado a null se ignora. Clases 8 y 9 (cuentas de orden) no
+#    se leen.
+# 5. El PUC NO distingue corriente de no corriente. Los supuestos de la
+#    sección `supuestos` se registran cuando la cuenta tiene saldo; la empresa
+#    puede corregirlos con reclasificaciones.
 
 balance:
   "11":   efectivo
-  "12":   inversiones_cp               # supuesto: corto plazo
+  "12":   inversiones_cp
   "1305": deudores_comerciales         # clientes
-  "13":   otros_deudores_cp            # supuesto: corto plazo
+  "13":   otros_deudores_cp
   "14":   inventarios
-  "15":   ppe
+  "15":   ppe                          # incluye 1592 depreciación acumulada (resta)
   "16":   intangibles
   "1705": otros_activos_cp             # gastos pagados por anticipado
   "17":   otros_activos_lp
   "18":   otros_activos_lp
-  "19":   null                         # valorizaciones: no aplican bajo NIIF
-  "21":   obligaciones_financieras_cp  # supuesto: corto plazo
+  # Valorizaciones (19) y su contrapartida (38) no aplican bajo NIIF. Se
+  # ignoran las DOS: ignorar solo una descuadra el balance.
+  "19":   null
+  "21":   obligaciones_financieras_cp
   "22":   proveedores
   "23":   otras_cuentas_por_pagar_cp
   "24":   impuestos_por_pagar
   "25":   obligaciones_laborales
-  "26":   otros_pasivos_cp             # supuesto: corto plazo
+  "26":   otros_pasivos_cp
   "27":   otros_pasivos_cp
   "28":   otros_pasivos_cp
   "29":   obligaciones_financieras_lp  # bonos y papeles comerciales
   "31":   capital
   "32":   otro_patrimonio              # superávit de capital
   "33":   reservas
-  "34":   otro_patrimonio
+  "34":   otro_patrimonio              # revalorización del patrimonio
+  "35":   otro_patrimonio              # dividendos decretados en acciones
   "36":   resultado_ejercicio
   "37":   resultados_acumulados
-  "38":   otro_patrimonio
+  "38":   null
 
 resultados:
-  "41":   ingresos_operacionales
+  "41":   ingresos_operacionales       # 4175 devoluciones (débito) resta sola
   "4210": ingresos_financieros
   "42":   otros_ingresos
+  "47":   otros_ingresos               # ajustes por inflación (histórico)
   "51":   gastos_administracion
   "52":   gastos_ventas
   "5305": gastos_financieros
   "53":   otros_gastos
   "54":   impuesto_renta
+  "59":   null                         # ganancias y pérdidas: cuenta de cierre
   "61":   costo_ventas
+  "62":   costo_ventas                 # compras (inventario periódico)
+  "7":    costo_ventas                 # costos de producción sin trasladar
 
 # Se leen aparte solo para el EBITDA; ya están dentro de 51 y 52.
 informativo:
@@ -55,3 +69,12 @@ informativo:
   "5165": depreciacion_amortizacion
   "5260": depreciacion_amortizacion
   "5265": depreciacion_amortizacion
+
+# Se registran en los supuestos del periodo cuando el prefijo tiene saldo.
+supuestos:
+  "12": "Las inversiones se clasificaron como de corto plazo (el PUC no separa el plazo)."
+  "13": "Los deudores se clasificaron como de corto plazo (el PUC no separa el plazo)."
+  "21": "Las obligaciones financieras se clasificaron como de corto plazo: el PUC no separa la porción de largo plazo, lo que subestima la liquidez si hay créditos a varios años."
+  "26": "Los pasivos estimados se clasificaron como de corto plazo."
+  "62": "Las compras (inventario periódico) se trataron como costo de ventas."
+  "7":  "Los costos de producción sin trasladar a inventario se trataron como costo de ventas."

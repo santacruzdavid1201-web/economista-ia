@@ -1,6 +1,7 @@
 # Dependencias directas (versiones probadas con Python 3.14)
 pydantic==2.13.5
 PyYAML==6.0.3
+openpyxl==3.1.5
 pandas==3.0.6
 numpy==2.5.3
 requests==2.34.2
