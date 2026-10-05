@@ -1,0 +1,72 @@
+8813 filas, 306 empresas
+ 306  100%  Total pasivos
+ 306  100%  Total de activos
+ 306  100%  Total activos corrientes distintos de los activos no corrientes o grupo de activos para su disposici�n clasificados como
+ 306  100%  Capital emitido
+ 306  100%  Ganancias acumuladas
+ 306  100%  Efectivo y equivalentes al efectivo
+ 306  100%  Activos corrientes totales
+ 306  100%  Total de patrimonio y pasivos
+ 306  100%  Patrimonio total
+ 304   99%  Pasivos corrientes totales
+ 301   98%  Total de activos no corrientes
+ 299   98%  Cuentas comerciales por cobrar y otras cuentas por cobrar corrientes
+ 297   97%  Cuentas por pagar comerciales y otras cuentas por pagar corrientes
+ 289   94%  Propiedades, planta y equipo
+ 263   86%  Total pasivos corrientes distintos de los pasivos incluidos en grupos de activos para su disposici�n clasificados como m
+ 250   82%  Total de pasivos no corrientes
+ 238   78%  Pasivos por impuestos corrientes, corriente
+ 233   76%  Inventarios corrientes
+ 218   71%  Otras reservas
+ 191   62%  Total provisiones corrientes
+ 187   61%  Activos por impuestos corrientes, corriente
+ 184   60%  Provisiones corrientes por beneficios a los empleados
+ 182   59%  Otros pasivos financieros corrientes
+ 166   54%  Otros pasivos no financieros corrientes
+ 151   49%  Otros pasivos financieros no corrientes
+ 135   44%  Cuentas comerciales por pagar y otras cuentas por pagar no corrientes
+ 121   40%  Superavit por revaluaci�n
+ 119   39%  Pr�stamos corrientes
+ 116   38%  Pasivo por impuestos diferidos
+ 114   37%  Otros activos no financieros corrientes
+ 110   36%  Parte no corriente de pr�stamos no corrientes
+ 109   36%  Activos intangibles distintos de la plusval�a
+ 105   34%  Activos por impuestos diferidos
+ 100   33%  Prima de emisi�n
+  99   32%  Otros activos financieros corrientes
+  88   29%  Otros activos no financieros no corrientes
+  83   27%  Otros pasivos no financieros no corrientes
+  81   26%  Cuentas comerciales por cobrar y otras cuentas por cobrar no corrientes
+  72   24%  Otros activos financieros no corrientes
+  61   20%  Otras participaciones en el patrimonio
+  58   19%  Otras provisiones corrientes
+  45   15%  Total provisiones no corrientes
+  42   14%  Parte corriente de pr�stamos no corrientes
+  41   13%  Otras provisiones no corrientes
+  41   13%  Total de pasivos corrientes distintos de los pasivos incluidos en grupos de activos para su disposici�n clasificados com
+  41   13%  Pasivos por impuestos corrientes, no corriente
+  37   12%  Propiedades de inversi�n a valor razonable con cambios en resultados
+  34   11%  Inversi�n suplementaria al capital asignado
+  34   11%  Activos por impuestos corrientes, no corriente
+  33   11%  Propiedades de inversi�n al costo menos depreciaci�n acumulada y deterioro
+  31   10%  Plusval�a
+  31   10%  Activos corrientes distintos al efectivo pignorados como garant�a colateral para las que el receptor de transferencias t
+  30   10%  Provisiones no corrientes por beneficios a los empleados
+  30   10%  Acciones propias en cartera
+  27    9%  Inventarios no corrientes
+  26    8%  Activos biol�gicos corrientes, al valor razonable
+  26    8%  Activos biol�gicos corrientes, al costo menos depreciaci�n acumulada y deterioro de valor
+  26    8%  Activos no corrientes o grupos de activos para su disposici�n clasificados como mantenidos para la venta o como mantenid
+  25    8%  Pasivos incluidos en grupos de activos para su disposici�n clasificados como mantenidos para la venta
+  22    7%  Activos biol�gicos no corrientes, al costo menos depreciaci�n acumulada y deterioro del valor
+  21    7%  Activos no corrientes distintos al efectivo pignorados como garant�a colateral para las que el receptor de transferencia
+  20    7%  Activos biol�gicos no corrientes, al valor razonable
+   8    3%  Propiedad de inversi�n
+   7    2%  Inversiones en asociadas
+   7    2%  Inversiones en subsidiarias
+   6    2%  Inversiones en subsidiarias, negocios conjuntos y asociadas
+   5    2%  Activos biol�gicos corrientes
+   4    1%  Activos biol�gicos no corrientes
+   4    1%  Activos no corrientes distintos al efectivo pignorados como garant�a colateral para las que el receptor de transferencia
+   3    1%  Inversiones contabilizadas utilizando el m�todo de la participaci�n
+   2    1%  Inversiones en negocios conjuntos

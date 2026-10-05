@@ -1,0 +1,20 @@
+# Grupos de comparación sectorial por código CIIU Rev. 4 A.C. (DANE).
+# Verificar contra el catálogo CIIU que use Supersociedades en sus datos.
+
+alojamiento:
+  descripcion: "Alojamiento (división 55)"
+  ciius:
+    "5511": "Alojamiento en hoteles"
+    "5512": "Alojamiento en apartahoteles"
+    "5513": "Alojamiento en centros vacacionales"
+    "5514": "Alojamiento rural"
+    "5519": "Otros tipos de alojamiento para visitantes"
+    "5520": "Actividades de zonas de camping y parques para vehículos recreacionales"
+    "5530": "Servicio por horas"
+    "5590": "Otros tipos de alojamiento n.c.p."
+
+hoteles:
+  descripcion: "Hoteles y apartahoteles"
+  ciius:
+    "5511": "Alojamiento en hoteles"
+    "5512": "Alojamiento en apartahoteles"

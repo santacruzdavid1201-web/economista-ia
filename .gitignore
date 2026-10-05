@@ -19,3 +19,5 @@ exploracion/salidas/log_*.txt
 
 # Grafo de conocimiento (graphify), se regenera
 graphify-out/
+exploracion/salidas/*_hoteles_*.csv
+exploracion/salidas/caratula_*.csv
