@@ -134,3 +134,22 @@ sobre los hoteles 2024:
 - Anomalía para el paso 5: hay hoteles con depreciación mayor que sus
   ingresos (p. ej. NIT 800108852). Los percentiles del benchmark resisten
   estos extremos, pero conviene revisarlos.
+
+## 7. Referencia sectorial de hoteles 2024 (5/10/2026)
+
+303 hoteles (CIIU 5511-5512). Medianas: razón corriente 1,51; endeudamiento
+34 %; deuda/EBITDA 0,38; margen bruto 76 %; margen operacional 13 %; margen
+EBITDA 19 %; ROA 2,4 %; ROE 4,8 %; rotación de activos 0,38; días de cartera
+53; Z'' 7,69. Coherente con un negocio intensivo en activos fijos cuyo costo
+de ventas es casi solo alimentos y bebidas.
+
+**Días de proveedores y ciclo de conversión no se comparan en servicios**
+(decisión del 5/10/2026). Las compras se estiman con costo de ventas +
+Δinventario, pero un hotel compra sobre todo servicios que se registran en
+gastos operacionales: la mediana salía en 144 días (P75 334) y el ciclo en
+−35. Se declaran en `no_comparables` de `config/ciiu_sectores.yaml`.
+
+Los días de cartera (mediana 53) probablemente están inflados por las otras
+cuentas por cobrar (p. ej. vinculadas): un hotel cobra casi todo de contado.
+La empresa se mide con la misma agregación, así que la comparación es
+coherente, pero la cifra absoluta no es el plazo real de cobro.

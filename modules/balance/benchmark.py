@@ -61,6 +61,9 @@ class ReferenciaSectorial(BaseModel):
     fuente: str = "Superintendencia de Sociedades (SIIS / Datos Abiertos Colombia)"
     filtros: list[str] = Field(default_factory=list)   # reglas de limpieza aplicadas
     valores: dict[str, list[float | None]]              # clave del indicador -> valores de los pares
+    # Indicadores que no se comparan en este grupo, con el motivo (p. ej. días de
+    # proveedores en servicios, donde las compras no se pueden estimar).
+    no_comparables: dict[str, str] = Field(default_factory=dict)
 
 
 def limpiar(valores: list[float | None]) -> list[float]:
@@ -83,8 +86,22 @@ def cuantil(muestra: list[float], q: float) -> float:
     return ordenada[abajo] * (1 - peso) + ordenada[arriba] * peso
 
 
+def formatear(valor: float, unidad: str) -> str:
+    """Valor legible según su unidad, con coma decimal: un 8B lee mal "0.02"."""
+    if unidad == "proporcion":
+        texto = f"{valor * 100:.1f} %"
+    elif unidad == "dias":
+        texto = f"{valor:.0f} días"
+    elif unidad == "veces":
+        texto = f"{valor:.2f} veces"
+    else:
+        texto = f"{valor:,.2f}"
+    return texto.replace(".", ",") if unidad != "pesos" else texto
+
+
 def _frase(ind: Indicador, pct: float, n: int, mediana: float, direccion: Direccion) -> str:
-    base = f"{ind.nombre}: percentil {pct:.0f} frente a {n} empresas (mediana del sector {mediana:.2f})"
+    base = (f"{ind.nombre}: {formatear(ind.valor, ind.unidad)}, percentil {pct:.0f} frente a "
+            f"{n} empresas (mediana del sector {formatear(mediana, ind.unidad)})")
     if direccion == "mayor":
         return f"{base}; está mejor que el {pct:.0f} % de los pares en este indicador."
     if direccion == "menor":
@@ -109,6 +126,11 @@ def comparar(resultados: list[ResultadoModulo], ref: ReferenciaSectorial) -> Res
     for res in resultados:
         for ind in res.indicadores:
             if ind.clave not in DIRECCION or ind.unidad == "pesos" or ind.valor is None:
+                continue
+            if ind.clave in ref.no_comparables:
+                advertencias.append(
+                    f"{ind.nombre}: no se compara con el sector ({ref.no_comparables[ind.clave]})."
+                )
                 continue
             muestra = limpiar(ref.valores.get(ind.clave, []))
             n = len(muestra)

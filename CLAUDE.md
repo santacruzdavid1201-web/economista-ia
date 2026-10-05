@@ -48,7 +48,7 @@ y redacta el resultado. Todo número sale de funciones de Python probadas.
 
 ## Estado actual
 
-Hecho y probado (67 tests): esquema canónico, mapeo PUC, razones de liquidez,
+Hecho y probado (77 tests): esquema canónico, mapeo PUC, razones de liquidez,
 endeudamiento, rentabilidad y actividad, ciclo de conversión de efectivo,
 DuPont (con descomposición logarítmica de la variación del ROE), Z'' de
 Altman para mercados emergentes (zonas 4,35 / 5,85 y equivalencia de
@@ -76,14 +76,25 @@ Paso 4 resuelto: `config/mapeo_niif.yaml` + cargador
 pura con exclusiones motivadas). Carga 303 de 306 hoteles 2024. Ver sección 6
 de los hallazgos.
 
-Pendiente, en orden:
-5. Construir `ReferenciaSectorial` calculando los indicadores de los pares
-   con las mismas funciones de `modules/balance/`. Decisiones acordadas:
-   pares sin `costo_ventas` en `model_fields_set` no entran a margen bruto ni
-   días de inventario; los días de cartera y proveedores de la empresa se
-   comparan con la misma agregación que los pares (cuentas comerciales + otras);
-   `SUPUESTOS_MAPEO` va a `ReferenciaSectorial.filtros`.
-6. Validar contra los indicadores que publica el SIIS.
+Paso 5 resuelto: `data_sources/externos/referencia.py`
+(`referencia_supersociedades("hoteles", 2024)`): 303 hoteles, 19 indicadores
+comparables, caché en `data/raw/supersociedades/` y referencia versionada en
+`data/referencias/hoteles_2024.json`. La empresa se compara con
+`homologar_empresa` (cartera y proveedores agregados como la taxonomía) y nunca
+es su propio par. Días de proveedores y ciclo de conversión no se comparan en
+servicios (`no_comparables` en `ciiu_sectores.yaml`). Los hallazgos formatean
+valores por unidad ("2,4 %", "53 días") para que el 8B no los malinterprete.
+
+Pendiente, en orden (acordado el 5/10/2026):
+1. Cargador de la empresa: PUC y Excel → esquema canónico
+   (`data_sources/empresa/loaders.py`, usa `config/mapeo_puc.yaml`).
+2. Versión delgada de punta a punta solo con balance: metaprompt, enrutador,
+   cliente Ollama (Qwen 7-8B), registro de herramientas, Streamlit mínimo y
+   preguntas de evaluación. Valida el supuesto más riesgoso: que un 8B elija
+   bien el módulo y redacte sin inventar números.
+3. Validar la referencia contra los indicadores que publica el SIIS.
+4. Revisar valores extremos (p. ej. hoteles con depreciación > ingresos).
+5. Módulos 4 → 3 → 2 (macro, proyectos, econometría).
 
 Grupos de comparación en `config/ciiu_sectores.yaml` (alojamiento / hoteles).
 El benchmark se describe siempre como "empresas reportantes a

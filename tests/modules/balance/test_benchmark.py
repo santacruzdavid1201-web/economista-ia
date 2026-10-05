@@ -73,3 +73,29 @@ def test_advierte_anios_distintos(historial):
     res = comparar([liquidez(historial)], ref)
     assert any("mezcla años distintos" in a for a in res.advertencias)
     assert any("no es censal" in s for s in res.supuestos)
+
+
+def test_indicador_no_comparable_se_explica(historial):
+    from modules.balance.razones import actividad
+    ref = referencia(dias_cartera=[float(k) for k in range(1, 41)],
+                     dias_proveedores=[float(k) for k in range(1, 41)])
+    ref = ref.model_copy(update={"no_comparables": {"dias_proveedores": "motivo de prueba"}})
+    res = comparar([actividad(historial)], ref)
+    assert "dias_cartera_percentil" in {i.clave for i in res.indicadores}
+    with pytest.raises(KeyError):
+        res.valor("dias_proveedores_percentil")
+    assert any("no se compara con el sector (motivo de prueba)" in a for a in res.advertencias)
+
+
+def test_formatear_por_unidad():
+    from modules.balance.benchmark import formatear
+    assert formatear(0.0241, "proporcion") == "2,4 %"
+    assert formatear(53.32, "dias") == "53 días"
+    assert formatear(1.514, "veces") == "1,51 veces"
+
+
+def test_hallazgo_incluye_valor_y_mediana_legibles(historial):
+    pares = [0.02 * k for k in range(1, 41)]
+    res = comparar([endeudamiento(historial)], referencia(nivel_endeudamiento=pares))
+    assert res.hallazgos[0].startswith("Nivel de endeudamiento: 42,4 %, percentil 52")
+    assert "mediana del sector 41,0 %" in res.hallazgos[0]

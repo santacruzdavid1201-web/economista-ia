@@ -1,8 +1,14 @@
 # Grupos de comparación sectorial por código CIIU Rev. 4 A.C. (DANE).
 # Verificar contra el catálogo CIIU que use Supersociedades en sus datos.
+# no_comparables: indicadores que el benchmark no compara en el grupo, con el motivo.
 
 alojamiento:
   descripcion: "Alojamiento (división 55)"
+  no_comparables:
+    dias_proveedores: &servicios >-
+      en servicios las compras a proveedores se registran sobre todo en gastos
+      operacionales y no se pueden estimar con el costo de ventas
+    ciclo_conversion_efectivo: *servicios
   ciius:
     "5511": "Alojamiento en hoteles"
     "5512": "Alojamiento en apartahoteles"
@@ -15,6 +21,9 @@ alojamiento:
 
 hoteles:
   descripcion: "Hoteles y apartahoteles"
+  no_comparables:
+    dias_proveedores: *servicios
+    ciclo_conversion_efectivo: *servicios
   ciius:
     "5511": "Alojamiento en hoteles"
     "5512": "Alojamiento en apartahoteles"
