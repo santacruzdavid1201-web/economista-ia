@@ -26,7 +26,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from modules.base import Indicador, ResultadoModulo
+from modules.base import Indicador, ResultadoModulo, formatear
 
 Direccion = Literal["mayor", "menor", "neutral"]
 
@@ -84,19 +84,6 @@ def cuantil(muestra: list[float], q: float) -> float:
     abajo, arriba = math.floor(posicion), math.ceil(posicion)
     peso = posicion - abajo
     return ordenada[abajo] * (1 - peso) + ordenada[arriba] * peso
-
-
-def formatear(valor: float, unidad: str) -> str:
-    """Valor legible según su unidad, con coma decimal: un 8B lee mal "0.02"."""
-    if unidad == "proporcion":
-        texto = f"{valor * 100:.1f} %"
-    elif unidad == "dias":
-        texto = f"{valor:.0f} días"
-    elif unidad == "veces":
-        texto = f"{valor:.2f} veces"
-    else:
-        texto = f"{valor:,.2f}"
-    return texto.replace(".", ",") if unidad != "pesos" else texto
 
 
 def _frase(ind: Indicador, pct: float, n: int, mediana: float, direccion: Direccion) -> str:

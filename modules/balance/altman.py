@@ -20,7 +20,7 @@ muestras de otras economías y otra época, y no aplica a entidades financieras.
 from __future__ import annotations
 
 from modules.balance.comun import contexto_base, factor_anual
-from modules.base import Indicador, ResultadoModulo, division_segura
+from modules.base import Indicador, ResultadoModulo, division_segura, formatear
 from modules.esquema_financiero import HistorialFinanciero
 
 CONSTANTE = 3.25
@@ -113,7 +113,7 @@ def altman(historial: HistorialFinanciero, i: int = -1) -> ResultadoModulo:
         cal = calificacion_equivalente(em)
         z = zona(em)
         hallazgos.append(
-            f"Z'' = {em:.2f}: zona {z}, equivalente a una calificación {cal} "
+            f"Z'' = {formatear(em, 'veces').removesuffix(' veces')}: zona {z}, equivalente a una calificación {cal} "
             f"en la escala de Altman y Hotchkiss."
         )
         if z == "gris":

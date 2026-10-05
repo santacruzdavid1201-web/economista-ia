@@ -49,3 +49,18 @@ def division_segura(numerador: float, denominador: float) -> float | None:
     if denominador == 0:
         return None
     return numerador / denominador
+
+
+def formatear(valor: float, unidad: str) -> str:
+    """Valor legible según su unidad, con coma decimal: un 8B lee mal "0.02"."""
+    if unidad == "proporcion":
+        texto = f"{valor * 100:.1f} %"
+    elif unidad == "dias":
+        texto = f"{valor:.0f} días"
+    elif unidad == "veces":
+        texto = f"{valor:.2f} veces"
+    elif unidad == "pesos":
+        return f"$ {valor:,.0f}".replace(",", ".")
+    else:
+        texto = f"{valor:,.2f}"
+    return texto.replace(".", ",")

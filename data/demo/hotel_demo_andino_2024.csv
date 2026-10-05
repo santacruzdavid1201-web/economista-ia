@@ -1,0 +1,65 @@
+Código,Nombre de la cuenta,Saldo final
+1,,2887000000
+11,,100000000
+1105,Caja,15000000
+1110,Bancos,85000000
+13,,155000000
+1305,Clientes,120000000
+1330,Anticipos y avances,10000000
+1355,Anticipo de impuestos y contribuciones,25000000
+14,,30000000
+1435,Mercancías no fabricadas por la empresa,30000000
+15,,2590000000
+1504,Terrenos,600000000
+1516,Construcciones y edificaciones,2400000000
+1524,Equipo de oficina,350000000
+1528,Equipo de computación y comunicación,60000000
+1592,Depreciación acumulada,-820000000
+17,,12000000
+1705,Gastos pagados por anticipado,12000000
+2,,-965000000
+21,,-680000000
+2105,Bancos nacionales,-680000000
+22,,-95000000
+2205,Proveedores nacionales,-95000000
+23,,-40000000
+2335,Costos y gastos por pagar,-40000000
+24,,-70000000
+2404,Impuesto de renta y complementarios,-48000000
+2408,Impuesto sobre las ventas por pagar,-22000000
+25,,-50000000
+2510,Cesantías consolidadas,-38000000
+2525,Vacaciones consolidadas,-12000000
+28,,-30000000
+2805,Anticipos y avances recibidos,-30000000
+3,,-1685000000
+31,,-1200000000
+3105,Capital suscrito y pagado,-1200000000
+33,,-60000000
+3305,Reservas obligatorias,-60000000
+37,,-425000000
+3705,Utilidades acumuladas,-425000000
+4,,-1860000000
+41,,-1850000000
+4155,Hoteles y restaurantes,-1850000000
+42,,-10000000
+4210,Financieros,-6000000
+4250,Recuperaciones,-4000000
+5,,1363000000
+51,,925000000
+5105,Gastos de personal,420000000
+5135,Servicios,210000000
+5145,Mantenimiento y reparaciones,95000000
+5160,Depreciaciones,140000000
+5195,Diversos,60000000
+52,,210000000
+5205,Gastos de personal (ventas),90000000
+5235,Servicios (comisiones de agencias),120000000
+53,,103000000
+5305,Financieros,95000000
+5315,Gastos extraordinarios,8000000
+54,,125000000
+5405,Impuesto de renta y complementarios,125000000
+6,,260000000
+61,,260000000
+6155,Hoteles y restaurantes (costo de alimentos y bebidas),260000000

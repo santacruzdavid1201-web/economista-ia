@@ -49,7 +49,7 @@ y redacta el resultado. Todo número sale de funciones de Python probadas.
 
 ## Estado actual
 
-Hecho y probado (92 tests): esquema canónico, mapeo PUC, razones de liquidez,
+Hecho y probado (94 tests): esquema canónico, mapeo PUC, razones de liquidez,
 endeudamiento, rentabilidad y actividad, ciclo de conversión de efectivo,
 DuPont (con descomposición logarítmica de la variación del ROE), Z'' de
 Altman para mercados emergentes (zonas 4,35 / 5,85 y equivalencia de
@@ -92,6 +92,8 @@ Pendiente, en orden (acordado el 5/10/2026):
    hoja, exige que las clases 1-7 sumen cero, rechaza balances posteriores al
    cierre y acepta reclasificaciones de corto a largo plazo. Falta: plantilla
    Excel propia para empresas sin software contable.
+   Caso de demostración: `data/demo/hotel_demo_andino_{2023,2024}.csv`
+   (empresa ficticia, generada con `data/demo/generar_demo.py`).
 2. Versión delgada de punta a punta solo con balance: metaprompt, enrutador,
    cliente Ollama (Qwen 7-8B), registro de herramientas, Streamlit mínimo y
    preguntas de evaluación. Valida el supuesto más riesgoso: que un 8B elija

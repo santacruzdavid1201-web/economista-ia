@@ -84,7 +84,9 @@ def test_sin_reclasificar_la_deuda_queda_de_corto_plazo():
 def test_reclasificacion_queda_registrada():
     ef = a_estado_financiero(balance_prueba(), CORTE, reclasificaciones=LARGO_PLAZO)
     assert ef.balance.obligaciones_financieras_lp == 600
-    assert any("Se reclasificaron 600" in s for s in ef.supuestos_carga)
+    assert ("Se reclasificaron $ 600 de obligaciones financieras de corto plazo a "
+            "obligaciones financieras de largo plazo según información de la empresa."
+            in ef.supuestos_carga)
     with pytest.raises(ErrorCarga, match="Reclasificación inválida"):
         a_estado_financiero(balance_prueba(), CORTE,
                             reclasificaciones=[("obligaciones_financieras_cp",
@@ -166,3 +168,13 @@ def test_historial_de_dos_anios():
                                              date(2023, 12, 31): anterior})
     assert [p.fecha_corte.year for p in h.periodos] == [2023, 2024]
     assert h.saldo_promedio("efectivo") == (250, True)
+
+
+def test_reclasificar_anula_el_supuesto_de_plazo():
+    ef = a_estado_financiero(balance_prueba(), CORTE, reclasificaciones=LARGO_PLAZO)
+    assert not any("porción de largo plazo" in s for s in ef.supuestos_carga)
+
+
+def test_balance_de_prueba_completo_no_advierte_cuentas_faltantes():
+    ef = a_estado_financiero(balance_prueba(), CORTE, reclasificaciones=LARGO_PLAZO)
+    assert not any("no reportadas" in a for a in ef.advertencias())

@@ -92,6 +92,7 @@ def test_formatear_por_unidad():
     assert formatear(0.0241, "proporcion") == "2,4 %"
     assert formatear(53.32, "dias") == "53 días"
     assert formatear(1.514, "veces") == "1,51 veces"
+    assert formatear(520_000_000, "pesos") == "$ 520.000.000"
 
 
 def test_hallazgo_incluye_valor_y_mediana_legibles(historial):

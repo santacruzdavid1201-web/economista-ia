@@ -21,7 +21,7 @@ from modules.balance.comun import (
     factor_anual,
     promedios,
 )
-from modules.base import Indicador, ResultadoModulo, division_segura
+from modules.base import Indicador, ResultadoModulo, division_segura, formatear
 from modules.esquema_financiero import HistorialFinanciero
 
 PALANCAS = ("margen_neto", "rotacion_activos", "multiplicador_capital")
@@ -125,7 +125,8 @@ def variacion(historial: HistorialFinanciero, i: int = -1) -> ResultadoModulo:
         principal = max(contribuciones, key=lambda k: abs(contribuciones[k]))
         sentido = "subió" if actual["roe"] > anterior["roe"] else "bajó"
         hallazgos.append(
-            f"El ROE {sentido} de {anterior['roe']:.1%} a {actual['roe']:.1%}; "
+            f"El ROE {sentido} de {formatear(anterior['roe'], 'proporcion')} a "
+            f"{formatear(actual['roe'], 'proporcion')}; "
             f"la palanca que más explica el cambio es el {nombres[principal]}."
         )
     else:

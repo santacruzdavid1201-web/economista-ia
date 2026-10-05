@@ -25,6 +25,7 @@ import pandas as pd
 import yaml
 from pydantic import ValidationError
 
+from modules.base import formatear
 from modules.esquema_financiero import (
     BalanceGeneral,
     Empresa,
@@ -109,6 +110,12 @@ def hojas(df: pd.DataFrame) -> pd.DataFrame:
 # --------------------------------------------------------------------------- #
 # Traducción al esquema
 # --------------------------------------------------------------------------- #
+def _legible(campo: str) -> str:
+    """'obligaciones_financieras_cp' → 'obligaciones financieras de corto plazo'."""
+    return (campo.replace("_cp", " de corto plazo").replace("_lp", " de largo plazo")
+            .replace("_", " "))
+
+
 def _prefijo(cuenta: str, tabla: dict) -> str | None:
     """Prefijo más largo de la tabla que coincide con la cuenta."""
     candidatos = [p for p in tabla if cuenta.startswith(p)]
@@ -164,8 +171,11 @@ def a_estado_financiero(df: pd.DataFrame, fecha: date, mapeo: dict | None = None
         raise ErrorCarga("No hay saldos en la clase 4 (ingresos): use el balance de prueba "
                          "ANTES del cierre del ejercicio.")
 
+    # El supuesto de plazo sobra si la empresa reclasificó ese mismo campo
+    reclasificados = {origen for origen, _, _ in reclasificaciones or []}
     supuestos = [texto for prefijo, texto in m["supuestos"].items()
-                 if any(c.startswith(prefijo) for c in usados)]
+                 if any(c.startswith(prefijo) for c in usados)
+                 and tabla.get(_prefijo(prefijo, tabla)) not in reclasificados]
 
     # Depreciación: informativa, ya está dentro de los gastos
     dep = d[d["cuenta"].map(lambda c: _prefijo(c, m["informativo"]) is not None)]["saldo"].sum()
@@ -183,13 +193,17 @@ def a_estado_financiero(df: pd.DataFrame, fecha: date, mapeo: dict | None = None
                              f"{b.get(origen, 0):,.0f}).")
         b[origen] -= monto
         b[destino] = b.get(destino, 0) + monto
-        supuestos.append(f"Se reclasificaron {monto:,.0f} de {origen} a {destino} según "
-                         "información de la empresa.")
+        supuestos.append(f"Se reclasificaron {formatear(monto, 'pesos')} de {_legible(origen)} "
+                         f"a {_legible(destino)} según información de la empresa.")
 
     try:
+        # Un balance de prueba es completo: la cuenta ausente vale cero (no es
+        # "no reportada"). La depreciación es la excepción, ver arriba.
+        r = {c: 0 for c in EstadoResultados.model_fields if c != "depreciacion_amortizacion"} | r
         resultados = EstadoResultados(**r)
         # Antes del cierre la utilidad vive en las clases 4 a 7, no en la 36
         b["resultado_ejercicio"] = b.get("resultado_ejercicio", 0) + resultados.utilidad_neta
+        b = {c: 0 for c in BalanceGeneral.model_fields} | b
         return EstadoFinanciero(fecha_corte=fecha, meses=fecha.month, balance=BalanceGeneral(**b),
                                 resultados=resultados, supuestos_carga=supuestos)
     except ValidationError as e:
