@@ -84,3 +84,16 @@ def test_historial_ordena_y_promedia():
     assert h.saldo_promedio("efectivo") == (300, True)
     assert h.saldo_promedio("activo_total") == ((2_150 + 1_950) / 2, True)
     assert h.saldo_promedio("efectivo", 0) == (200, False)
+
+
+def test_sin_depreciacion_no_hay_ebitda():
+    r = resultados().model_copy(update={"depreciacion_amortizacion": None})
+    assert r.ebitda is None
+    assert r.utilidad_operacional == 250
+
+
+def test_impuesto_negativo_es_beneficio():
+    r = resultados().model_copy(update={"impuesto_renta": -20})
+    # Utilidad antes de impuestos 200; con beneficio de 20 la neta es 220
+    assert r.utilidad_antes_impuestos == 200
+    assert r.utilidad_neta == 220

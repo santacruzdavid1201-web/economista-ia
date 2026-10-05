@@ -88,12 +88,13 @@ NIIF y casi vacío: no usarlo.
 4. **Costo de ventas ausente en el 9 %** (28 hoteles lo llevan todo a gastos
    de administración): margen bruto de 100 % y días de inventario no
    calculables. En hoteles, el margen operacional es más comparable.
-5. **Deuda financiera fragmentada:** `Préstamos corrientes`, `Parte corriente
-   de préstamos no corrientes`, `Otros pasivos financieros corrientes` y sus
-   equivalentes no corrientes.
-6. **Utilidades retenidas:** `Ganancias acumuladas` (100 %) parece incluir el
-   resultado del ejercicio; verificar antes de separar
-   `resultados_acumulados` y `resultado_ejercicio`.
+5. **Deuda financiera:** en esta taxonomía `Otros pasivos financieros` es el
+   TOTAL de pasivos financieros y `Préstamos corrientes` / `Parte corriente de
+   préstamos no corrientes` son su desglose (el exceso coincidió con ese
+   concepto en 225 de 225 casos). Se usa el total y, si no viene, el desglose.
+6. **Utilidades retenidas:** `Ganancias acumuladas` incluye la utilidad del año
+   (el patrimonio cuadra así en el 100 % de los hoteles 2024). Las acciones
+   propias en cartera vienen en positivo y restan.
 7. `Costos de distribución` (8 %) es sinónimo de gastos de ventas: sumarlos.
 
 ## 5. Disponibilidad (hoteles 2024)
@@ -109,6 +110,27 @@ capital emitido y ganancias acumuladas 100 %; pasivo corriente 99 %; deudores
 39 %; préstamos no corrientes 36 %.
 
 Que un concepto falte suele significar cero (la empresa no tiene esa cuenta),
-no dato faltante. Los totales reportados permiten verificarlo: mapear las
+no dato faltante. **Excepción: la depreciación.** Falta en el flujo de efectivo
+del 22 % de los hoteles, y 55 de esos 67 tienen PPE (mediana $6.300 millones):
+no la reportaron. Se trata como desconocida y esos hoteles no entran en el
+benchmark de EBITDA. Los totales reportados permiten verificarlo: mapear las
 cuentas, sumar y comparar contra `Total de activos` / `Total pasivos`; la
 diferencia va a `otros_*` y se registra como medida de calidad.
+
+## 6. Resultado del cargador (5/10/2026)
+
+`data_sources/externos/supersociedades.py` con `config/mapeo_niif.yaml`,
+sobre los hoteles 2024:
+
+- 303 de 306 empresas cargadas, 605 periodos (2023 sale del comparativo del
+  reporte 2024); 302 con dos periodos para saldo promedio.
+- 7 periodos excluidos: 5 sin total de activo o pasivo corriente y 2 de una
+  empresa que reporta la misma cifra como intangibles y como plusvalía.
+- Balance: ninguna empresa queda con residuo sin clasificar después de mapear
+  los activos pignorados como garantía.
+- Resultados: 22 empresas con partidas no operacionales sin cuenta propia
+  (van a otros ingresos o gastos, con supuesto).
+- Depreciación en 238 empresas (79 %); 5 venían con signo negativo.
+- Anomalía para el paso 5: hay hoteles con depreciación mayor que sus
+  ingresos (p. ej. NIT 800108852). Los percentiles del benchmark resisten
+  estos extremos, pero conviene revisarlos.

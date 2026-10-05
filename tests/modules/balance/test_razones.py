@@ -83,3 +83,11 @@ def test_supuestos_del_cargador_pasan_al_resultado(historial):
     historial.ultimo.supuestos_carga.append("Cuenta 21 asumida como corto plazo.")
     res = endeudamiento(historial)
     assert "Cuenta 21 asumida como corto plazo." in res.supuestos
+
+
+def test_sin_depreciacion_no_calcula_ebitda():
+    h = hacer_historial(resultados={"depreciacion_amortizacion": None})
+    res = endeudamiento(h)
+    assert res.valor("deuda_ebitda") is None
+    assert any("depreciación" in a for a in res.advertencias)
+    assert res.valor("cobertura_intereses") == pytest.approx(5)

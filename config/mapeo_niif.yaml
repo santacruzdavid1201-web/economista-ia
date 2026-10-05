@@ -1,0 +1,162 @@
+# Mapeo de la taxonomía NIIF de Supersociedades (datos.gov.co) al esquema canónico.
+# Hallazgos que lo sustentan: exploracion/hallazgos_supersociedades.md
+#
+# Reglas para el cargador:
+# 1. Los nombres se comparan normalizados (minúsculas, sin caracteres no ASCII):
+#    la fuente trae las tildes dañadas ("administraci�n").
+# 2. Varios conceptos para un mismo campo se suman.
+# 3. Solo se mapean las cuentas limpias. Lo que el total reportado tenga de más
+#    (partidas poco frecuentes o mal clasificadas) va a otros_* como residuo y se
+#    registra como supuesto. Un residuo negativo indica doble conteo: la empresa
+#    se excluye del benchmark.
+# 4. Los valores vienen en miles de pesos (Empresa.unidad = 1_000).
+
+balance:
+  # Activo corriente
+  efectivo:
+    - "Efectivo y equivalentes al efectivo"
+  inversiones_cp:
+    - "Otros activos financieros corrientes"
+  deudores_comerciales:
+    # Supuesto: incluye "otras cuentas por cobrar"; la taxonomía no las separa.
+    - "Cuentas comerciales por cobrar y otras cuentas por cobrar corrientes"
+  otros_deudores_cp:
+    - "Activos por impuestos corrientes, corriente"
+  inventarios:
+    - "Inventarios corrientes"
+  otros_activos_cp:
+    - "Otros activos no financieros corrientes"
+    - "Activos biológicos corrientes"
+    - "Activos biológicos corrientes, al valor razonable"
+    - "Activos biológicos corrientes, al costo menos depreciación acumulada y deterioro de valor"
+    - "Activos no corrientes o grupos de activos para su disposición clasificados como mantenidos para la venta o como mantenidos para distribuir a los propietarios"
+    - "Activos corrientes distintos al efectivo pignorados como garantía colateral para las que el receptor de transferencias tiene derecho por contrato o costumbre a vender o pignorar de nuevo dicha garantía colateral"
+  # Activo no corriente
+  ppe:
+    - "Propiedades, planta y equipo"
+  intangibles:
+    - "Activos intangibles distintos de la plusvalía"
+    - "Plusvalía"
+  inversiones_lp:
+    - "Otros activos financieros no corrientes"
+    - "Propiedad de inversión"
+    - "Propiedades de inversión a valor razonable con cambios en resultados"
+    - "Propiedades de inversión al costo menos depreciación acumulada y deterioro"
+    - "Inversiones en subsidiarias"
+    - "Inversiones en asociadas"
+    - "Inversiones en negocios conjuntos"
+    - "Inversiones en subsidiarias, negocios conjuntos y asociadas"
+    - "Inversiones contabilizadas utilizando el método de la participación"
+  deudores_lp:
+    - "Cuentas comerciales por cobrar y otras cuentas por cobrar no corrientes"
+    - "Activos por impuestos corrientes, no corriente"
+  otros_activos_lp:
+    - "Otros activos no financieros no corrientes"
+    - "Activos por impuestos diferidos"
+    - "Inventarios no corrientes"
+    - "Activos biológicos no corrientes"
+    - "Activos biológicos no corrientes, al valor razonable"
+    - "Activos biológicos no corrientes, al costo menos depreciación acumulada y deterioro del valor"
+    # La fuente usa dos redacciones para el mismo concepto.
+    - "Activos no corrientes distintos al efectivo pignorados como garantía colateral para las que el receptor de transferencias tiene derecho por contrato o costumbre a vender o pignorar de nuevo dicha garantía colateral"
+    - "Activos no corrientes distintos al efectivo pignorados como garantía colateral para las que el receptor de transferencias tiene derecho por contrato o costumbre a vender o pignorar de nuevo la garantía colateral"
+  # Pasivo corriente
+  # obligaciones_financieras_cp: ver balance_alternativas
+  proveedores:
+    # Supuesto: incluye "otras cuentas por pagar"; la taxonomía no las separa.
+    - "Cuentas por pagar comerciales y otras cuentas por pagar corrientes"
+  impuestos_por_pagar:
+    - "Pasivos por impuestos corrientes, corriente"
+  obligaciones_laborales:
+    - "Provisiones corrientes por beneficios a los empleados"
+  otros_pasivos_cp:
+    - "Otras provisiones corrientes"
+    - "Otros pasivos no financieros corrientes"
+    - "Pasivos incluidos en grupos de activos para su disposición clasificados como mantenidos para la venta"
+  # Pasivo no corriente
+  # obligaciones_financieras_lp: ver balance_alternativas
+  otros_pasivos_lp:
+    - "Cuentas comerciales por pagar y otras cuentas por pagar no corrientes"
+    - "Pasivos por impuestos corrientes, no corriente"
+    - "Pasivo por impuestos diferidos"
+    - "Provisiones no corrientes por beneficios a los empleados"
+    - "Otras provisiones no corrientes"
+    - "Otros pasivos no financieros no corrientes"
+  # Patrimonio. "Ganancias acumuladas" incluye la utilidad del año (verificado en
+  # el 100 % de los hoteles 2024): el cargador le resta la ganancia del estado de
+  # resultados para obtener resultados_acumulados.
+  capital:
+    - "Capital emitido"
+    - "Inversión suplementaria al capital asignado"
+  reservas:
+    - "Otras reservas"
+  resultados_acumulados:
+    - "Ganancias acumuladas"
+  otro_patrimonio:
+    - "Prima de emisión"
+    - "Superavit por revaluación"
+    - "Otras participaciones en el patrimonio"
+
+# Gana la primera alternativa con algún concepto presente; dentro de cada
+# alternativa los conceptos se suman. En esta taxonomía "Otros pasivos
+# financieros" es el TOTAL de pasivos financieros y los préstamos son su
+# desglose: sumarlos duplicaba la deuda (225 de 225 casos en hoteles 2024).
+balance_alternativas:
+  obligaciones_financieras_cp:
+    - ["Otros pasivos financieros corrientes"]
+    - ["Préstamos corrientes", "Parte corriente de préstamos no corrientes"]
+  obligaciones_financieras_lp:
+    - ["Otros pasivos financieros no corrientes"]
+    - ["Parte no corriente de préstamos no corrientes"]
+
+# Se reportan en positivo y restan del patrimonio.
+patrimonio_resta:
+  - "Acciones propias en cartera"
+
+# Totales reportados: se usan para verificar y calcular residuos, nunca se cargan.
+totales_balance:
+  activo_total: "Total de activos"
+  activo_corriente: "Activos corrientes totales"
+  pasivo_total: "Total pasivos"
+  pasivo_corriente: "Pasivos corrientes totales"
+  patrimonio_total: "Patrimonio total"
+
+resultados:
+  ingresos_operacionales:
+    - "Ingresos de actividades ordinarias"
+  costo_ventas:
+    - "Costo de ventas"
+  gastos_administracion:
+    - "Gastos de administración"
+  gastos_ventas:
+    - "Gastos de ventas"
+    - "Costos de distribución"
+  otros_ingresos:
+    - "Otros ingresos"
+  otros_gastos:
+    - "Otros gastos"
+    - "Otros gastos, por función"
+  ingresos_financieros:
+    - "Ingresos financieros"
+  gastos_financieros:
+    - "Costos financieros"
+
+# Se toma el primero disponible (no se suman). Positivo = gasto.
+impuesto_renta:
+  - "Ingreso (gasto) por impuestos"
+  - "Gasto (ingreso) por impuestos, operaciones continuadas"
+
+# El total NIIF "Ganancia (pérdida) por actividades de operación" NO se usa:
+# incluye otros ingresos y gastos, a diferencia de utilidad_operacional.
+totales_resultados:
+  utilidad_antes_impuestos: "Ganancia (pérdida), antes de impuestos"
+  utilidad_neta: "Ganancia (pérdida)"
+  operaciones_discontinuadas: "Ganancia (pérdida) procedente de operaciones discontinuadas"
+
+flujo:
+  # Falta en el 22 % de los hoteles 2024, casi todos con PPE: no reportada, no cero.
+  depreciacion_amortizacion: "( + ) Ajustes por gastos de depreciación y amortización"
+  operacion: "Flujos de efectivo netos procedentes de (utilizados en) actividades de operación"
+  inversion: "Flujos de efectivo netos procedentes de (utilizados en) actividades de inversión"
+  financiacion: "Flujos de efectivo netos procedentes de (utilizados en) actividades de financiación"
+  variacion_efectivo: "Incremento (disminución) neto de efectivo y equivalentes al efectivo, antes del efecto de los cambios en la tasa de cambio"

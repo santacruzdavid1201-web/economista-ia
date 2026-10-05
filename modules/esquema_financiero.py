@@ -145,9 +145,11 @@ class EstadoResultados(BaseModel):
     otros_gastos: NonNegativeFloat = 0
     ingresos_financieros: NonNegativeFloat = 0
     gastos_financieros: NonNegativeFloat = 0
-    impuesto_renta: NonNegativeFloat = 0
+    # Negativo = beneficio tributario (p. ej. impuesto diferido): aumenta la utilidad.
+    impuesto_renta: float = 0
     # Informativo: ya está incluido en costos y gastos, NO se resta otra vez.
-    depreciacion_amortizacion: NonNegativeFloat = 0
+    # None = no reportada (distinto de cero): sin ella no hay EBITDA.
+    depreciacion_amortizacion: NonNegativeFloat | None = None
 
     @computed_field
     @property
@@ -161,7 +163,9 @@ class EstadoResultados(BaseModel):
 
     @computed_field
     @property
-    def ebitda(self) -> float:
+    def ebitda(self) -> float | None:
+        if self.depreciacion_amortizacion is None:
+            return None
         return self.utilidad_operacional + self.depreciacion_amortizacion
 
     @computed_field

@@ -48,13 +48,14 @@ y redacta el resultado. Todo número sale de funciones de Python probadas.
 
 ## Estado actual
 
-Hecho y probado (48 tests): esquema canónico, mapeo PUC, razones de liquidez,
+Hecho y probado (67 tests): esquema canónico, mapeo PUC, razones de liquidez,
 endeudamiento, rentabilidad y actividad, ciclo de conversión de efectivo,
 DuPont (con descomposición logarítmica de la variación del ROE), Z'' de
 Altman para mercados emergentes (zonas 4,35 / 5,85 y equivalencia de
 calificación de Altman y Hotchkiss 2005) y motor de benchmark
 (`modules/balance/benchmark.py`: percentil de rango medio, dirección por
-indicador, muestra mínima 10 / adecuada 30).
+indicador, muestra mínima 10 / adecuada 30). El EBITDA es `None` si no se
+reportó la depreciación; el impuesto admite negativos (beneficio).
 
 ## Siguiente paso: datos de Supersociedades para el benchmark
 
@@ -70,12 +71,18 @@ CIIU como concepto de la carátula (`I5511 - ...`), cruce por NIT + fecha;
 punto_entrada 10/20/40/50, solo cortes 31-dic, `Periodo Actual`; valores en
 miles de pesos; ~300 hoteles por año a nivel nacional.
 
+Paso 4 resuelto: `config/mapeo_niif.yaml` + cargador
+`data_sources/externos/supersociedades.py` (descarga SoQL + transformación
+pura con exclusiones motivadas). Carga 303 de 306 hoteles 2024. Ver sección 6
+de los hallazgos.
+
 Pendiente, en orden:
-4. Mapear conceptos NIIF al esquema canónico (`config/mapeo_niif.yaml`)
-   resolviendo las 7 diferencias de la sección 4 de los hallazgos; revisar
-   depreciación en el flujo de efectivo `ctcp-462n`.
 5. Construir `ReferenciaSectorial` calculando los indicadores de los pares
-   con las mismas funciones de `modules/balance/`.
+   con las mismas funciones de `modules/balance/`. Decisiones acordadas:
+   pares sin `costo_ventas` en `model_fields_set` no entran a margen bruto ni
+   días de inventario; los días de cartera y proveedores de la empresa se
+   comparan con la misma agregación que los pares (cuentas comerciales + otras);
+   `SUPUESTOS_MAPEO` va a `ReferenciaSectorial.filtros`.
 6. Validar contra los indicadores que publica el SIIS.
 
 Grupos de comparación en `config/ciiu_sectores.yaml` (alojamiento / hoteles).

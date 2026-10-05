@@ -23,6 +23,10 @@ from modules.base import Indicador, ResultadoModulo, division_segura
 from modules.esquema_financiero import HistorialFinanciero
 
 DIAS_ANIO = 365
+SIN_DEPRECIACION = (
+    "No se reportó la depreciación y amortización: el EBITDA y las razones que "
+    "lo usan no se pueden calcular."
+)
 
 
 def liquidez(historial: HistorialFinanciero, i: int = -1) -> ResultadoModulo:
@@ -69,8 +73,9 @@ def endeudamiento(historial: HistorialFinanciero, i: int = -1) -> ResultadoModul
     apalancamiento = division_segura(b.pasivo_total, patrimonio) if patrimonio > 0 else None
 
     # EBITDA anualizado si el periodo tiene menos de 12 meses (deuda es un saldo).
-    ebitda_anual = r.ebitda * factor_anual(ef)
-    deuda_ebitda = division_segura(b.deuda_financiera, ebitda_anual) if ebitda_anual > 0 else None
+    ebitda_anual = None if r.ebitda is None else r.ebitda * factor_anual(ef)
+    deuda_ebitda = (division_segura(b.deuda_financiera, ebitda_anual)
+                    if ebitda_anual is not None and ebitda_anual > 0 else None)
 
     cobertura = division_segura(r.utilidad_operacional, r.gastos_financieros)
 
@@ -100,7 +105,9 @@ def endeudamiento(historial: HistorialFinanciero, i: int = -1) -> ResultadoModul
         supuestos.append(f"EBITDA anualizado a partir de {ef.meses} meses (× 12 / {ef.meses}).")
     if patrimonio <= 0:
         advertencias.append("Patrimonio nulo o negativo: el apalancamiento no tiene interpretación.")
-    if ebitda_anual <= 0:
+    if ebitda_anual is None:
+        advertencias.append(SIN_DEPRECIACION)
+    elif ebitda_anual <= 0:
         advertencias.append("EBITDA nulo o negativo: la operación no genera caja para pagar deuda.")
     if r.gastos_financieros == 0:
         advertencias.append("Sin gastos financieros en el periodo: la cobertura de intereses no aplica.")
@@ -133,7 +140,8 @@ def rentabilidad(historial: HistorialFinanciero, i: int = -1) -> ResultadoModulo
                   valor=division_segura(r.utilidad_operacional, ventas), unidad="proporcion",
                   formula="Utilidad operacional / Ingresos operacionales"),
         Indicador(clave="margen_ebitda", nombre="Margen EBITDA",
-                  valor=division_segura(r.ebitda, ventas), unidad="proporcion",
+                  valor=None if r.ebitda is None else division_segura(r.ebitda, ventas),
+                  unidad="proporcion",
                   formula="EBITDA / Ingresos operacionales"),
         Indicador(clave="margen_neto", nombre="Margen neto",
                   valor=division_segura(r.utilidad_neta, ventas), unidad="proporcion",
@@ -157,6 +165,8 @@ def rentabilidad(historial: HistorialFinanciero, i: int = -1) -> ResultadoModulo
         advertencias.append("Sin ingresos operacionales: los márgenes no se pueden calcular.")
     if patrimonio_prom <= 0:
         advertencias.append("Patrimonio promedio nulo o negativo: el ROE no tiene interpretación.")
+    if r.ebitda is None:
+        advertencias.append(SIN_DEPRECIACION)
     if r.utilidad_neta < 0:
         advertencias.append("La empresa tuvo pérdida neta en el periodo.")
 
