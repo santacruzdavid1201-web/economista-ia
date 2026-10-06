@@ -20,6 +20,7 @@ from __future__ import annotations
 import re
 from datetime import date
 from pathlib import Path
+from typing import IO
 
 import pandas as pd
 import yaml
@@ -66,14 +67,22 @@ def _buscar(columnas: dict[str, str], opciones: tuple[str, ...]) -> str | None:
     return next((columnas[o] for o in opciones if o in columnas), None)
 
 
-def leer_balance_prueba(ruta: Path | str) -> pd.DataFrame:
+def leer_balance_prueba(archivo: Path | str | IO[bytes], nombre: str | None = None) -> pd.DataFrame:
     """
     Lee un balance de prueba (.xlsx, .xls o .csv) y devuelve `cuenta` (texto,
     solo dígitos) y `saldo` (con signo, débito positivo).
+
+    `archivo` puede ser una ruta o un archivo abierto (p. ej. subido desde la
+    interfaz); en ese caso `nombre` indica la extensión.
     """
-    ruta = Path(ruta)
-    crudo = (pd.read_csv(ruta, dtype=str) if ruta.suffix.lower() == ".csv"
-             else pd.read_excel(ruta, dtype=str))
+    extension = Path(nombre or str(getattr(archivo, "name", archivo))).suffix.lower()
+    if extension not in (".csv", ".xlsx", ".xls"):
+        raise ErrorCarga(f"Formato no soportado ({extension or 'sin extensión'}): use .xlsx, .xls o .csv.")
+    try:
+        crudo = (pd.read_csv(archivo, dtype=str) if extension == ".csv"
+                 else pd.read_excel(archivo, dtype=str))
+    except Exception as e:  # archivo dañado, protegido o con otra codificación
+        raise ErrorCarga(f"No se pudo leer el archivo: {e}") from e
     columnas = {_simplificar(c): c for c in crudo.columns}
     cuenta = _buscar(columnas, COLUMNAS_CUENTA)
     if cuenta is None:

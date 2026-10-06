@@ -178,3 +178,15 @@ def test_reclasificar_anula_el_supuesto_de_plazo():
 def test_balance_de_prueba_completo_no_advierte_cuentas_faltantes():
     ef = a_estado_financiero(balance_prueba(), CORTE, reclasificaciones=LARGO_PLAZO)
     assert not any("no reportadas" in a for a in ef.advertencias())
+
+
+def test_lee_archivo_abierto_y_rechaza_formatos(tmp_path):
+    import io
+    df = balance_prueba()
+    contenido = pd.DataFrame({"Cuenta": df["cuenta"], "Saldo": df["saldo"]}).to_csv(index=False)
+    leido = leer_balance_prueba(io.BytesIO(contenido.encode("utf-8")), nombre="subido.csv")
+    assert a_estado_financiero(leido, CORTE).balance.activo_total == 2_050
+    with pytest.raises(ErrorCarga, match="Formato no soportado"):
+        leer_balance_prueba(io.BytesIO(b"x"), nombre="balance.pdf")
+    with pytest.raises(ErrorCarga, match="No se pudo leer"):
+        leer_balance_prueba(io.BytesIO(b"\x00\x01basura"), nombre="balance.xlsx")

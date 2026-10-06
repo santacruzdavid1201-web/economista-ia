@@ -55,7 +55,7 @@ y redacta el resultado. Todo número sale de funciones de Python probadas.
 
 ## Estado actual
 
-Hecho y probado (123 tests): esquema canónico, mapeo PUC, razones de liquidez,
+Hecho y probado (124 tests): esquema canónico, mapeo PUC, razones de liquidez,
 endeudamiento, rentabilidad y actividad, ciclo de conversión de efectivo,
 DuPont (con descomposición logarítmica de la variación del ROE), Z'' de
 Altman para mercados emergentes (zonas 4,35 / 5,85 y equivalencia de
@@ -110,8 +110,10 @@ Pendiente, en orden (acordado el 5/10/2026):
    Python al final; el LLM solo redacta. Lecciones con el modelo real: 8/8 en
    enrutamiento; inventó una definición sin glosario; el verificador atrapa
    cifras inventadas, pero no errores de sentido (p. ej. confundir "mejor que
-   el 78 % de los pares" con un margen de 78 %). Falta: set de evaluación
-   (`tests/eval/preguntas.yaml`) con rúbrica de sentido y Streamlit mínimo.
+   el 78 % de los pares" con un margen de 78 %). Interfaz: `streamlit run
+   frontend/app.py` (hotel de demostración o balances subidos, con validación
+   de archivos). Falta: set de evaluación (`tests/eval/preguntas.yaml`) con
+   rúbrica de sentido.
 3. Validar la referencia contra los indicadores que publica el SIIS.
 4. Revisar valores extremos (p. ej. hoteles con depreciación > ingresos).
 5. Módulos 4 → 3 → 2 (macro, proyectos, econometría).
