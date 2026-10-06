@@ -162,3 +162,19 @@ def referencia_supersociedades(grupo: str, anio: int, excluir_nit: str | None = 
         (REFERENCIAS / f"{grupo}_{anio}.json").write_text(
             ref.model_dump_json(indent=1), encoding="utf-8")
     return ref
+
+
+def grupo_de_ciiu(ciiu: str) -> str | None:
+    """Grupo de comparación más específico (con menos CIIU) que contiene el CIIU."""
+    sectores = yaml.safe_load(SECTORES.read_text(encoding="utf-8"))
+    candidatos = [(len(d["ciius"]), g) for g, d in sectores.items() if ciiu in d["ciius"]]
+    return min(candidatos)[1] if candidatos else None
+
+
+def cargar_referencia(ciiu: str, anio: int) -> ReferenciaSectorial | None:
+    """Referencia guardada para el CIIU y el año; None si no se ha construido."""
+    grupo = grupo_de_ciiu(ciiu)
+    archivo = REFERENCIAS / f"{grupo}_{anio}.json"
+    if grupo is None or not archivo.exists():
+        return None
+    return ReferenciaSectorial.model_validate_json(archivo.read_text(encoding="utf-8"))

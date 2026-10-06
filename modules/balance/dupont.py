@@ -77,9 +77,11 @@ def variacion(historial: HistorialFinanciero, i: int = -1) -> ResultadoModulo:
     """
     Descompone el cambio del ROE entre el periodo i−1 y el i.
 
-    Cada indicador `contribucion_*` es la parte del cambio de ln(ROE) que explica
-    esa palanca; las tres suman exactamente `cambio_log_roe`. Solo se puede
-    calcular si el ROE y las tres palancas son positivos en ambos periodos.
+    Cada indicador `participacion_*` es la fracción del cambio de ln(ROE) que
+    explica esa palanca; las tres suman exactamente 1 (100 %). Se presenta como
+    participación y no como diferencia logarítmica porque esta última, mostrada
+    en %, se lee como "% del cambio" y no lo es. Solo se puede calcular si el
+    ROE y las tres palancas son positivos en ambos periodos.
     """
     i = i % len(historial.periodos)
     ef = historial.periodos[i]
@@ -111,24 +113,28 @@ def variacion(historial: HistorialFinanciero, i: int = -1) -> ResultadoModulo:
         Indicador(clave="roe_actual", nombre="ROE periodo actual", valor=actual["roe"],
                   unidad="proporcion", formula="DuPont del periodo actual"),
     ]
-    if calculable:
-        contribuciones = {k: math.log(actual[k] / anterior[k]) for k in PALANCAS}
-        indicadores.append(Indicador(
-            clave="cambio_log_roe", nombre="Cambio logarítmico del ROE",
-            valor=math.log(actual["roe"] / anterior["roe"]), unidad="proporcion",
-            formula="ln(ROE actual / ROE anterior)"))
-        for k, v in contribuciones.items():
+    cambio = math.log(actual["roe"] / anterior["roe"]) if calculable else 0
+    if calculable and abs(cambio) > 1e-9:
+        # Participación de cada palanca en el cambio de ln(ROE): suman 100 %.
+        # Una participación negativa es una palanca que jugó en contra.
+        participacion = {k: math.log(actual[k] / anterior[k]) / cambio for k in PALANCAS}
+        for k, v in participacion.items():
             indicadores.append(Indicador(
-                clave=f"contribucion_{k}", nombre=f"Contribución del {nombres[k]}",
+                clave=f"participacion_{k}",
+                nombre=f"Parte del cambio del ROE explicada por el {nombres[k]}",
                 valor=v, unidad="proporcion",
-                formula=f"ln({nombres[k]} actual / {nombres[k]} anterior)"))
-        principal = max(contribuciones, key=lambda k: abs(contribuciones[k]))
+                formula=f"ln({nombres[k]} actual / anterior) / ln(ROE actual / anterior)"))
+        principal = max(participacion, key=lambda k: abs(participacion[k]))
         sentido = "subió" if actual["roe"] > anterior["roe"] else "bajó"
+        detalle = ", ".join(f"el {nombres[k]} {formatear(v, 'proporcion')}"
+                            for k, v in participacion.items())
         hallazgos.append(
             f"El ROE {sentido} de {formatear(anterior['roe'], 'proporcion')} a "
-            f"{formatear(actual['roe'], 'proporcion')}; "
-            f"la palanca que más explica el cambio es el {nombres[principal]}."
+            f"{formatear(actual['roe'], 'proporcion')}; la palanca que más explica el cambio "
+            f"es el {nombres[principal]}. Participación en el cambio: {detalle}."
         )
+    elif calculable:
+        advertencias.append("El ROE no cambió entre los dos periodos: no hay variación que descomponer.")
     else:
         advertencias.append(
             "La descomposición logarítmica requiere ROE y palancas positivos en ambos "

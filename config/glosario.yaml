@@ -1,0 +1,62 @@
+# Definiciones que recibe el LLM para explicar los indicadores. El modelo local
+# definió "razón corriente" como "creencias compartidas por una sociedad"
+# cuando respondió de memoria: las definiciones salen de aquí, no del modelo.
+# Lenguaje para un gerente que no es financiero; una o dos frases.
+
+razon_corriente: >-
+  Cuántos pesos de activos de corto plazo (caja, cartera, inventarios) tiene la
+  empresa por cada peso de deudas que vencen en el próximo año.
+prueba_acida: >-
+  Igual que la razón corriente, pero sin contar los inventarios, que son lo más
+  difícil de convertir en efectivo.
+razon_efectivo: >-
+  Cuántos pesos de efectivo e inversiones de corto plazo hay por cada peso de
+  deudas de corto plazo.
+capital_trabajo: >-
+  Diferencia entre los activos y las deudas de corto plazo. Si es negativa, las
+  deudas que vencen en el año superan los recursos de corto plazo.
+nivel_endeudamiento: >-
+  Qué parte de los activos está financiada con deudas (bancos, proveedores,
+  empleados, impuestos, etc.).
+concentracion_cp: Qué parte de la deuda total vence en el próximo año.
+apalancamiento: >-
+  Cuántos pesos de deuda hay por cada peso que han aportado o dejado los socios
+  (patrimonio).
+deuda_ebitda: >-
+  Cuántos años de EBITDA (la caja que genera la operación) se necesitarían para
+  pagar la deuda con bancos.
+cobertura_intereses: Cuántas veces la utilidad operacional alcanza para pagar los intereses.
+carga_financiera: Qué parte de las ventas se va en gastos financieros (intereses y comisiones).
+margen_bruto: Qué parte de cada peso vendido queda después del costo directo de lo vendido.
+margen_operacional: >-
+  Qué parte de cada peso vendido queda después de los costos y gastos de la
+  operación, antes de intereses e impuestos.
+margen_ebitda: >-
+  Como el margen operacional, pero sin descontar depreciaciones y
+  amortizaciones: aproxima la caja que genera la operación por cada peso vendido.
+margen_neto: >-
+  Qué parte de cada peso vendido queda como utilidad final, después de
+  intereses e impuestos.
+roa: Utilidad neta del año por cada peso de activos (rentabilidad del activo).
+roe: >-
+  Utilidad neta del año por cada peso de patrimonio, es decir, de lo que han
+  aportado o dejado los socios (rentabilidad del patrimonio).
+rotacion_activos: Cuántos pesos vende la empresa en el año por cada peso de activos.
+multiplicador_capital: >-
+  Cuántos pesos de activos hay por cada peso de patrimonio; en el análisis
+  DuPont mide cuánto se apoya la rentabilidad en la deuda.
+dias_cartera: Cuántos días tardan en promedio los clientes en pagar.
+dias_inventario: Cuántos días dura en promedio el inventario antes de venderse.
+dias_proveedores: Cuántos días tarda en promedio la empresa en pagarle a sus proveedores.
+ciclo_conversion_efectivo: >-
+  Días entre el pago a los proveedores y el cobro a los clientes. Si es alto, la
+  empresa tiene que financiar ese tiempo con su caja o con deuda.
+em_score: >-
+  Puntaje Z'' de Altman: combina liquidez, utilidades acumuladas, rentabilidad
+  operativa y solvencia en una señal de alerta temprana de dificultades
+  financieras. No es una probabilidad de quiebra.
+# Sin cifras en las definiciones: toda cifra de los datos queda "permitida"
+# para el verificador de la redacción.
+percentil: >-
+  Posición frente a las empresas del sector: indica qué porcentaje de ellas
+  tiene un valor menor que el de la empresa.

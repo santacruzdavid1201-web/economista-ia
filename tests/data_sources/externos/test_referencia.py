@@ -87,3 +87,13 @@ def test_no_comparables_no_llevan_valores(pares):
                                no_comparables={"dias_proveedores": "servicios"})
     assert "dias_proveedores" not in ref.valores
     assert ref.no_comparables == {"dias_proveedores": "servicios"}
+
+
+def test_cargar_referencia_elige_el_grupo_mas_especifico():
+    from data_sources.externos.referencia import cargar_referencia, grupo_de_ciiu
+    assert grupo_de_ciiu("5511") == "hoteles"          # está en hoteles y en alojamiento
+    assert grupo_de_ciiu("5530") == "alojamiento"
+    assert grupo_de_ciiu("4711") is None
+    ref = cargar_referencia("5511", 2024)              # versionada en data/referencias
+    assert ref is not None and ref.anio == 2024 and "dias_proveedores" in ref.no_comparables
+    assert cargar_referencia("5511", 1999) is None

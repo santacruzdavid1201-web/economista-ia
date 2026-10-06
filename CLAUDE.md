@@ -46,10 +46,16 @@ y redacta el resultado. Todo número sale de funciones de Python probadas.
 - Sin umbrales genéricos de "bueno/malo": eso lo da el benchmark sectorial.
 - Cada función nueva lleva tests en `tests/` con la misma estructura de
   carpetas. Correr `python -m pytest -v` antes de cada commit.
+- Robustez por fases (definido por el usuario el 5/10/2026). En el MVP:
+  variables de entorno para claves y configuración (nunca en el código),
+  validación básica de toda entrada del usuario, separación de roles
+  system/user en los prompts (la pregunta del usuario nunca va en el system)
+  y manejo de errores con try/except y mensajes útiles. Rate limiting fino y
+  monitoreo con dashboard se agregan cuando el producto tenga uso real.
 
 ## Estado actual
 
-Hecho y probado (94 tests): esquema canónico, mapeo PUC, razones de liquidez,
+Hecho y probado (123 tests): esquema canónico, mapeo PUC, razones de liquidez,
 endeudamiento, rentabilidad y actividad, ciclo de conversión de efectivo,
 DuPont (con descomposición logarítmica de la variación del ROE), Z'' de
 Altman para mercados emergentes (zonas 4,35 / 5,85 y equivalencia de
@@ -94,10 +100,18 @@ Pendiente, en orden (acordado el 5/10/2026):
    Excel propia para empresas sin software contable.
    Caso de demostración: `data/demo/hotel_demo_andino_{2023,2024}.csv`
    (empresa ficticia, generada con `data/demo/generar_demo.py`).
-2. Versión delgada de punta a punta solo con balance: metaprompt, enrutador,
-   cliente Ollama (Qwen 7-8B), registro de herramientas, Streamlit mínimo y
-   preguntas de evaluación. Valida el supuesto más riesgoso: que un 8B elija
-   bien el módulo y redacte sin inventar números.
+2. Versión delgada de punta a punta (en curso). Hecho: `app/config.py`
+   (variables de entorno, `.env.example`), `app/llm/client.py` (API compatible
+   con OpenAI; LM Studio con qwen2.5-7b-instruct en localhost:1234),
+   `app/orchestrator/` (registro de herramientas, orquestador, verificador de
+   cifras con un reintento y respuesta de respaldo armada en Python),
+   `config/prompts/`, `config/glosario.yaml` y `app/demo.py`
+   (`python -m app.demo "pregunta"`). Supuestos y advertencias los agrega
+   Python al final; el LLM solo redacta. Lecciones con el modelo real: 8/8 en
+   enrutamiento; inventó una definición sin glosario; el verificador atrapa
+   cifras inventadas, pero no errores de sentido (p. ej. confundir "mejor que
+   el 78 % de los pares" con un margen de 78 %). Falta: set de evaluación
+   (`tests/eval/preguntas.yaml`) con rúbrica de sentido y Streamlit mínimo.
 3. Validar la referencia contra los indicadores que publica el SIIS.
 4. Revisar valores extremos (p. ej. hoteles con depreciación > ingresos).
 5. Módulos 4 → 3 → 2 (macro, proyectos, econometría).

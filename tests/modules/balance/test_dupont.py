@@ -24,14 +24,16 @@ def test_dupont_patrimonio_negativo():
     assert any("no tiene interpretación" in a for a in d.advertencias)
 
 
-def test_variacion_contribuciones_suman_el_cambio(historial_dos_periodos):
+def test_variacion_participaciones_suman_cien(historial_dos_periodos):
     v = variacion(historial_dos_periodos)
-    suma = sum(v.valor(f"contribucion_{k}")
-               for k in ("margen_neto", "rotacion_activos", "multiplicador_capital"))
-    assert suma == pytest.approx(v.valor("cambio_log_roe"))
-    assert v.valor("cambio_log_roe") == pytest.approx(
-        math.log(v.valor("roe_actual") / v.valor("roe_anterior")))
-    assert v.hallazgos and "subió" in v.hallazgos[0]
+    claves = ("margen_neto", "rotacion_activos", "multiplicador_capital")
+    assert sum(v.valor(f"participacion_{k}") for k in claves) == pytest.approx(1)
+    # Cada participación es su diferencia logarítmica sobre la del ROE
+    d0, d1 = dupont(historial_dos_periodos, 0), dupont(historial_dos_periodos, 1)
+    esperado = (math.log(d1.valor("margen_neto") / d0.valor("margen_neto"))
+                / math.log(d1.valor("roe") / d0.valor("roe")))
+    assert v.valor("participacion_margen_neto") == pytest.approx(esperado)
+    assert v.hallazgos and "subió" in v.hallazgos[0] and "Participación en el cambio" in v.hallazgos[0]
 
 
 def test_variacion_con_un_solo_periodo(historial):

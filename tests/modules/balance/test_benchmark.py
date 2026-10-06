@@ -98,5 +98,6 @@ def test_formatear_por_unidad():
 def test_hallazgo_incluye_valor_y_mediana_legibles(historial):
     pares = [0.02 * k for k in range(1, 41)]
     res = comparar([endeudamiento(historial)], referencia(nivel_endeudamiento=pares))
-    assert res.hallazgos[0].startswith("Nivel de endeudamiento: 42,4 %, percentil 52")
-    assert "mediana del sector 41,0 %" in res.hallazgos[0]
+    assert res.hallazgos[0].startswith(
+        "Nivel de endeudamiento: 42,4 %, por encima de la mediana del sector (41,0 %); "
+        "percentil 52 frente a 40 empresas")

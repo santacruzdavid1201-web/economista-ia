@@ -87,14 +87,17 @@ def cuantil(muestra: list[float], q: float) -> float:
 
 
 def _frase(ind: Indicador, pct: float, n: int, mediana: float, direccion: Direccion) -> str:
-    base = (f"{ind.nombre}: {formatear(ind.valor, ind.unidad)}, percentil {pct:.0f} frente a "
-            f"{n} empresas (mediana del sector {formatear(mediana, ind.unidad)})")
+    # La posición frente a la mediana va siempre explícita: el 8B no debe inferirla
+    # del percentil (en pruebas escribió "por debajo de la mediana" con percentil 79).
+    posicion = ("por encima de" if ind.valor > mediana else
+                "por debajo de" if ind.valor < mediana else "igual a")
+    base = (f"{ind.nombre}: {formatear(ind.valor, ind.unidad)}, {posicion} la mediana del "
+            f"sector ({formatear(mediana, ind.unidad)}); percentil {pct:.0f} frente a {n} empresas")
     if direccion == "mayor":
         return f"{base}; está mejor que el {pct:.0f} % de los pares en este indicador."
     if direccion == "menor":
         return f"{base}; está mejor que el {100 - pct:.0f} % de los pares en este indicador."
-    posicion = "por encima" if pct > 50 else "por debajo" if pct < 50 else "en"
-    return f"{base}; se ubica {posicion} de la mediana."
+    return f"{base}."
 
 
 def comparar(resultados: list[ResultadoModulo], ref: ReferenciaSectorial) -> ResultadoModulo:
