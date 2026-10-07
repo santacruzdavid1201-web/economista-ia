@@ -29,6 +29,8 @@ EJEMPLOS = [
     "¿Tengo con qué pagar mis deudas de corto plazo?",
     "¿Cómo estamos frente a otros hoteles en rentabilidad?",
     "¿Por qué cambió la rentabilidad del patrimonio?",
+    "¿Cómo me afecta que el Banco de la República suba las tasas?",
+    "¿Me conviene subir las tarifas de las habitaciones?",
 ]
 
 st.set_page_config(page_title="Economista IA", page_icon="📊", layout="centered")

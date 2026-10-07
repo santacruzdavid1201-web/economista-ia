@@ -33,6 +33,10 @@ class Config:
     llm_api_key: str | None
     llm_timeout: float
     max_caracteres_pregunta: int
+    embeddings_modelo: str = "text-embedding-nomic-embed-text-v1.5"
+    # nomic exige prefijos de tarea; otros modelos (p. ej. bge-m3) van vacíos
+    embeddings_prefijo_consulta: str = "search_query: "
+    embeddings_prefijo_documento: str = "search_document: "
 
 
 def config() -> Config:
@@ -45,4 +49,15 @@ def config() -> Config:
         llm_api_key=os.environ.get("LLM_API_KEY") or None,
         llm_timeout=float(os.environ.get("LLM_TIMEOUT", "300")),
         max_caracteres_pregunta=int(os.environ.get("MAX_CARACTERES_PREGUNTA", "1000")),
+        embeddings_modelo=os.environ.get("EMBEDDINGS_MODELO", "text-embedding-nomic-embed-text-v1.5"),
+        embeddings_prefijo_consulta=_prefijo(os.environ.get("EMBEDDINGS_PREFIJO_CONSULTA",
+                                                            "search_query: ")),
+        embeddings_prefijo_documento=_prefijo(os.environ.get("EMBEDDINGS_PREFIJO_DOCUMENTO",
+                                                             "search_document: ")),
     )
+
+
+def _prefijo(valor: str) -> str:
+    """El .env recorta espacios: 'search_query:' debe quedar 'search_query: '."""
+    valor = valor.strip()
+    return f"{valor} " if valor else ""

@@ -183,3 +183,16 @@ def test_tema_desconocido_compara_todo():
     llm = LLMFalso(herramienta("comparar_con_sector", tema="marketing"), texto("Bien."))
     r = responder("¿Frente al sector?", contexto_demo(), llm, HOY)
     assert any(h.startswith("Razón corriente") for h in r.resultados[0].hallazgos)
+
+
+def test_analisis_tematico_incluye_sector_si_hay_referencia():
+    from app.demo import contexto_demo
+    r = responder("¿Rentabilidad?", contexto_demo(),
+                  LLMFalso(herramienta("analizar_rentabilidad"), texto("Bien.")), HOY)
+    assert [x.analisis for x in r.resultados] == ["rentabilidad", "benchmark"]
+
+
+def test_analisis_tematico_sin_referencia_no_falla(ctx):
+    r = responder("¿Rentabilidad?", ctx, LLMFalso(herramienta("analizar_rentabilidad"),
+                                                  texto("Bien.")), HOY)
+    assert [x.analisis for x in r.resultados] == ["rentabilidad"]

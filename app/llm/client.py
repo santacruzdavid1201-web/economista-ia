@@ -56,6 +56,23 @@ class ClienteLLM:
             return False, f"El servidor responde, pero no tiene cargado '{self.cfg.llm_modelo}'."
         return True, f"Modelo {self.cfg.llm_modelo} disponible."
 
+    def embeddings(self, textos: list[str]) -> list[list[float]]:
+        """Vectores del modelo de embeddings configurado (búsqueda por significado)."""
+        try:
+            r = requests.post(f"{self.cfg.llm_url}/embeddings", timeout=self.cfg.llm_timeout,
+                              json={"model": self.cfg.embeddings_modelo, "input": textos},
+                              headers=({"Authorization": f"Bearer {self.cfg.llm_api_key}"}
+                                       if self.cfg.llm_api_key else {}))
+        except requests.RequestException as e:
+            raise ErrorLLM(f"No hay conexión con el modelo de embeddings: {e}") from e
+        if r.status_code != 200:
+            raise ErrorLLM(f"El servidor de embeddings respondió {r.status_code}: {r.text[:200]}")
+        try:
+            datos = sorted(r.json()["data"], key=lambda d: d.get("index", 0))
+            return [d["embedding"] for d in datos]
+        except (ValueError, KeyError, TypeError) as e:
+            raise ErrorLLM(f"Respuesta de embeddings con formato inesperado: {e}") from e
+
     def chat(self, sistema: str, usuario: str, herramientas: list[dict] | None = None,
              forzar_herramienta: bool = False, temperatura: float = 0.2) -> RespuestaLLM:
         # Roles separados: las instrucciones van en system; la pregunta y los

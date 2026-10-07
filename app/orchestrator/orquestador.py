@@ -27,6 +27,7 @@ from app.orchestrator.tools_registry import (
     indice_periodo,
 )
 from app.orchestrator.verificador import cifras_no_respaldadas, respaldo
+from app.rag.retriever import Buscador
 from modules.base import ResultadoModulo, formatear
 
 PROMPTS = RAIZ / "config" / "prompts"
@@ -34,11 +35,19 @@ GLOSARIO = RAIZ / "config" / "glosario.yaml"
 SUFIJOS_BENCHMARK = re.compile(r"_(percentil|p25|p75|mediana)$")
 
 FUERA_DE_ALCANCE = (
-    "Esa pregunta está fuera de lo que puedo analizar por ahora. Puedo ayudarle con "
-    "la liquidez, el endeudamiento, la rentabilidad, la rotación de cartera e "
-    "inventarios, el riesgo financiero (Z'' de Altman), el análisis DuPont y la "
-    "comparación con empresas de su sector."
+    "Esa pregunta está fuera de lo que puedo responder con rigor. Para temas legales "
+    "o tributarios específicos, lo indicado es consultar a un abogado o a un contador. "
+    "Puedo ayudarle con la liquidez, el endeudamiento, la rentabilidad, la rotación de "
+    "cartera e inventarios, el riesgo financiero (Z'' de Altman), el análisis DuPont, la "
+    "comparación con empresas de su sector y conceptos económicos que afectan a su "
+    "negocio (tasas de interés, inflación, precios, endeudamiento)."
 )
+SIN_FUENTE = (
+    "No tengo una fuente revisada para responder eso con rigor, y prefiero no "
+    "responder de memoria. Puedo ayudarle con el análisis de los estados financieros "
+    "de su empresa o con los conceptos de la base de conocimiento del sistema."
+)
+AVISO_SIN_REVISAR = "Parte del material usado aún no ha sido revisado por el economista."
 
 Origen = Literal["llm", "respaldo", "sin_llm", "error"]
 
@@ -55,13 +64,17 @@ class Respuesta:
     periodo: int | None = None
     resultados: list[ResultadoModulo] = field(default_factory=list)
     notas: list[str] = field(default_factory=list)          # supuestos y advertencias
+    fuentes: list[str] = field(default_factory=list)        # notas de la base de conocimiento
     eventos: list[str] = field(default_factory=list)        # trazas internas (no se muestran)
 
     @property
     def texto_completo(self) -> str:
-        if not self.notas:
-            return self.texto
-        return self.texto + "\n\nPara tener en cuenta:\n" + "\n".join(f"- {n}" for n in self.notas)
+        partes = [self.texto]
+        if self.fuentes:
+            partes.append("Fuentes:\n" + "\n".join(f"- {f}" for f in self.fuentes))
+        if self.notas:
+            partes.append("Para tener en cuenta:\n" + "\n".join(f"- {n}" for n in self.notas))
+        return "\n\n".join(partes)
 
 
 # --------------------------------------------------------------------------- #
@@ -131,8 +144,59 @@ def _notas(resultados: list[ResultadoModulo]) -> list[str]:
 # --------------------------------------------------------------------------- #
 # Pipeline
 # --------------------------------------------------------------------------- #
+def _sistema(reglas: str) -> str:
+    """Rol del economista (común) + reglas de redacción del tipo de pregunta."""
+    return "\n\n".join((PROMPTS / f).read_text(encoding="utf-8") for f in ("rol.md", reglas))
+
+
+def _redactar(cliente: ClienteChat, sistema: str, usuario: str, permitidas: list[str],
+              base: Respuesta) -> str | None:
+    """Redacta y verifica cifras; un reintento con la corrección. None si no lo logra."""
+    for intento in (1, 2):
+        try:
+            texto = (cliente.chat(sistema, usuario, temperatura=0.2).texto or "").strip()
+        except ErrorLLM as e:
+            base.eventos.append(f"redacción: {e}")
+            return None
+        sobrantes = cifras_no_respaldadas(texto, *permitidas)
+        if texto and not sobrantes:
+            return texto
+        if not texto:
+            base.eventos.append(f"intento {intento}: respuesta vacía")
+            continue
+        base.eventos.append(f"intento {intento}: cifras sin respaldo {sobrantes}")
+        usuario += ("\n\nTu respuesta anterior incluía cifras que no están en los datos: "
+                    f"{', '.join(sobrantes)}. Reescríbela usando solo cifras que estén ahí.")
+    return None
+
+
+def _conceptual(pregunta: str, cliente: ClienteChat, buscador: Buscador | None) -> Respuesta:
+    """Tipo 2: criterio o teoría, respondido solo con la base de conocimiento."""
+    base = Respuesta(texto="", origen="llm", herramienta="consulta_conceptual")
+    fragmentos = buscador.buscar(pregunta) if buscador else []
+    if buscador:
+        base.eventos += buscador.eventos
+    else:
+        base.eventos.append("sin índice de conocimiento: ejecute python -m app.rag.ingest")
+    if not fragmentos:
+        base.texto, base.origen = SIN_FUENTE, "sin_llm"
+        return base
+    base.fuentes = [f"{f.titulo} ({f.fuente})" for f in fragmentos]
+    if not all(f.revisado for f in fragmentos):
+        base.notas.append(AVISO_SIN_REVISAR)
+    fuentes = "\n\n".join(f"### {f.titulo}\n{f.texto}" for f in fragmentos)
+    usuario = f"PREGUNTA:\n{pregunta}\n\nFUENTES:\n{fuentes}"
+    texto = _redactar(cliente, _sistema("redaccion_conceptual.md"), usuario,
+                      [fuentes, pregunta], base)
+    if texto is None:
+        base.texto, base.origen = fuentes.replace("### ", ""), "respaldo"
+    else:
+        base.texto = texto
+    return base
+
+
 def responder(pregunta: str, ctx: ContextoEmpresa, cliente: ClienteChat | None = None,
-              hoy: date | None = None) -> Respuesta:
+              hoy: date | None = None, buscador: Buscador | None = None) -> Respuesta:
     try:
         pregunta = validar_pregunta(pregunta)
     except ErrorEntrada as e:
@@ -140,7 +204,7 @@ def responder(pregunta: str, ctx: ContextoEmpresa, cliente: ClienteChat | None =
     cliente = cliente or ClienteLLM()
     hoy = hoy or date.today()
 
-    # 1. Enrutar
+    # 1. Enrutar: cálculo (tipo 1), criterio o teoría (tipo 2) o fuera de alcance (tipo 3)
     try:
         r = cliente.chat(_prompt_enrutador(ctx, hoy), pregunta, herramientas=esquema_openai(),
                          forzar_herramienta=True, temperatura=0)
@@ -156,6 +220,10 @@ def responder(pregunta: str, ctx: ContextoEmpresa, cliente: ClienteChat | None =
     herramienta = POR_NOMBRE[llamada.nombre]
     if herramienta.nombre == "fuera_de_alcance":
         return Respuesta(texto=FUERA_DE_ALCANCE, origen="sin_llm", herramienta=herramienta.nombre)
+    if herramienta.nombre == "consulta_conceptual":
+        if buscador is None:
+            buscador = Buscador.desde_archivo(cliente if hasattr(cliente, "embeddings") else None)
+        return _conceptual(pregunta, cliente, buscador)
 
     # 2. Calcular (Python)
     try:
@@ -167,27 +235,12 @@ def responder(pregunta: str, ctx: ContextoEmpresa, cliente: ClienteChat | None =
                      periodo=ctx.historial.periodos[i].fecha_corte.year,
                      resultados=resultados, notas=_notas(resultados))
 
-    # 3. Redactar y verificar (un reintento si aparecen cifras sin respaldo)
+    # 3. Redactar y verificar
     datos = json.dumps(datos_para_redactar(ctx, resultados), ensure_ascii=False, indent=1)
-    sistema = (PROMPTS / "metaprompt.md").read_text(encoding="utf-8")
-    usuario = f"PREGUNTA:\n{pregunta}\n\nDATOS:\n{datos}"
-    for intento in (1, 2):
-        try:
-            texto = (cliente.chat(sistema, usuario, temperatura=0.2).texto or "").strip()
-        except ErrorLLM as e:
-            base.eventos.append(f"redacción: {e}")
-            break
-        sobrantes = cifras_no_respaldadas(texto, datos, pregunta)
-        if texto and not sobrantes:
-            base.texto = texto
-            return base
-        if not texto:
-            base.eventos.append(f"intento {intento}: respuesta vacía")
-            continue
-        base.eventos.append(f"intento {intento}: cifras sin respaldo {sobrantes}")
-        usuario += ("\n\nTu respuesta anterior incluía cifras que no están en DATOS: "
-                    f"{', '.join(sobrantes)}. Reescríbela usando solo cifras de DATOS.")
-
-    base.texto = respaldo(resultados)
-    base.origen = "respaldo"
+    texto = _redactar(cliente, _sistema("redaccion_calculo.md"),
+                      f"PREGUNTA:\n{pregunta}\n\nDATOS:\n{datos}", [datos, pregunta], base)
+    if texto is None:
+        base.texto, base.origen = respaldo(resultados), "respaldo"
+    else:
+        base.texto = texto
     return base

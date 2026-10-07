@@ -77,27 +77,36 @@ def _sector(ctx: ContextoEmpresa, i: int, analisis) -> list[ResultadoModulo]:
     return [comparar([f(comparable, i) for f in analisis], ctx.referencia)]
 
 
+def _con_sector(ctx: ContextoEmpresa, i: int, analisis) -> list[ResultadoModulo]:
+    """
+    Un análisis temático más su comparación sectorial, si hay referencia. Sin
+    ella el modelo calificaba indicadores de "buenos" sin ningún respaldo.
+    """
+    propio = [analisis(ctx.historial, i)]
+    return propio + (_sector(ctx, i, (analisis,)) if ctx.referencia else [])
+
+
 HERRAMIENTAS: list[Herramienta] = [
     Herramienta(
         "analizar_liquidez",
         "¿Puede la empresa pagar sus deudas de corto plazo? ¿Le alcanza la caja? Razón "
         "corriente, prueba ácida, razón de efectivo y capital de trabajo.",
-        lambda c, i, a: [liquidez(c.historial, i)]),
+        lambda c, i, a: _con_sector(c, i, liquidez)),
     Herramienta(
         "analizar_endeudamiento",
         "¿Qué tan endeudada está la empresa? ¿Puede pagar los intereses? Nivel de deuda, "
         "apalancamiento, deuda/EBITDA, cobertura de intereses y carga financiera.",
-        lambda c, i, a: [endeudamiento(c.historial, i)]),
+        lambda c, i, a: _con_sector(c, i, endeudamiento)),
     Herramienta(
         "analizar_rentabilidad",
         "¿Qué tan rentable es el negocio? ¿Cuánto gana por cada peso vendido o invertido? "
         "Márgenes bruto, operacional, EBITDA y neto, ROA y ROE.",
-        lambda c, i, a: [rentabilidad(c.historial, i)]),
+        lambda c, i, a: _con_sector(c, i, rentabilidad)),
     Herramienta(
         "analizar_actividad",
         "¿Cuánto se demoran los clientes en pagar? ¿Cuánto dura el inventario? ¿Qué tan "
         "bien se usan los activos? Rotación, días de cartera, inventario y proveedores.",
-        lambda c, i, a: [actividad(c.historial, i)]),
+        lambda c, i, a: _con_sector(c, i, actividad)),
     Herramienta(
         "analizar_dupont",
         "¿Por qué la rentabilidad del patrimonio (ROE) es la que es, o por qué subió o "
@@ -107,7 +116,7 @@ HERRAMIENTAS: list[Herramienta] = [
         "analizar_riesgo_quiebra",
         "¿Corre la empresa riesgo de quiebra o de dificultades financieras serias? "
         "Z'' de Altman para mercados emergentes.",
-        lambda c, i, a: [altman(c.historial, i)]),
+        lambda c, i, a: _con_sector(c, i, altman)),
     Herramienta(
         "comparar_con_sector",
         "¿Cómo está la empresa frente a empresas similares de su sector? Ubica cada "
@@ -124,9 +133,16 @@ HERRAMIENTAS: list[Herramienta] = [
                                                     altman)],
                       *(_sector(c, i, _analisis_del_tema("todos")) if c.referencia else [])]),
     Herramienta(
+        "consulta_conceptual",
+        "Preguntas de criterio económico o teoría que no piden calcular indicadores de la "
+        "empresa: qué es un concepto (EBITDA, capital de trabajo, RevPAR), cómo afectan "
+        "las tasas de interés o la inflación, si conviene subir precios o endeudarse, "
+        "punto de equilibrio.",
+        lambda c, i, a: [], usa_periodo=False),
+    Herramienta(
         "fuera_de_alcance",
-        "La pregunta no es sobre el análisis de los estados financieros de la empresa "
-        "(p. ej. temas legales, tributarios, de mercadeo, saludos o temas no financieros).",
+        "La pregunta no es de análisis financiero ni de criterio económico (p. ej. temas "
+        "legales o tributarios específicos, trámites, mercadeo, saludos, temas personales).",
         lambda c, i, a: [], usa_periodo=False),
 ]
 POR_NOMBRE = {h.nombre: h for h in HERRAMIENTAS}

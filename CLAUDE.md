@@ -55,7 +55,7 @@ y redacta el resultado. Todo número sale de funciones de Python probadas.
 
 ## Estado actual
 
-Hecho y probado (124 tests): esquema canónico, mapeo PUC, razones de liquidez,
+Hecho y probado (136 tests): esquema canónico, mapeo PUC, razones de liquidez,
 endeudamiento, rentabilidad y actividad, ciclo de conversión de efectivo,
 DuPont (con descomposición logarítmica de la variación del ROE), Z'' de
 Altman para mercados emergentes (zonas 4,35 / 5,85 y equivalencia de
@@ -112,8 +112,18 @@ Pendiente, en orden (acordado el 5/10/2026):
    cifras inventadas, pero no errores de sentido (p. ej. confundir "mejor que
    el 78 % de los pares" con un margen de 78 %). Interfaz: `streamlit run
    frontend/app.py` (hotel de demostración o balances subidos, con validación
-   de archivos). Falta: set de evaluación (`tests/eval/preguntas.yaml`) con
-   rúbrica de sentido.
+   de archivos); arranque completo con `.\iniciar.ps1`.
+   Tres tipos de pregunta (acordado el 6/10/2026): (1) cálculo con
+   herramientas de Python; (2) criterio o teoría respondido SOLO con la base
+   de conocimiento `conocimiento/*.md` (RAG híbrido: embeddings nomic de LM
+   Studio + palabras clave; índice en `data/conocimiento/indice.json`, se
+   reconstruye con `python -m app.rag.ingest`; sin nota pertinente no
+   responde); (3) fuera de alcance con remisión al profesional. El rol del
+   economista está en `config/prompts/rol.md`, común a la redacción de los
+   tipos 1 y 2. Los análisis temáticos incluyen la comparación sectorial
+   cuando hay referencia. Las 9 notas iniciales son borradores con
+   `revisado: false`: el usuario debe revisarlas.
+   Falta: set de evaluación (`tests/eval/preguntas.yaml`) con rúbrica de sentido.
 3. Validar la referencia contra los indicadores que publica el SIIS.
 4. Revisar valores extremos (p. ej. hoteles con depreciación > ingresos).
 5. Módulos 4 → 3 → 2 (macro, proyectos, econometría).
