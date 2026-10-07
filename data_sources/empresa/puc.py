@@ -17,6 +17,8 @@ Reglas (detalle en config/mapeo_puc.yaml):
 """
 from __future__ import annotations
 
+import csv
+import io
 import re
 from datetime import date
 from pathlib import Path
@@ -41,7 +43,9 @@ CLASES_CREDITO = {"2", "3", "4"}
 CLASES_LEIDAS = set("1234567")
 
 # Nombres de columna que usan los programas contables (en minúsculas, sin tildes)
-COLUMNAS_CUENTA = ("cuenta", "codigo", "codigo cuenta", "cod cuenta", "codigo contable")
+# En orden de preferencia: "Cuenta" a veces es el nombre y no el código
+COLUMNAS_CUENTA = ("codigo", "codigo cuenta", "cod cuenta", "codigo contable", "cuenta",
+                   "cuenta contable")
 COLUMNAS_SALDO = ("saldo final", "saldo", "nuevo saldo", "saldo actual")
 COLUMNAS_DEBITO = ("saldo debito", "saldo final debito")
 COLUMNAS_CREDITO = ("saldo credito", "saldo final credito")
@@ -63,8 +67,135 @@ def _simplificar(nombre: str) -> str:
     return " ".join(re.sub(r"[^a-z ]", " ", str(nombre).lower().translate(tabla)).split())
 
 
-def _buscar(columnas: dict[str, str], opciones: tuple[str, ...]) -> str | None:
+def _buscar(columnas: dict[str, int], opciones: tuple[str, ...]) -> int | None:
     return next((columnas[o] for o in opciones if o in columnas), None)
+
+
+# --------------------------------------------------------------------------- #
+# Números en formato colombiano o inglés
+# --------------------------------------------------------------------------- #
+def _limpiar_numero(texto: str) -> tuple[str, bool]:
+    """Quita símbolos y detecta el signo: '-', '(...)' o un '-' al final."""
+    t = re.sub(r"[\s\u00a0$]|COP", "", str(texto))
+    negativo = t.startswith("-") or t.endswith("-") or (t.startswith("(") and t.endswith(")"))
+    return t.strip("-()"), negativo
+
+
+def separador_decimal(textos: list[str]) -> str | None:
+    """
+    Separador decimal de una columna, decidido con todos sus valores:
+    - con punto y coma a la vez, el último es el decimal ("1.234,56");
+    - un separador repetido es de miles ("2.400.000");
+    - uno solo seguido de 1, 2 o más de 3 dígitos es decimal ("85,5").
+    Si solo hay casos ambiguos ("1.500"), son miles: en un balance en pesos
+    un decimal de exactamente tres cifras es muy improbable. Devuelve None
+    cuando no hay decimales.
+    """
+    votos = {".": 0, ",": 0}
+    for texto in textos:
+        t, _ = _limpiar_numero(texto)
+        puntos, comas = t.count("."), t.count(",")
+        if puntos and comas:
+            votos["," if t.rfind(",") > t.rfind(".") else "."] += 1
+        elif puntos > 1:
+            votos[","] += 1
+        elif comas > 1:
+            votos["."] += 1
+        elif puntos == 1 or comas == 1:
+            sep = "." if puntos else ","
+            if len(t) - t.rfind(sep) - 1 != 3:
+                votos[sep] += 1
+    if not any(votos.values()):
+        return None
+    return max(votos, key=votos.get)
+
+
+def a_numero(valor: object, decimal: str | None) -> float:
+    """Convierte una celda a número; las vacías valen cero."""
+    if isinstance(valor, (int, float)) and not isinstance(valor, bool):
+        return 0.0 if pd.isna(valor) else float(valor)   # celda numérica de Excel
+    t, negativo = _limpiar_numero(valor if valor is not None else "")
+    if not t:
+        return 0.0
+    if decimal is None:
+        t = t.replace(".", "").replace(",", "")
+    else:
+        miles = "," if decimal == "." else "."
+        t = t.replace(miles, "").replace(decimal, ".")
+    try:
+        numero = float(t)
+    except ValueError:
+        raise ErrorCarga(f"Valor no numérico en la columna de saldos: '{valor}'.") from None
+    return -numero if negativo else numero
+
+
+def _codigo(valor: object) -> str:
+    """Código de cuenta como texto; en Excel puede venir como 1105.0."""
+    if isinstance(valor, float) and valor.is_integer():
+        return str(int(valor))
+    return "" if valor is None or (isinstance(valor, float) and pd.isna(valor)) else str(valor)
+
+
+# --------------------------------------------------------------------------- #
+# Lectura del archivo
+# --------------------------------------------------------------------------- #
+def _decodificar(datos: bytes) -> str:
+    # Excel en español guarda los CSV en Windows-1252; los demás, en UTF-8
+    for codificacion in ("utf-8-sig", "cp1252"):
+        try:
+            return datos.decode(codificacion)
+        except UnicodeDecodeError:
+            continue
+    raise ErrorCarga("No se reconoce la codificación del archivo (use UTF-8 o Windows-1252).")
+
+
+def _columna_de_codigos(muestra: list[list], columnas: dict[str, int]) -> int | None:
+    """
+    Columna del código de cuenta. Algunos programas llaman "Cuenta" al código y
+    otros al nombre de la cuenta: entre las candidatas gana la primera (en el
+    orden de COLUMNAS_CUENTA) cuyos valores son mayoritariamente códigos.
+    """
+    for nombre in COLUMNAS_CUENTA:
+        j = columnas.get(nombre)
+        if j is None:
+            continue
+        valores = [_codigo(f[j]) for f in muestra if j < len(f) and f[j] not in (None, "")]
+        if valores and sum(bool(re.fullmatch(r"[\d\s.\-]+", v)) for v in valores) > len(valores) / 2:
+            return j
+    return None
+
+
+def _encabezado(filas: list[list]) -> tuple[int, int, int | None, int | None, int | None] | None:
+    """
+    Fila de encabezados y columnas (cuenta, saldo, débito, crédito). Los programas
+    contables suelen poner antes el nombre de la empresa, el NIT y las fechas.
+    Con saldo débito y crédito se usan esas dos; si no, la de saldo con signo.
+    """
+    for i, fila in enumerate(filas[:30]):
+        columnas: dict[str, int] = {}
+        for j, celda in enumerate(fila):
+            if celda not in (None, ""):
+                columnas.setdefault(_simplificar(celda), j)
+        cuenta = _columna_de_codigos(filas[i + 1:i + 31], columnas)
+        debito, credito = _buscar(columnas, COLUMNAS_DEBITO), _buscar(columnas, COLUMNAS_CREDITO)
+        saldo = _buscar(columnas, COLUMNAS_SALDO)
+        if cuenta is None:
+            continue
+        if debito is not None and credito is not None:
+            return i, cuenta, None, debito, credito
+        if saldo is not None:
+            return i, cuenta, saldo, None, None
+    return None
+
+
+def _filas(archivo: Path | str | IO[bytes], extension: str) -> list[list[list]]:
+    """Filas crudas del archivo; para CSV, una lectura por cada separador posible."""
+    if extension != ".csv":
+        df = pd.read_excel(archivo, header=None, dtype=object)
+        return [df.astype(object).where(df.notna(), None).values.tolist()]
+    datos = archivo.read() if hasattr(archivo, "read") else Path(archivo).read_bytes()
+    texto = _decodificar(datos)
+    return [list(csv.reader(io.StringIO(texto), delimiter=d)) for d in (";", ",", "\t", "|")]
 
 
 def leer_balance_prueba(archivo: Path | str | IO[bytes], nombre: str | None = None) -> pd.DataFrame:
@@ -72,6 +203,9 @@ def leer_balance_prueba(archivo: Path | str | IO[bytes], nombre: str | None = No
     Lee un balance de prueba (.xlsx, .xls o .csv) y devuelve `cuenta` (texto,
     solo dígitos) y `saldo` (con signo, débito positivo).
 
+    Acepta filas de título antes del encabezado, CSV separados por ";" o ",",
+    archivos en UTF-8 o Windows-1252 y números en formato colombiano
+    ("1.234.567,89") o inglés ("1,234,567.89"), con negativos "-" o "(...)".
     `archivo` puede ser una ruta o un archivo abierto (p. ej. subido desde la
     interfaz); en ese caso `nombre` indica la extensión.
     """
@@ -79,26 +213,38 @@ def leer_balance_prueba(archivo: Path | str | IO[bytes], nombre: str | None = No
     if extension not in (".csv", ".xlsx", ".xls"):
         raise ErrorCarga(f"Formato no soportado ({extension or 'sin extensión'}): use .xlsx, .xls o .csv.")
     try:
-        crudo = (pd.read_csv(archivo, dtype=str) if extension == ".csv"
-                 else pd.read_excel(archivo, dtype=str))
-    except Exception as e:  # archivo dañado, protegido o con otra codificación
+        lecturas = _filas(archivo, extension)
+    except ErrorCarga:
+        raise
+    except Exception as e:  # archivo dañado o protegido
         raise ErrorCarga(f"No se pudo leer el archivo: {e}") from e
-    columnas = {_simplificar(c): c for c in crudo.columns}
-    cuenta = _buscar(columnas, COLUMNAS_CUENTA)
-    if cuenta is None:
-        raise ErrorCarga(f"No se encontró la columna de código de cuenta. Columnas: {list(crudo.columns)}.")
 
-    numero = lambda s: pd.to_numeric(  # noqa: E731
-        s.astype(str).str.replace(r"[$\s]", "", regex=True), errors="coerce").fillna(0)
-    debito, credito = _buscar(columnas, COLUMNAS_DEBITO), _buscar(columnas, COLUMNAS_CREDITO)
-    if debito and credito:
-        saldo = numero(crudo[debito]) - numero(crudo[credito])
+    for filas in lecturas:
+        encontrado = _encabezado(filas)
+        if encontrado:
+            break
     else:
-        col = _buscar(columnas, COLUMNAS_SALDO)
-        if col is None:
-            raise ErrorCarga("No se encontró la columna de saldo final (o saldo débito y crédito).")
-        saldo = numero(crudo[col])
-    return normalizar_balance(pd.DataFrame({"cuenta": crudo[cuenta], "saldo": saldo}))
+        primera = next((f for f in lecturas[0] if any(c not in (None, "") for c in f)), [])
+        raise ErrorCarga(
+            "No se encontró la fila de encabezados con la columna de código de cuenta y la "
+            "de saldo final (o saldo débito y crédito) en las primeras 30 filas. Primera "
+            f"fila con datos: {[c for c in primera if c not in (None, '')]}.")
+
+    i, col_cuenta, col_saldo, col_debito, col_credito = encontrado
+    datos = [f for f in filas[i + 1:] if len(f) > col_cuenta]
+    celda = lambda f, j: f[j] if j is not None and j < len(f) else None  # noqa: E731
+
+    def columna(j: int) -> list[float]:
+        valores = [celda(f, j) for f in datos]
+        decimal = separador_decimal([v for v in valores if isinstance(v, str)])
+        return [a_numero(v, decimal) for v in valores]
+
+    if col_saldo is None:
+        saldos = [d - c for d, c in zip(columna(col_debito), columna(col_credito))]
+    else:
+        saldos = columna(col_saldo)
+    cuentas = [_codigo(celda(f, col_cuenta)) for f in datos]
+    return normalizar_balance(pd.DataFrame({"cuenta": cuentas, "saldo": saldos}))
 
 
 def normalizar_balance(df: pd.DataFrame) -> pd.DataFrame:

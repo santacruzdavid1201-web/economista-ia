@@ -74,6 +74,9 @@ with st.sidebar:
                     "Obligaciones financieras de largo plazo (pesos)", min_value=0.0,
                     step=1_000_000.0, key=f"lp_{a.name}",
                     help="El PUC no separa la porción de largo plazo de la cuenta 21.")
+            st.caption("Columnas: código de cuenta y saldo final con signo (débito +, "
+                       "crédito −), o saldo débito y saldo crédito. Se aceptan filas de "
+                       "título arriba, CSV con ';' o ',' y números como 1.234.567,89.")
             cargar = st.form_submit_button("Cargar")
 
         if cargar:
