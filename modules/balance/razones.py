@@ -78,6 +78,11 @@ def endeudamiento(historial: HistorialFinanciero, i: int = -1) -> ResultadoModul
                     if ebitda_anual is not None and ebitda_anual > 0 else None)
 
     cobertura = division_segura(r.utilidad_operacional, r.gastos_financieros)
+    # Con deuda y sin gastos financieros, los intereses quedaron en otra cuenta
+    # (p. ej. "otros gastos"): una carga de 0 % sería engañosa.
+    intereses_sin_identificar = r.gastos_financieros == 0 and b.deuda_financiera > 0
+    carga = (None if intereses_sin_identificar
+             else division_segura(r.gastos_financieros, r.ingresos_operacionales))
 
     indicadores = [
         Indicador(clave="nivel_endeudamiento", nombre="Nivel de endeudamiento",
@@ -96,8 +101,7 @@ def endeudamiento(historial: HistorialFinanciero, i: int = -1) -> ResultadoModul
                   valor=cobertura, unidad="veces",
                   formula="Utilidad operacional / Gastos financieros"),
         Indicador(clave="carga_financiera", nombre="Carga financiera",
-                  valor=division_segura(r.gastos_financieros, r.ingresos_operacionales),
-                  unidad="proporcion",
+                  valor=carga, unidad="proporcion",
                   formula="Gastos financieros / Ingresos operacionales"),
     ]
 
@@ -109,7 +113,13 @@ def endeudamiento(historial: HistorialFinanciero, i: int = -1) -> ResultadoModul
         advertencias.append(SIN_DEPRECIACION)
     elif ebitda_anual <= 0:
         advertencias.append("EBITDA nulo o negativo: la operación no genera caja para pagar deuda.")
-    if r.gastos_financieros == 0:
+    if intereses_sin_identificar:
+        advertencias.append(
+            "Hay deuda financiera pero no se identificaron gastos financieros: los intereses "
+            "pueden estar registrados en otra cuenta. La carga financiera y la cobertura de "
+            "intereses no se calculan."
+        )
+    elif r.gastos_financieros == 0:
         advertencias.append("Sin gastos financieros en el periodo: la cobertura de intereses no aplica.")
     elif cobertura is not None and cobertura < 1:
         advertencias.append(

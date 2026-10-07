@@ -55,14 +55,16 @@ y redacta el resultado. Todo número sale de funciones de Python probadas.
 
 ## Estado actual
 
-Hecho y probado (156 tests): esquema canónico, mapeo PUC, razones de liquidez,
+Hecho y probado (163 tests): esquema canónico, mapeo PUC, razones de liquidez,
 endeudamiento, rentabilidad y actividad, ciclo de conversión de efectivo,
 DuPont (con descomposición logarítmica de la variación del ROE), Z'' de
 Altman para mercados emergentes (zonas 4,35 / 5,85 y equivalencia de
 calificación de Altman y Hotchkiss 2005) y motor de benchmark
 (`modules/balance/benchmark.py`: percentil de rango medio, dirección por
 indicador, muestra mínima 10 / adecuada 30). El EBITDA es `None` si no se
-reportó la depreciación; el impuesto admite negativos (beneficio).
+reportó la depreciación; el impuesto admite negativos (beneficio). Con deuda
+financiera y sin gastos financieros identificados, la carga financiera y la
+cobertura son `None` (los intereses quedaron en otra cuenta).
 
 ## Siguiente paso: datos de Supersociedades para el benchmark
 
@@ -80,8 +82,11 @@ miles de pesos; ~300 hoteles por año a nivel nacional.
 
 Paso 4 resuelto: `config/mapeo_niif.yaml` + cargador
 `data_sources/externos/supersociedades.py` (descarga SoQL + transformación
-pura con exclusiones motivadas). Carga 303 de 306 hoteles 2024. Ver sección 6
-de los hallazgos.
+pura con exclusiones motivadas). Carga 303 de 305 hoteles 2024. Ver sección 6
+de los hallazgos. Todos los conceptos de un año salen de un solo reporte (el
+propio antes que el comparativo; la retransmisión más reciente antes que la
+original): mezclarlos duplicaba partidas. Acepta los reportes antiguos (hasta
+2017), cuyo periodo viene como fecha ("2016-dic-31") o como año.
 
 Paso 5 resuelto: `data_sources/externos/referencia.py`
 (`referencia_supersociedades("hoteles", 2024)`): 303 hoteles, 19 indicadores
@@ -100,7 +105,14 @@ Pendiente, en orden (acordado el 5/10/2026):
    reales de exportación: filas de título antes del encabezado, CSV con ";"
    o ",", UTF-8 o Windows-1252, números colombianos o ingleses (el formato se
    decide con toda la columna) y negativos con "-" o paréntesis; si "Cuenta"
-   trae nombres, elige la columna que contiene códigos. Falta: plantilla
+   trae nombres, elige la columna que contiene códigos. El impuesto diferido
+   (2725) es no corriente (NIC 1.56). Reclasificaciones permitidas en
+   `RECLASIFICACIONES` (deuda, inversiones, deudores y otros pasivos a largo
+   plazo; diferidos a corto plazo; PPE a propiedades de inversión). La
+   interfaz pide la unidad del archivo (pesos o miles) y propone la fecha de
+   corte a partir del nombre. Conciliado al peso contra Supersociedades con
+   los CSV de prueba del usuario (SECOLINSA, NIT 830010665, 2015-2016; copia
+   local en `data/raw/prueba/`, no versionada). Falta: plantilla
    Excel propia para empresas sin software contable.
    Caso de demostración: `data/demo/hotel_demo_andino_{2023,2024}.csv`
    (empresa ficticia, generada con `data/demo/generar_demo.py`).

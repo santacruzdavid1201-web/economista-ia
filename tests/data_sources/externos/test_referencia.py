@@ -47,7 +47,7 @@ def test_referencia_cuenta_y_documenta(pares):
     ref = construir_referencia(historiales, 2024, "Hoteles (prueba)", ["5511"], exclusiones)
     n = len(historiales)
     assert all(len(v) == n for v in ref.valores.values())
-    assert any(f"{n} empresas" in f and "1 excluidas" in f for f in ref.filtros)
+    assert any(f"{n} empresas" in f and "0 excluidas" in f for f in ref.filtros)
     assert any("sin costo de ventas" in f for f in ref.filtros)
     assert any("taxonomía NIIF" in f for f in ref.filtros)
 

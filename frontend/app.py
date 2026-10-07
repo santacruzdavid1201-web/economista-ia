@@ -6,6 +6,7 @@ Desde la raíz del proyecto, con el servidor del modelo encendido:
 """
 from __future__ import annotations
 
+import re
 import sys
 from datetime import date
 from pathlib import Path
@@ -18,12 +19,19 @@ from app.demo import contexto_demo  # noqa: E402
 from app.llm.client import ClienteLLM  # noqa: E402
 from app.orchestrator.orquestador import responder  # noqa: E402
 from app.orchestrator.tools_registry import ContextoEmpresa  # noqa: E402
-from data_sources.empresa.puc import ErrorCarga, cargar_historial, leer_balance_prueba  # noqa: E402
+from data_sources.empresa.puc import (  # noqa: E402
+    RECLASIFICACIONES,
+    ErrorCarga,
+    cargar_historial,
+    leer_balance_prueba,
+)
 from data_sources.externos.referencia import cargar_referencia  # noqa: E402
 from modules.base import formatear  # noqa: E402
 from modules.esquema_financiero import Empresa  # noqa: E402
 
 MAX_MB = 5
+DEUDA_LP = ("obligaciones_financieras_cp", "obligaciones_financieras_lp")
+UNIDADES = {"Pesos": 1, "Miles de pesos": 1_000}
 EJEMPLOS = [
     "¿Cómo está mi empresa?",
     "¿Tengo con qué pagar mis deudas de corto plazo?",
@@ -32,6 +40,20 @@ EJEMPLOS = [
     "¿Cómo me afecta que el Banco de la República suba las tasas?",
     "¿Me conviene subir las tarifas de las habitaciones?",
 ]
+
+
+
+def corte_sugerido(nombre: str) -> date:
+    """Fecha de corte a partir del nombre del archivo ("balance_2015-12-31.csv", "2016.xlsx")."""
+    if m := re.search(r"(20\d{2})-(\d{2})-(\d{2})", nombre):
+        try:
+            return date(*map(int, m.groups()))
+        except ValueError:
+            pass
+    if m := re.search(r"(20\d{2})", nombre):
+        return date(int(m.group(1)), 12, 31)
+    return date(2024, 12, 31)
+
 
 st.set_page_config(page_title="Economista IA", page_icon="📊", layout="centered")
 st.title("Economista IA")
@@ -65,15 +87,24 @@ with st.sidebar:
             archivos = st.file_uploader("Balances de prueba antes del cierre (.xlsx o .csv), "
                                         "uno por año", type=["xlsx", "xls", "csv"],
                                         accept_multiple_files=True)
-            cortes, largo_plazo = {}, {}
+            unidad = st.radio("Las cifras del archivo están en", list(UNIDADES), horizontal=True,
+                              help="Supersociedades y muchos estados auditados reportan en "
+                                   "miles de pesos. Los montos de abajo van en la misma unidad.")
+            cortes, montos = {}, {}
             for a in archivos or []:
                 st.markdown(f"**{a.name}**")
-                cortes[a.name] = st.date_input("Fecha de corte", value=date(2024, 12, 31),
+                cortes[a.name] = st.date_input("Fecha de corte", value=corte_sugerido(a.name),
                                                key=f"f_{a.name}")
-                largo_plazo[a.name] = st.number_input(
-                    "Obligaciones financieras de largo plazo (pesos)", min_value=0.0,
-                    step=1_000_000.0, key=f"lp_{a.name}",
-                    help="El PUC no separa la porción de largo plazo de la cuenta 21.")
+                # El PUC no separa el plazo: la empresa informa qué parte es de largo plazo
+                montos[a.name] = {DEUDA_LP: st.number_input(
+                    RECLASIFICACIONES[DEUDA_LP], min_value=0.0, step=1_000.0,
+                    key=f"lp_{a.name}",
+                    help="El PUC no separa la porción de largo plazo de la cuenta 21.")}
+                with st.expander("Otras reclasificaciones de plazo (opcional)"):
+                    for par, etiqueta in RECLASIFICACIONES.items():
+                        if par != DEUDA_LP:
+                            montos[a.name][par] = st.number_input(
+                                etiqueta, min_value=0.0, step=1_000.0, key=f"{par}_{a.name}")
             st.caption("Columnas: código de cuenta y saldo final con signo (débito +, "
                        "crédito −), o saldo débito y saldo crédito. Se aceptan filas de "
                        "título arriba, CSV con ';' o ',' y números como 1.234.567,89.")
@@ -98,10 +129,14 @@ with st.sidebar:
                 try:
                     empresa = Empresa(empresa_id="usuario", razon_social=razon_social.strip(),
                                       ciiu=ciiu)
-                    balances = {cortes[a.name]: leer_balance_prueba(a, a.name) for a in archivos}
-                    reclasif = {cortes[a.name]: [("obligaciones_financieras_cp",
-                                                  "obligaciones_financieras_lp", lp)]
-                                for a in archivos if (lp := largo_plazo[a.name]) > 0}
+                    factor = UNIDADES[unidad]
+                    balances = {}
+                    for a in archivos:
+                        df = leer_balance_prueba(a, a.name)
+                        balances[cortes[a.name]] = df.assign(saldo=df["saldo"] * factor)
+                    reclasif = {cortes[a.name]: [(*par, monto * factor)
+                                                 for par, monto in montos[a.name].items() if monto > 0]
+                                for a in archivos}
                     historial = cargar_historial(empresa, balances, reclasif)
                     referencia = cargar_referencia(ciiu, historial.ultimo.fecha_corte.year)
                     st.session_state.update(

@@ -63,11 +63,24 @@ def test_endeudamiento_patrimonio_negativo():
     assert any("Patrimonio nulo o negativo" in a for a in res.advertencias)
 
 
-def test_endeudamiento_sin_gastos_financieros():
+def test_endeudamiento_con_deuda_e_intereses_no_identificados():
+    # Tiene obligaciones financieras pero ningún gasto financiero: los intereses
+    # quedaron en otra cuenta y una carga de 0 % sería engañosa
     h = hacer_historial(resultados={"gastos_financieros": 0},
                         balance={"resultado_ejercicio": 190, "resultados_acumulados": -10})
     res = endeudamiento(h)
     assert res.valor("cobertura_intereses") is None
+    assert res.valor("carga_financiera") is None
+    assert any("no se identificaron gastos financieros" in a for a in res.advertencias)
+
+
+def test_endeudamiento_sin_deuda_ni_intereses():
+    h = hacer_historial(resultados={"gastos_financieros": 0},
+                        balance={"obligaciones_financieras_cp": 0, "obligaciones_financieras_lp": 0,
+                                 "proveedores": 870, "resultado_ejercicio": 190,
+                                 "resultados_acumulados": -10})
+    res = endeudamiento(h)
+    assert res.valor("carga_financiera") == 0
     assert any("no aplica" in a for a in res.advertencias)
 
 

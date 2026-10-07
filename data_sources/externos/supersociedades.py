@@ -137,6 +137,24 @@ def _tolerancia(total: float) -> float:
 # --------------------------------------------------------------------------- #
 # Transformación
 # --------------------------------------------------------------------------- #
+def normalizar_periodo(periodo: pd.Series, fecha_corte: pd.Series) -> pd.Series:
+    """
+    Etiqueta `Periodo Actual` / `Periodo Anterior`. Los reportes antiguos
+    (hasta 2017) traen la fecha ("2016-dic-31", "2015-ene-01") o, en el
+    estado de resultados, solo el año ("2016"): el del año del corte es el
+    actual, el del año previo es el anterior y el estado de apertura (1-ene,
+    transición a NIIF) se descarta.
+    """
+    texto = periodo.astype(str).str.strip()
+    anio_corte = fecha_corte.astype(str).str[:4]
+    es_fecha = texto.str.fullmatch(r"\d{4}(-dic-31)?")
+    anio = texto.str[:4]
+    anterior = (pd.to_numeric(anio, errors="coerce") + 1).astype("Int64").astype(str)
+    salida = texto.where(texto.isin(PERIODOS))
+    salida = salida.mask(es_fecha & anio.eq(anio_corte), "Periodo Actual")
+    return salida.mask(es_fecha & anterior.eq(anio_corte), "Periodo Anterior")
+
+
 def filtrar_reportes(df: pd.DataFrame) -> pd.DataFrame:
     """
     Deja una fila por (nit, fecha, concepto) de reportes comparables.
@@ -148,6 +166,7 @@ def filtrar_reportes(df: pd.DataFrame) -> pd.DataFrame:
     - Si un mismo año viene como `Periodo Actual` de su propio reporte y como
       `Periodo Anterior` del reporte siguiente, gana el primero.
     """
+    df = df.assign(periodo=normalizar_periodo(df["periodo"], df["fecha_corte"]))
     d = df[df["punto_entrada"].astype(str).str[:2].isin(PUNTOS_ENTRADA)
            & df["periodo"].isin(PERIODOS)
            & df["fecha_corte"].astype(str).str[5:10].eq("12-31")].copy()
@@ -160,6 +179,12 @@ def filtrar_reportes(df: pd.DataFrame) -> pd.DataFrame:
     d["valor"] = pd.to_numeric(d["valor"], errors="coerce")
     d = d.dropna(subset=["valor"])
     d = d.sort_values(["es_anterior", "numero_radicado"], ascending=[True, False])
+    # Todos los conceptos de un año salen del MISMO reporte: mezclar el actual
+    # con el comparativo del año siguiente suma dos veces una partida cuando
+    # la taxonomía le cambió el nombre ("Otros gastos" en 2016 y en 2017).
+    reporte = ["nit", "fecha", "numero_radicado", "es_anterior"]
+    elegido = d.drop_duplicates(subset=["nit", "fecha"], keep="first")[reporte]
+    d = d.merge(elegido, on=reporte)
     return d.drop_duplicates(subset=["nit", "fecha", "clave"], keep="first")
 
 
@@ -319,7 +344,8 @@ def construir_historiales(caratula: pd.DataFrame, esf: pd.DataFrame, eri: pd.Dat
     su motivo; la empresa se conserva si le queda al menos un periodo.
     """
     m = mapeo or cargar_mapeo()
-    car = caratula[caratula["periodo"].eq("Periodo Actual")].copy()
+    # En los reportes antiguos la carátula no trae una etiqueta de periodo útil
+    car = caratula[caratula["periodo"].ne("Periodo Anterior")].copy()
     car["clave"] = car["concepto"].map(normalizar)
     esf_f, eri_f = filtrar_reportes(esf), filtrar_reportes(eri)
     efe_f = filtrar_reportes(efe) if efe is not None else None

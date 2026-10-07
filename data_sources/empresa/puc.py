@@ -50,6 +50,21 @@ COLUMNAS_SALDO = ("saldo final", "saldo", "nuevo saldo", "saldo actual")
 COLUMNAS_DEBITO = ("saldo debito", "saldo final debito")
 COLUMNAS_CREDITO = ("saldo credito", "saldo final credito")
 
+# Reclasificaciones que la empresa puede informar por fuera del PUC, que no
+# separa el plazo. Solo mueven saldos dentro del mismo lado del balance.
+RECLASIFICACIONES = {
+    ("obligaciones_financieras_cp", "obligaciones_financieras_lp"):
+        "Obligaciones financieras de largo plazo (cuenta 21)",
+    ("inversiones_cp", "inversiones_lp"): "Inversiones de largo plazo (cuenta 12)",
+    ("deudores_comerciales", "deudores_lp"): "Clientes que pagan a más de un año (cuenta 1305)",
+    ("otros_deudores_cp", "deudores_lp"): "Otros deudores de largo plazo (cuenta 13)",
+    ("otros_pasivos_cp", "otros_pasivos_lp"): "Otros pasivos de largo plazo (cuentas 26 a 28)",
+    ("otros_activos_lp", "otros_activos_cp"):
+        "Diferidos que se consumen en menos de un año (cuentas 17 y 18)",
+    ("ppe", "inversiones_lp"):
+        "Propiedades de inversión: inmuebles para arrendar o valorizar (cuenta 15)",
+}
+
 
 class ErrorCarga(ValueError):
     """El balance de prueba no se puede traducir al esquema con confianza."""
@@ -286,6 +301,7 @@ def a_estado_financiero(df: pd.DataFrame, fecha: date, mapeo: dict | None = None
     `reclasificaciones`: (campo_origen, campo_destino, monto) que la empresa
     informa por fuera del PUC, p. ej. ("obligaciones_financieras_cp",
     "obligaciones_financieras_lp", 120_000_000) para la porción de largo plazo.
+    Solo se aceptan los pares de `RECLASIFICACIONES`.
     """
     m = mapeo or cargar_mapeo()
     d = hojas(normalizar_balance(df))
@@ -343,6 +359,9 @@ def a_estado_financiero(df: pd.DataFrame, fecha: date, mapeo: dict | None = None
     # reportada (EBITDA = None), nunca como cero.
 
     for origen, destino, monto in reclasificaciones or []:
+        if (origen, destino) not in RECLASIFICACIONES:
+            raise ErrorCarga(f"Reclasificación no permitida: de {_legible(origen)} a "
+                             f"{_legible(destino)}.")
         if monto < 0 or monto > b.get(origen, 0) + 1e-6:
             raise ErrorCarga(f"Reclasificación inválida: {monto:,.0f} de {origen} (saldo "
                              f"{b.get(origen, 0):,.0f}).")

@@ -15,6 +15,7 @@ from data_sources.externos.supersociedades import (
     construir_historiales,
     filtrar_reportes,
     normalizar,
+    normalizar_periodo,
 )
 from modules.balance.razones import endeudamiento, rentabilidad
 
@@ -40,6 +41,29 @@ def carga():
 def test_normalizar_iguala_tildes_danadas():
     assert normalizar("Gastos de administraci�n") == normalizar("Gastos de administración")
     assert normalizar("  Costo   de VENTAS ") == "costo de ventas"
+
+
+def test_periodos_de_reportes_antiguos():
+    # Hasta 2017 el periodo viene como fecha (balance) o como año (resultados)
+    periodo = pd.Series(["2016-dic-31", "2015-dic-31", "2015-ene-01", "2016", "2015",
+                         "Periodo Actual", "830010665"])
+    corte = pd.Series(["2016-12-31T00:00:00.000"] * 7)
+    assert normalizar_periodo(periodo, corte).fillna("").tolist() == [
+        "Periodo Actual", "Periodo Anterior", "", "Periodo Actual", "Periodo Anterior",
+        "Periodo Actual", ""]
+
+
+def test_un_anio_sale_de_un_solo_reporte():
+    # El comparativo del reporte siguiente no completa conceptos del reporte propio
+    base = {"nit": "1", "punto_entrada": "40 NIIF Pymes", "valor": "10"}
+    filas = [
+        {**base, "numero_radicado": "A", "fecha_corte": "2016-12-31", "periodo": "Periodo Actual",
+         "concepto": "Otros gastos"},
+        {**base, "numero_radicado": "B", "fecha_corte": "2017-12-31", "periodo": "Periodo Anterior",
+         "concepto": "Otros gastos, por función"},
+    ]
+    f = filtrar_reportes(pd.DataFrame(filas))
+    assert f["numero_radicado"].tolist() == ["A"]
 
 
 def test_filtro_descarta_consolidados_y_fecha_el_comparativo():
@@ -117,12 +141,14 @@ def test_sin_costo_de_ventas_queda_marcado(carga):
     assert r.utilidad_bruta == r.ingresos_operacionales
 
 
-def test_doble_conteo_se_excluye_con_motivo(carga):
+def test_retransmision_reemplaza_el_reporte_completo(carga):
     historiales, exclusiones = carga
-    # Reporta la misma cifra como intangibles y como plusvalía
-    assert "806000591" not in historiales
-    motivos = [e.motivo for e in exclusiones if e.nit == "806000591"]
-    assert motivos and all("doble conteo" in m for m in motivos)
+    # El radicado original reporta intangibles y plusvalía; la retransmisión
+    # corrigió y reporta solo intangibles. Mezclar conceptos de los dos
+    # reportes contaba dos veces la misma cifra.
+    h = historiales["806000591"]
+    assert h.ultimo.balance.intangibles == 8_952_762
+    assert not [e for e in exclusiones if e.nit == "806000591"]
 
 
 def test_las_funciones_del_modulo_corren_sobre_los_pares(carga):
@@ -176,6 +202,13 @@ def test_acciones_propias_restan_del_patrimonio():
     ef = a_estado_financiero(esf, eri, None, CORTE, MAPEO)
     assert ef.balance.otro_patrimonio == -5
     assert ef.balance.patrimonio_total == 55
+
+
+def test_doble_conteo_se_rechaza():
+    # Intangibles reportados además de la PPE que ya completa el no corriente
+    esf, eri = reporte(**{"Activos intangibles distintos de la plusvalía": 70})
+    with pytest.raises(ErrorCarga, match="doble conteo"):
+        a_estado_financiero(esf, eri, None, CORTE, MAPEO)
 
 
 def test_falta_un_total_se_rechaza():

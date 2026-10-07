@@ -93,6 +93,28 @@ def test_reclasificacion_queda_registrada():
                                                 "obligaciones_financieras_lp", 9_999)])
 
 
+def test_reclasificacion_no_permitida():
+    # Pasar activo fijo a efectivo inflaría la liquidez
+    with pytest.raises(ErrorCarga, match="no permitida"):
+        a_estado_financiero(balance_prueba(), CORTE, reclasificaciones=[("ppe", "efectivo", 100)])
+
+
+def test_propiedades_de_inversion_salen_de_la_ppe():
+    ef = a_estado_financiero(balance_prueba(), CORTE,
+                             reclasificaciones=[("ppe", "inversiones_lp", 500)])
+    assert ef.balance.ppe == 1_000
+    assert ef.balance.inversiones_lp == 500
+    assert ef.balance.activo_total == 2_050
+
+
+def test_impuesto_diferido_pasivo_es_no_corriente():
+    # NIC 1.56: los impuestos diferidos nunca son corrientes
+    ef = a_estado_financiero(balance_prueba({"2725": -100, "171076": 100}, padres=False), CORTE)
+    assert ef.balance.otros_pasivos_lp == 100
+    assert ef.balance.otros_pasivos_cp == 0
+    assert ef.balance.otros_activos_lp == 100
+
+
 def test_saldos_sin_signo_se_rechazan():
     sin_signo = balance_prueba(padres=False)
     sin_signo["saldo"] = sin_signo["saldo"].abs()

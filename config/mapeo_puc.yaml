@@ -36,6 +36,9 @@ balance:
   "24":   impuestos_por_pagar
   "25":   obligaciones_laborales
   "26":   otros_pasivos_cp
+  # Impuestos diferidos: siempre no corrientes (NIC 1.56; Sección 29 de NIIF
+  # para pymes). El activo diferido (171076) ya cae en 17 → no corriente.
+  "2725": otros_pasivos_lp
   "27":   otros_pasivos_cp
   "28":   otros_pasivos_cp
   "29":   obligaciones_financieras_lp  # bonos y papeles comerciales
