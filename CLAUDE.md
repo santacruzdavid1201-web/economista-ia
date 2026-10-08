@@ -55,7 +55,7 @@ y redacta el resultado. Todo número sale de funciones de Python probadas.
 
 ## Estado actual
 
-Hecho y probado (178 tests): esquema canónico, mapeo PUC, razones de liquidez,
+Hecho y probado (179 tests): esquema canónico, mapeo PUC, razones de liquidez,
 endeudamiento, rentabilidad y actividad, ciclo de conversión de efectivo,
 DuPont (con descomposición logarítmica de la variación del ROE), Z'' de
 Altman para mercados emergentes (zonas 4,35 / 5,85 y equivalencia de
@@ -137,8 +137,9 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    responde); (3) fuera de alcance con remisión al profesional. El rol del
    economista está en `config/prompts/rol.md`, común a la redacción de los
    tipos 1 y 2. Los análisis temáticos incluyen la comparación sectorial
-   cuando hay referencia. Las 9 notas iniciales son borradores con
-   `revisado: false`: el usuario debe revisarlas.
+   cuando hay referencia. Las 9 notas fueron revisadas por el usuario el
+   7/10/2026 (`revisado: true`), con ajustes para Colombia (tarifa general de
+   renta, tasa de usura, indexación al IPC y al salario mínimo, MMH del DANE).
    Set de evaluación (hecho el 7/10/2026): `tests/eval/preguntas.yaml` (las 28
    preguntas del guion de prueba en 7 bloques A-G; 9 y 10 son pares de
    consistencia) y `app/eval/` (`python -m app.eval`, con `--casos` o
@@ -154,7 +155,7 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    hallazgo redactado en Python ("no se compara con el sector"). Lección:
    con el 7B, las distinciones de sentido van en hallazgos, no en el prompt.
    Cuando se encuentre un error de sentido nuevo, convertirlo en regla del YAML.
-3. Revisar las 9 notas de conocimiento (`revisado: true`).
+3. ~~Revisar las 9 notas de conocimiento~~ hecho el 7/10/2026.
 4. Validar la referencia contra los indicadores que publica el SIIS, y
    revisar valores extremos (p. ej. hoteles con depreciación > ingresos).
 5. Plantilla Excel para empresas sin software contable.

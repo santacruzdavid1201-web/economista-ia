@@ -1,8 +1,8 @@
 ---
 titulo: Capital de trabajo y ciclo de caja
 temas: [capital de trabajo, caja, cartera, inventario, proveedores, ciclo, flujo de caja, nómina]
-fuente: Elaboración propia (borrador)
-revisado: false
+fuente: Elaboración propia, revisada por el economista
+revisado: true
 ---
 El capital de trabajo es la diferencia entre los activos de corto plazo y las
 deudas de corto plazo. Representa los recursos con los que la empresa opera

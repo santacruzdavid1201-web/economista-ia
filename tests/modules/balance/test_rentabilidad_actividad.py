@@ -25,9 +25,16 @@ def test_ebitda_en_pesos(historial):
     res = rentabilidad(historial)
     assert res.valor("ebitda") == pytest.approx(330)
     # El hallazgo separa el monto del margen, que es lo que se compara con el sector
-    assert "$ 330" in res.hallazgos[0] and "no se compara con el sector" in res.hallazgos[0]
+    assert "$ 330" in res.hallazgos[-1] and "no se compara con el sector" in res.hallazgos[-1]
     sin_dep = rentabilidad(hacer_historial(resultados={"depreciacion_amortizacion": None}))
-    assert sin_dep.valor("ebitda") is None and sin_dep.hallazgos == []
+    assert sin_dep.valor("ebitda") is None
+    assert not any("EBITDA" in h for h in sin_dep.hallazgos)
+
+
+def test_hallazgo_lo_que_queda_es_el_margen_neto(historial):
+    assert "es el margen neto: 14,0 %" in rentabilidad(historial).hallazgos[0]
+    sin_ventas = rentabilidad(hacer_historial(resultados={"ingresos_operacionales": 0}))
+    assert not any("margen neto" in h for h in sin_ventas.hallazgos)
 
 
 def test_roa_roe_con_promedios(historial_dos_periodos):

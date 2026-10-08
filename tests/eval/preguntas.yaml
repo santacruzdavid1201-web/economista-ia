@@ -62,7 +62,11 @@ casos:
   - id: "04"
     bloque: A
     pregunta: ¿Cuánto me queda de cada peso que vendo?
-    espera: {herramienta: analizar_rentabilidad}
+    # Lo que queda al final es el margen neto; la primera corrida respondió con
+    # el bruto (85,9 centavos), que hace ver el negocio más holgado
+    espera:
+      herramienta: analizar_rentabilidad
+      cifra_de: [margen_neto]
 
   - id: "05"
     bloque: A

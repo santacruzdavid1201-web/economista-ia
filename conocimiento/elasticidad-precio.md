@@ -1,8 +1,8 @@
 ---
 titulo: Subir precios y elasticidad precio de la demanda
 temas: [precios, tarifas, subir, bajar, elasticidad, demanda, ventas, ingresos]
-fuente: Elaboración propia (borrador) sobre teoría microeconómica básica
-revisado: false
+fuente: Elaboración propia, revisada por el economista, sobre teoría microeconómica básica
+revisado: true
 ---
 Que una subida de precios aumente o no los ingresos depende de la elasticidad
 precio de la demanda: cuánto cae la cantidad vendida cuando sube el precio.

@@ -1,8 +1,8 @@
 ---
 titulo: Liquidez, solvencia y rentabilidad
 temas: [liquidez, solvencia, rentabilidad, deudas, pagar, quiebra, corto plazo, largo plazo]
-fuente: Elaboración propia (borrador)
-revisado: false
+fuente: Elaboración propia, revisada por el economista
+revisado: true
 ---
 Son tres dimensiones distintas de la salud financiera y no siempre van juntas:
 

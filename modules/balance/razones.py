@@ -186,6 +186,14 @@ def rentabilidad(historial: HistorialFinanciero, i: int = -1) -> ResultadoModulo
     # Con solo una regla en el prompt, el 8B seguía atribuyéndole al monto el
     # percentil del margen EBITDA; la distinción va redactada desde Python.
     hallazgos = []
+    margen_neto = division_segura(r.utilidad_neta, ventas)
+    if margen_neto is not None:
+        # "¿Cuánto me queda de cada peso?" es lo que queda al final: el modelo
+        # respondía con el margen bruto, que hace ver el negocio más holgado.
+        hallazgos.append(
+            f"Lo que le queda a la empresa de cada peso vendido, después de costos, gastos, "
+            f"intereses e impuestos, es el margen neto: {formatear(margen_neto, 'proporcion')}. "
+            "El margen bruto solo descuenta el costo de ventas.")
     if r.ebitda is not None:
         hallazgos.append(
             f"El EBITDA del periodo es {formatear(r.ebitda, 'pesos')}. Es un monto que depende "
