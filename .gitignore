@@ -21,3 +21,6 @@ exploracion/salidas/log_*.txt
 graphify-out/
 exploracion/salidas/*_hoteles_*.csv
 exploracion/salidas/caratula_*.csv
+
+# Informes del set de evaluación (se regeneran con python -m app.eval)
+data/eval/

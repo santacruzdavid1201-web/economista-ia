@@ -20,6 +20,16 @@ def test_margenes(historial):
     assert res.valor("margen_neto") == pytest.approx(0.14)
 
 
+def test_ebitda_en_pesos(historial):
+    # Utilidad operacional 250 + depreciación 80; el margen solo no responde "¿cuál es mi EBITDA?"
+    res = rentabilidad(historial)
+    assert res.valor("ebitda") == pytest.approx(330)
+    # El hallazgo separa el monto del margen, que es lo que se compara con el sector
+    assert "$ 330" in res.hallazgos[0] and "no se compara con el sector" in res.hallazgos[0]
+    sin_dep = rentabilidad(hacer_historial(resultados={"depreciacion_amortizacion": None}))
+    assert sin_dep.valor("ebitda") is None and sin_dep.hallazgos == []
+
+
 def test_roa_roe_con_promedios(historial_dos_periodos):
     res = rentabilidad(historial_dos_periodos)
     assert res.valor("roa") == pytest.approx(140 / 1_945)

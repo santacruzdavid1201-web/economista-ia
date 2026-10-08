@@ -61,6 +61,7 @@ class Respuesta:
     texto: str
     origen: Origen
     herramienta: str | None = None
+    argumentos: dict = field(default_factory=dict)          # los que eligió el enrutador
     periodo: int | None = None
     resultados: list[ResultadoModulo] = field(default_factory=list)
     notas: list[str] = field(default_factory=list)          # supuestos y advertencias
@@ -218,20 +219,25 @@ def responder(pregunta: str, ctx: ContextoEmpresa, cliente: ClienteChat | None =
                                "pregunta de otra manera?", origen="error",
                          eventos=[f"enrutador sin herramienta válida: {nombre}"])
     herramienta = POR_NOMBRE[llamada.nombre]
+    argumentos = dict(llamada.argumentos)
     if herramienta.nombre == "fuera_de_alcance":
-        return Respuesta(texto=FUERA_DE_ALCANCE, origen="sin_llm", herramienta=herramienta.nombre)
+        return Respuesta(texto=FUERA_DE_ALCANCE, origen="sin_llm", herramienta=herramienta.nombre,
+                         argumentos=argumentos)
     if herramienta.nombre == "consulta_conceptual":
         if buscador is None:
             buscador = Buscador.desde_archivo(cliente if hasattr(cliente, "embeddings") else None)
-        return _conceptual(pregunta, cliente, buscador)
+        respuesta = _conceptual(pregunta, cliente, buscador)
+        respuesta.argumentos = argumentos
+        return respuesta
 
     # 2. Calcular (Python)
     try:
         i = indice_periodo(ctx.historial, llamada.argumentos.get("periodo"))
         resultados = herramienta.ejecutar(ctx, i, llamada.argumentos)
     except ErrorHerramienta as e:
-        return Respuesta(texto=str(e), origen="sin_llm", herramienta=herramienta.nombre)
-    base = Respuesta(texto="", origen="llm", herramienta=herramienta.nombre,
+        return Respuesta(texto=str(e), origen="sin_llm", herramienta=herramienta.nombre,
+                         argumentos=argumentos)
+    base = Respuesta(texto="", origen="llm", herramienta=herramienta.nombre, argumentos=argumentos,
                      periodo=ctx.historial.periodos[i].fecha_corte.year,
                      resultados=resultados, notas=_notas(resultados))
 

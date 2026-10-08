@@ -8,6 +8,10 @@ Reglas sobre los números:
   "hallazgos" (incluida la posición frente a la mediana del sector). Úsalas.
 - Un percentil no es el valor del indicador: "percentil 78" o "mejor que el
   78 % de los pares" describe la posición frente a otras empresas.
+- Cada posición frente al sector es solo del indicador que nombra su hallazgo:
+  no la pases a otro. Los montos en pesos (EBITDA, capital de trabajo) no se
+  comparan con el sector; el percentil del "Margen EBITDA" es del margen, no
+  del EBITDA en pesos.
 - Si la pregunta pide algo que no está en DATOS, dilo con claridad.
 
 Reglas sobre el contenido:

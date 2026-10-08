@@ -31,6 +31,9 @@ margen_bruto: Qué parte de cada peso vendido queda después del costo directo d
 margen_operacional: >-
   Qué parte de cada peso vendido queda después de los costos y gastos de la
   operación, antes de intereses e impuestos.
+ebitda: >-
+  Utilidad operacional antes de descontar depreciaciones y amortizaciones, en
+  pesos: aproxima la caja que genera la operación en el periodo. No es un margen.
 margen_ebitda: >-
   Como el margen operacional, pero sin descontar depreciaciones y
   amortizaciones: aproxima la caja que genera la operación por cada peso vendido.

@@ -55,7 +55,7 @@ y redacta el resultado. Todo número sale de funciones de Python probadas.
 
 ## Estado actual
 
-Hecho y probado (163 tests): esquema canónico, mapeo PUC, razones de liquidez,
+Hecho y probado (178 tests): esquema canónico, mapeo PUC, razones de liquidez,
 endeudamiento, rentabilidad y actividad, ciclo de conversión de efectivo,
 DuPont (con descomposición logarítmica de la variación del ROE), Z'' de
 Altman para mercados emergentes (zonas 4,35 / 5,85 y equivalencia de
@@ -97,7 +97,7 @@ es su propio par. Días de proveedores y ciclo de conversión no se comparan en
 servicios (`no_comparables` en `ciiu_sectores.yaml`). Los hallazgos formatean
 valores por unidad ("2,4 %", "53 días") para que el 8B no los malinterprete.
 
-Pendiente, en orden (acordado el 5/10/2026):
+Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
 1. ~~Cargador PUC~~ hecho: `data_sources/empresa/puc.py` lee el balance de
    prueba (Excel/CSV, saldo con signo o débito/crédito), suma solo cuentas
    hoja, exige que las clases 1-7 sumen cero, rechaza balances posteriores al
@@ -139,10 +139,26 @@ Pendiente, en orden (acordado el 5/10/2026):
    tipos 1 y 2. Los análisis temáticos incluyen la comparación sectorial
    cuando hay referencia. Las 9 notas iniciales son borradores con
    `revisado: false`: el usuario debe revisarlas.
-   Falta: set de evaluación (`tests/eval/preguntas.yaml`) con rúbrica de sentido.
-3. Validar la referencia contra los indicadores que publica el SIIS.
-4. Revisar valores extremos (p. ej. hoteles con depreciación > ingresos).
-5. Módulos 4 → 3 → 2 (macro, proyectos, econometría).
+   Set de evaluación (hecho el 7/10/2026): `tests/eval/preguntas.yaml` (las 28
+   preguntas del guion de prueba en 7 bloques A-G; 9 y 10 son pares de
+   consistencia) y `app/eval/` (`python -m app.eval`, con `--casos` o
+   `--bloques`; informe en `data/eval/`, no versionado). Python comprueba
+   herramienta, periodo, origen, fuentes, frases y que toda cifra redactada
+   esté en el desplegable (más estricto que el verificador, que acepta cifras
+   de la pregunta). El sentido lo revisa el usuario en la sección "Respuestas
+   para revisar" del informe. Criterios: bloques A, B, C, F y G al 100 %;
+   respaldo ≤ 20 %. Primera corrida con qwen 7B: 30/30 en reglas automáticas,
+   0 % respaldo, pero un error de sentido (presentó el margen EBITDA como "el
+   EBITDA"); se agregó el EBITDA en pesos como indicador. Después le pegó al
+   monto el percentil del margen: la regla en el prompt no bastó, sí un
+   hallazgo redactado en Python ("no se compara con el sector"). Lección:
+   con el 7B, las distinciones de sentido van en hallazgos, no en el prompt.
+   Cuando se encuentre un error de sentido nuevo, convertirlo en regla del YAML.
+3. Revisar las 9 notas de conocimiento (`revisado: true`).
+4. Validar la referencia contra los indicadores que publica el SIIS, y
+   revisar valores extremos (p. ej. hoteles con depreciación > ingresos).
+5. Plantilla Excel para empresas sin software contable.
+6. Módulos 4 → 3 → 2 (macro, proyectos, econometría).
 
 Grupos de comparación en `config/ciiu_sectores.yaml` (alojamiento / hoteles).
 El benchmark se describe siempre como "empresas reportantes a

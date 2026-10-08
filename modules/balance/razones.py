@@ -19,7 +19,7 @@ from modules.balance.comun import (
     factor_anual,
     promedios,
 )
-from modules.base import Indicador, ResultadoModulo, division_segura
+from modules.base import Indicador, ResultadoModulo, division_segura, formatear
 from modules.esquema_financiero import HistorialFinanciero
 
 DIAS_ANIO = 365
@@ -149,6 +149,9 @@ def rentabilidad(historial: HistorialFinanciero, i: int = -1) -> ResultadoModulo
         Indicador(clave="margen_operacional", nombre="Margen operacional",
                   valor=division_segura(r.utilidad_operacional, ventas), unidad="proporcion",
                   formula="Utilidad operacional / Ingresos operacionales"),
+        # El monto, además del margen: sin él, el modelo presentaba el margen como "el EBITDA"
+        Indicador(clave="ebitda", nombre="EBITDA del periodo", valor=r.ebitda, unidad="pesos",
+                  formula="Utilidad operacional + Depreciación y amortización"),
         Indicador(clave="margen_ebitda", nombre="Margen EBITDA",
                   valor=None if r.ebitda is None else division_segura(r.ebitda, ventas),
                   unidad="proporcion",
@@ -180,9 +183,19 @@ def rentabilidad(historial: HistorialFinanciero, i: int = -1) -> ResultadoModulo
     if r.utilidad_neta < 0:
         advertencias.append("La empresa tuvo pérdida neta en el periodo.")
 
+    # Con solo una regla en el prompt, el 8B seguía atribuyéndole al monto el
+    # percentil del margen EBITDA; la distinción va redactada desde Python.
+    hallazgos = []
+    if r.ebitda is not None:
+        hallazgos.append(
+            f"El EBITDA del periodo es {formatear(r.ebitda, 'pesos')}. Es un monto que depende "
+            "del tamaño de la empresa, por eso no se compara con el sector: la comparación "
+            "sectorial es la del margen EBITDA.")
+
     return ResultadoModulo(modulo="balance", analisis="rentabilidad",
                            fecha_corte=ef.fecha_corte, indicadores=indicadores,
-                           supuestos=supuestos, fuentes=fuentes, advertencias=advertencias)
+                           hallazgos=hallazgos, supuestos=supuestos, fuentes=fuentes,
+                           advertencias=advertencias)
 
 
 def actividad(historial: HistorialFinanciero, i: int = -1) -> ResultadoModulo:

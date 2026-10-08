@@ -87,8 +87,9 @@ def variacion(historial: HistorialFinanciero, i: int = -1) -> ResultadoModulo:
     ef = historial.periodos[i]
     fuentes, supuestos, advertencias = contexto_base(historial, ef)
     hallazgos: list[str] = []
-    nombres = {"margen_neto": "margen neto", "rotacion_activos": "rotación de activos",
-               "multiplicador_capital": "multiplicador del capital"}
+    # Con artículo: "la palanca que más explica el cambio es la rotación de activos"
+    nombres = {"margen_neto": "el margen neto", "rotacion_activos": "la rotación de activos",
+               "multiplicador_capital": "el multiplicador del capital"}
 
     if i == 0:
         advertencias.append("Se necesitan al menos dos periodos para analizar la variación del ROE.")
@@ -121,17 +122,17 @@ def variacion(historial: HistorialFinanciero, i: int = -1) -> ResultadoModulo:
         for k, v in participacion.items():
             indicadores.append(Indicador(
                 clave=f"participacion_{k}",
-                nombre=f"Parte del cambio del ROE explicada por el {nombres[k]}",
+                nombre=f"Parte del cambio del ROE explicada por {nombres[k]}",
                 valor=v, unidad="proporcion",
-                formula=f"ln({nombres[k]} actual / anterior) / ln(ROE actual / anterior)"))
+                formula=f"ln({nombres[k].split(' ', 1)[1]} actual / anterior) / ln(ROE actual / anterior)"))
         principal = max(participacion, key=lambda k: abs(participacion[k]))
         sentido = "subió" if actual["roe"] > anterior["roe"] else "bajó"
-        detalle = ", ".join(f"el {nombres[k]} {formatear(v, 'proporcion')}"
+        detalle = ", ".join(f"{nombres[k]} {formatear(v, 'proporcion')}"
                             for k, v in participacion.items())
         hallazgos.append(
             f"El ROE {sentido} de {formatear(anterior['roe'], 'proporcion')} a "
             f"{formatear(actual['roe'], 'proporcion')}; la palanca que más explica el cambio "
-            f"es el {nombres[principal]}. Participación en el cambio: {detalle}."
+            f"es {nombres[principal]}. Participación en el cambio: {detalle}."
         )
     elif calculable:
         advertencias.append("El ROE no cambió entre los dos periodos: no hay variación que descomponer.")

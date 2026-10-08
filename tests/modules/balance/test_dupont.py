@@ -34,6 +34,8 @@ def test_variacion_participaciones_suman_cien(historial_dos_periodos):
                 / math.log(d1.valor("roe") / d0.valor("roe")))
     assert v.valor("participacion_margen_neto") == pytest.approx(esperado)
     assert v.hallazgos and "subió" in v.hallazgos[0] and "Participación en el cambio" in v.hallazgos[0]
+    # Artículo según el género de la palanca, sin "el rotación"
+    assert "el rotación" not in v.hallazgos[0] and "la rotación de activos" in v.hallazgos[0]
 
 
 def test_variacion_con_un_solo_periodo(historial):
