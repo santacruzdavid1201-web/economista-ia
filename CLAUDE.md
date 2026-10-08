@@ -165,6 +165,24 @@ El benchmark se describe siempre como "empresas reportantes a
 Supersociedades", nunca como el sector completo. Probablemente será nacional:
 Nariño tendrá muy pocas empresas.
 
+## Documentación del proyecto (Obsidian)
+
+Vault en `docs/`. Se actualiza solo en estos momentos, no en cada cambio menor:
+
+1. Decisión de diseño o arquitectura (herramienta, enfoque, esquema de datos):
+   una viñeta nueva en `docs/decisiones.md`, en el estilo de las existentes
+   (breve, en pasado, con el qué y el porqué en una frase).
+2. Un módulo cambia de estado (sin iniciar → en construcción → funcionando /
+   probado con datos reales): actualizar **Estado** y agregar una nota breve
+   en `docs/modulos/<módulo>.md` (econometria-aplicada, evaluacion-proyectos,
+   entorno-macro, balance-financiero).
+3. Al final de una sesión larga o con varios cambios importantes, si no se
+   hizo en el momento, resumir en `decisiones.md` lo decidido.
+
+No se documentan fixes menores, cambios de redacción, ajustes de formato ni
+iteraciones de prueba y error que no cambiaron una decisión final. Si se
+actualizó la documentación, decirlo en una línea al final de la respuesta.
+
 ## Entorno
 
 Windows, proyecto en `D:\economista-ia`, entorno virtual `.venv` con
