@@ -12,12 +12,15 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 from data_sources.externos.referencia import homologar_empresa
+from data_sources.externos.series import catalogo
+from data_sources.externos.series.modelo import Serie
 from modules.balance.altman import altman
 from modules.balance.benchmark import ReferenciaSectorial, comparar
 from modules.balance.dupont import dupont, variacion
 from modules.balance.razones import actividad, endeudamiento, liquidez, rentabilidad
 from modules.base import ResultadoModulo
 from modules.esquema_financiero import HistorialFinanciero
+from modules.macro.crecimiento_real import crecimiento_real, meses_del_periodo
 
 
 class ErrorHerramienta(ValueError):
@@ -28,6 +31,8 @@ class ErrorHerramienta(ValueError):
 class ContextoEmpresa:
     historial: HistorialFinanciero
     referencia: ReferenciaSectorial | None = None
+    # (variable, geografía, desde) → Serie; los tests lo reemplazan para no usar la red
+    serie: Callable[..., Serie] = catalogo.serie
 
 
 @dataclass(frozen=True)
@@ -86,6 +91,16 @@ def _con_sector(ctx: ContextoEmpresa, i: int, analisis) -> list[ResultadoModulo]
     return propio + (_sector(ctx, i, (analisis,)) if ctx.referencia else [])
 
 
+def _crecimiento_real(ctx: ContextoEmpresa, i: int) -> list[ResultadoModulo]:
+    """IPC de la ciudad de la empresa desde el inicio del periodo anterior."""
+    desde, _ = meses_del_periodo(ctx.historial.periodos[max(i, 1) - 1])
+    try:
+        ipc = ctx.serie("ipc", ctx.historial.empresa.municipio, desde)
+    except catalogo.ErrorSerie as e:
+        raise ErrorHerramienta(str(e)) from e
+    return [crecimiento_real(ctx.historial, i, ipc)]
+
+
 HERRAMIENTAS: list[Herramienta] = [
     Herramienta(
         "analizar_liquidez",
@@ -117,6 +132,12 @@ HERRAMIENTAS: list[Herramienta] = [
         "¿Corre la empresa riesgo de quiebra o de dificultades financieras serias? "
         "Z'' de Altman para mercados emergentes.",
         lambda c, i, a: _con_sector(c, i, altman)),
+    Herramienta(
+        "analizar_crecimiento_real",
+        "¿Crecí en términos reales? ¿Mis ventas le ganaron a la inflación? ¿Cuánto "
+        "crecieron los ingresos descontando el alza de precios? Crecimiento nominal y real "
+        "de los ingresos frente al año anterior.",
+        lambda c, i, a: _crecimiento_real(c, i)),
     Herramienta(
         "comparar_con_sector",
         "¿Cómo está la empresa frente a empresas similares de su sector? Ubica cada "

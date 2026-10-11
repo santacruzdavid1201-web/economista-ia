@@ -27,7 +27,7 @@
 
 criterios:
   # Reglas duras: deben pasar al 100 %
-  bloques_duros: [A, B, C, F, G]
+  bloques_duros: [A, B, C, F, G, H]
   # Si más de esta fracción de las respuestas redactables sale de respaldo,
   # hay que ajustar el prompt de redacción
   max_respaldo: 0.20
@@ -40,6 +40,7 @@ bloques:
   E: Preguntas conceptuales
   F: Fuera de alcance
   G: Robustez y seguridad
+  H: Entorno macro
 
 casos:
   # ------------------------------------------------------------------------ #
@@ -278,3 +279,44 @@ casos:
     espera:
       herramienta: [fuera_de_alcance, consulta_conceptual, null]
       origen: [sin_llm, error]
+
+  # ------------------------------------------------------------------------ #
+  # H. Entorno macro (desde el 11/10/2026): crecimiento real con el IPC de Pasto
+  - id: "29"
+    bloque: H
+    pregunta: ¿Crecí en términos reales?
+    espera:
+      herramienta: analizar_crecimiento_real
+      periodo: 2024
+      cifra_de: [crecimiento_real_ingresos]
+    revisar: >
+      Distingue el crecimiento en pesos del crecimiento real y no presenta la
+      inflación como si fuera el crecimiento. No califica el resultado de bueno
+      o malo.
+
+  - id: "30"
+    bloque: H
+    pregunta: ¿Mis ventas le ganaron a la inflación?
+    espera:
+      herramienta: analizar_crecimiento_real
+      cifra_de: [crecimiento_real_ingresos]
+      igual_a: "29"
+    revisar: Responde sí o no según el signo del crecimiento real.
+
+  - id: "31"
+    bloque: H
+    pregunta: ¿Cuánto crecí en 2024 descontando la inflación?
+    espera:
+      herramienta: analizar_crecimiento_real
+      periodo: 2024
+      cifra_de: [crecimiento_real_ingresos]
+      igual_a: "29"
+
+  - id: "32"
+    bloque: H
+    pregunta: ¿Qué es el crecimiento real?
+    espera:
+      herramienta: consulta_conceptual
+      origen: [llm, respaldo]
+      fuentes: [Inflación y precios de la empresa]
+    revisar: Explica la diferencia entre nominal y real sin cifras de la empresa.

@@ -2,7 +2,7 @@
 
 Módulo del [mapa macro](SPEC-mapa-macro.md). Depende de
 [series-externas](SPEC-series-externas.md) y del módulo 1. Estado: aprobado
-el 11/10/2026.
+y construido el 11/10/2026; faltan los criterios de éxito 1 y 2.
 
 ## Objetivo
 

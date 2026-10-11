@@ -21,6 +21,7 @@ tags: [economista-ia, bitacora]
 - El módulo macro se **adelantó** a la validación contra el SIIS y a la plantilla Excel: la pregunta "¿crecí en términos reales?" es la siguiente que haría un gerente después del balance, y las series que necesita sirven también a proyectos y econometría.
 - El IPC se toma del **BanRep (SUAMECA)** y no directamente del DANE porque trae las 23 ciudades con historia; el anexo del DANE queda como verificación del nacional, porque la API del BanRep no está documentada.
 - Si la ciudad de la empresa no tiene IPC, o el suyo no cubre el periodo (empieza en 2017), se usa el **IPC nacional con un supuesto declarado**, en vez de dejar el indicador vacío.
+- El crecimiento real de los ingresos se calcula con el **IPC promedio del periodo** (no el de diciembre) y con la fórmula exacta (1 + nominal) / (1 + inflación) − 1, porque los ingresos son un flujo acumulado en el año; en 2024 usar el de diciembre habría inflado el crecimiento real en 1,4 puntos.
 
 ---
 Vuelve a [[resumen]]

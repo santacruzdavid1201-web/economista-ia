@@ -39,7 +39,8 @@ FUERA_DE_ALCANCE = (
     "o tributarios específicos, lo indicado es consultar a un abogado o a un contador. "
     "Puedo ayudarle con la liquidez, el endeudamiento, la rentabilidad, la rotación de "
     "cartera e inventarios, el riesgo financiero (Z'' de Altman), el análisis DuPont, la "
-    "comparación con empresas de su sector y conceptos económicos que afectan a su "
+    "comparación con empresas de su sector, si sus ventas le ganaron a la inflación y "
+    "conceptos económicos que afectan a su "
     "negocio (tasas de interés, inflación, precios, endeudamiento)."
 )
 SIN_FUENTE = (

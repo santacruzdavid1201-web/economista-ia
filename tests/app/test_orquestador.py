@@ -196,3 +196,49 @@ def test_analisis_tematico_sin_referencia_no_falla(ctx):
     r = responder("¿Rentabilidad?", ctx, LLMFalso(herramienta("analizar_rentabilidad"),
                                                   texto("Bien.")), HOY)
     assert [x.analisis for x in r.resultados] == ["rentabilidad"]
+
+
+# --------------------------------------------------------------------------- #
+# Crecimiento real (series externas inyectadas: sin red)
+# --------------------------------------------------------------------------- #
+def ctx_con_ipc(serie):
+    from modules.esquema_financiero import HistorialFinanciero
+    from tests.conftest import periodo_2023
+    h = hacer_historial()
+    return ContextoEmpresa(historial=HistorialFinanciero(empresa=h.empresa,
+                                                         periodos=[periodo_2023(), h.ultimo]),
+                           serie=serie)
+
+
+def test_crecimiento_real_enruta_calcula_y_redacta():
+    from data_sources.externos.series.modelo import Serie
+    pedidas = []
+
+    def serie(variable, geografia, desde):
+        pedidas.append((variable, geografia, desde))
+        obs = [(date(a, m, 28), 100 if a == 2023 else 105) for a in (2023, 2024)
+               for m in range(1, 13)]
+        return Serie(clave="ipc_nacional", nombre="IPC", fuente="BanRep", unidad="índice",
+                     frecuencia="mensual", geografia="nacional", consultada=HOY,
+                     observaciones=obs)
+
+    # Ingresos 800 → 1.000 (25 %) con IPC 100 → 105: real 1,25 / 1,05 − 1 = 19,0 %
+    llm = LLMFalso(herramienta("analizar_crecimiento_real"),
+                   texto("Descontando la inflación, sus ingresos crecieron 19,0 %."))
+    r = responder("¿Crecí en términos reales?", ctx_con_ipc(serie), llm, HOY)
+    assert r.origen == "llm" and r.herramienta == "analizar_crecimiento_real"
+    assert pedidas == [("ipc", None, date(2023, 1, 1))]     # desde el periodo anterior
+    assert r.resultados[0].valor("crecimiento_real_ingresos") == pytest.approx(0.190476, abs=1e-6)
+    assert "crecimiento_real_ingresos" in llm.llamadas[1]["usuario"]   # glosario
+    assert any("IPC general" in n for n in r.notas)
+
+
+def test_crecimiento_real_sin_ipc_disponible():
+    from data_sources.externos.series.catalogo import ErrorSerie
+
+    def sin_red(*args):
+        raise ErrorSerie("No se pudo descargar la serie ipc_pasto. Revise la conexión.")
+
+    r = responder("¿Crecí?", ctx_con_ipc(sin_red),
+                  LLMFalso(herramienta("analizar_crecimiento_real")), HOY)
+    assert r.origen == "sin_llm" and "Revise la conexión" in r.texto

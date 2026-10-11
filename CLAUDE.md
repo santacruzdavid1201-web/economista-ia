@@ -168,7 +168,13 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    advertencia). La ciudad sin serie o sin cobertura cae al nacional con
    supuesto. SUAMECA no envía el certificado intermedio: se usa la cadena de
    DigiCert en `suameca_cadena.pem`. Refrescar: `python -m
-   data_sources.externos.series.catalogo Pasto`. Sigue `crecimiento-real`.
+   data_sources.externos.series.catalogo Pasto`.
+   Hecho `crecimiento-real` (`modules/macro/crecimiento_real.py`, herramienta
+   `analizar_crecimiento_real`, IPC de `municipio` de la empresa, bloque H del
+   set de evaluación, casos 29-32). Pendiente: correr `python -m app.eval
+   --bloques H` con el modelo real y comparar el hotel demo con el cálculo a
+   mano del usuario (criterios 1 y 2 de la spec). Después: `sensibilidad-tasas`
+   (agrega tasas a series-externas).
 
 Grupos de comparación en `config/ciiu_sectores.yaml` (alojamiento / hoteles).
 El benchmark se describe siempre como "empresas reportantes a
