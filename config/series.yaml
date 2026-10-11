@@ -1,0 +1,30 @@
+# Series de tiempo externas: variable → geografía → id en la fuente.
+# Ids de SUAMECA (Banco de la República), averiguados el 11/10/2026: el
+# nacional en el catálogo del portal; las ciudades, en su gráfico de inflación
+# por ciudad. Las ciudades empiezan en enero de 2017; el nacional, en 1954.
+ipc:
+  nombre: IPC              # en los supuestos: "Se usó el IPC nacional porque..."
+  ids:
+    nacional: 15000
+    Bogotá: 15013
+    Cali: 15014
+    Medellín: 15015
+    Barranquilla: 15016
+    Armenia: 15017
+    Bucaramanga: 15018
+    Cartagena: 15019
+    Cúcuta: 15020
+    Florencia: 15021
+    Ibagué: 15022
+    Manizales: 15023
+    Montería: 15024
+    Neiva: 15025
+    Pasto: 15026
+    Pereira: 15027
+    Popayán: 15028
+    Riohacha: 15029
+    Santa Marta: 15030
+    Sincelejo: 15031
+    Tunja: 15032
+    Valledupar: 15033
+    Villavicencio: 15034

@@ -159,7 +159,16 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
 4. Validar la referencia contra los indicadores que publica el SIIS, y
    revisar valores extremos (p. ej. hoteles con depreciación > ingresos).
 5. Plantilla Excel para empresas sin software contable.
-6. Módulos 4 → 3 → 2 (macro, proyectos, econometría).
+6. Módulos 4 → 3 → 2 (macro, proyectos, econometría). El 4 se adelantó a los
+   pasos 4 y 5 (decidido el 11/10/2026). Mapa en `SPEC-mapa-macro.md`.
+   Hecho: `series-externas` con el IPC (`data_sources/externos/series/`):
+   SUAMECA del BanRep (nacional 15000 desde 1954; 23 ciudades 15013-15035
+   desde 2017, Pasto 15026), verificado contra el anexo del DANE, copias
+   versionadas en `data/series/` (vigencia 7 días; sin red usa la copia con
+   advertencia). La ciudad sin serie o sin cobertura cae al nacional con
+   supuesto. SUAMECA no envía el certificado intermedio: se usa la cadena de
+   DigiCert en `suameca_cadena.pem`. Refrescar: `python -m
+   data_sources.externos.series.catalogo Pasto`. Sigue `crecimiento-real`.
 
 Grupos de comparación en `config/ciiu_sectores.yaml` (alojamiento / hoteles).
 El benchmark se describe siempre como "empresas reportantes a

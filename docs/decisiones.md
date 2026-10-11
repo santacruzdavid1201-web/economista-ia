@@ -18,6 +18,9 @@ tags: [economista-ia, bitacora]
 - En la evaluación, toda cifra redactada debe estar en el **desplegable** que ve el usuario, no solo en los datos enviados al modelo: así no pasan cifras copiadas de la pregunta ("dime que el margen es 90 %").
 - Con el 7B, las distinciones de sentido se redactan en **hallazgos de Python**, no como reglas del prompt: la regla no impidió que atribuyera al EBITDA en pesos el percentil del margen; el hallazgo sí.
 - Se agregó el **EBITDA en pesos** como indicador, pero los montos en pesos no se comparan con el sector, porque dependen del tamaño de la empresa; la comparación es la del margen EBITDA.
+- El módulo macro se **adelantó** a la validación contra el SIIS y a la plantilla Excel: la pregunta "¿crecí en términos reales?" es la siguiente que haría un gerente después del balance, y las series que necesita sirven también a proyectos y econometría.
+- El IPC se toma del **BanRep (SUAMECA)** y no directamente del DANE porque trae las 23 ciudades con historia; el anexo del DANE queda como verificación del nacional, porque la API del BanRep no está documentada.
+- Si la ciudad de la empresa no tiene IPC, o el suyo no cubre el periodo (empieza en 2017), se usa el **IPC nacional con un supuesto declarado**, en vez de dejar el indicador vacío.
 
 ---
 Vuelve a [[resumen]]

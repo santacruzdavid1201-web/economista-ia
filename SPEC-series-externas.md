@@ -1,6 +1,7 @@
 # Spec: series-externas (primer tramo: IPC)
 
-Módulo del [mapa macro](SPEC-mapa-macro.md). Estado: borrador para aprobación.
+Módulo del [mapa macro](SPEC-mapa-macro.md). Estado: aprobado el 11/10/2026;
+primer tramo (IPC) construido el 11/10/2026.
 
 ## Objetivo
 
@@ -51,9 +52,11 @@ Con consultas en paralelo el servidor rechazó las conexiones: siempre en serie.
 
 - `Serie` (pydantic, en `data_sources/externos/series/modelo.py`): clave,
   nombre, fuente, unidad, frecuencia (`mensual`, `diaria`...), geografía
-  (`nacional` o la ciudad), base (p. ej. "dic 2018 = 100"), fecha de consulta y
-  observaciones `list[tuple[date, float]]` ordenadas y sin duplicados.
-  Métodos puros: `valor(fecha)`, `promedio(desde, hasta)`, `ultimo()`.
+  (`nacional` o la ciudad), fecha de consulta y observaciones
+  `list[tuple[date, float]]` ordenadas y sin duplicados (la base va en la
+  unidad: "Indice, base dic/2018=100"). Método puro:
+  `promedio_mensual(desde, hasta)`, `None` si falta algún mes. `supuestos` y
+  `advertencias` los llena el catálogo al entregarla y no se guardan.
 - Catálogo `config/series.yaml`: clave estable → fuente, id en la fuente,
   geografía, unidad. Ej.: `ipc_nacional`, `ipc_pasto`. Un análisis pide
   `serie("ipc", geografia="Pasto")` y recibe la de la ciudad o la nacional
@@ -63,18 +66,23 @@ Con consultas en paralelo el servidor rechazó las conexiones: siempre en serie.
 - Cargadores: `banrep.py` (SUAMECA → `Serie`), `dane.py` (anexo IPC → `Serie`).
   Descarga separada de la transformación (como `supersociedades.py`), para
   probar la transformación sin red.
-- Caché en `data/raw/series/<clave>.json`; se usa si tiene menos de 7 días.
-  Si la descarga falla y hay caché vieja, se usa con una advertencia
-  ("datos al <fecha>"); si no hay caché, error con mensaje útil.
-- Copia versionada de las series que usa el demo en `data/series/`, para que
-  los tests de punta a punta y la demo no dependan de la red.
+- Un solo almacén, versionado: `data/series/<clave>.json` (sirve de caché y
+  de copia para la demo, sin red). Se usa si tiene menos de 7 días. Si la
+  descarga falla y hay copia vieja, se usa con una advertencia ("datos
+  consultados el <fecha>"); si no hay copia, error con mensaje útil.
+- El servidor de SUAMECA no envía el certificado intermedio (GeoTrust EV RSA
+  CA G2) y Python, a diferencia de Windows, no lo busca solo. La descarga usa
+  la cadena pública de DigiCert guardada en `suameca_cadena.pem` (intermedio
+  hasta 2030, raíz hasta 2038), sin desactivar la validación SSL. Si el BanRep
+  cambia de certificado, se actualiza el .pem (o se agrega `truststore`).
 
 ## Comandos
 
 ```
-python -m pytest -v                                   # sin red: fixtures JSON/xlsx
-python -m data_sources.externos.series.actualizar     # descarga o refresca el catálogo
-python -m data_sources.externos.series.actualizar --verificar   # IPC BanRep vs. DANE
+python -m pytest -v                                        # sin red: fixtures JSON/xlsx
+python -m data_sources.externos.series.catalogo Pasto      # refresca el IPC nacional y el de
+                                                           # las ciudades dadas, y verifica
+                                                           # el nacional contra el DANE
 ```
 
 ## Estructura
@@ -85,11 +93,10 @@ data_sources/externos/series/
   modelo.py                              Serie y operaciones puras
   banrep.py                              cliente SUAMECA + transformación
   dane.py                                anexo IPC del DANE + transformación
-  catalogo.py                            serie(clave, geografía) con caché y respaldo
-  actualizar.py                          línea de comandos
-tests/data_sources/externos/series/      tests con fixtures en tests/fixtures/series/
-data/raw/series/                         caché (no versionada)
-data/series/                             copias versionadas para demo y tests
+  catalogo.py                            serie(variable, geografía), copias y línea de comandos
+  suameca_cadena.pem                     cadena de certificados de DigiCert
+tests/data_sources/externos/test_series.py   tests; fixtures en datos/suameca_ipc_*.json
+data/series/                             copias versionadas (caché, demo y tests)
 ```
 
 ## Estilo
@@ -98,7 +105,7 @@ Igual que el resto del proyecto: español, funciones puras para transformar,
 descarga aislada, errores con mensajes para el usuario.
 
 ```python
-def desde_suameca(respuesta: dict, clave: str, geografia: str) -> Serie:
+def desde_suameca(respuesta: dict, clave: str, geografia: str, consultada: date) -> Serie:
     """JSON de consultaInformacionSerie → Serie. Sin red: se prueba con fixtures."""
 ```
 
