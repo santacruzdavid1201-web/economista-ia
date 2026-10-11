@@ -19,6 +19,28 @@ Usuario: los módulos de análisis (no el gerente directamente).
 | IPC nacional y por ciudad | Banco de la República, portal SUAMECA | `GET https://suameca.banrep.gov.co/estadisticas-economicas-back/rest/estadisticaEconomicaRestService/consultaInformacionSerie?idSerie=<id>` devuelve JSON con metadatos (nombre, unidad, periodicidad, fuente, notas) y la historia completa en `data: [[epoch_ms, valor], ...]`. Probado con la TRM (id 1, 12.735 datos desde 1991). |
 | IPC nacional (verificación) | DANE, anexo `anex-IPC-Indices-<mes><año>.xlsx` | Índice mensual desde 2003, base diciembre 2018 = 100, una hoja con años en columnas. Es el productor original. |
 
+**Ids del IPC (averiguado el 11/10/2026).** Índice mensual, base dic/2018 = 100,
+fuente DANE, fecha = último día del mes:
+
+- `15000` IPC nacional, desde julio de 1954 (los primeros años vienen
+  redondeados a 2 decimales: 0,03 en 1954).
+- `15013`–`15035` IPC de las 23 ciudades del DANE, desde enero de 2017
+  (Otras áreas urbanas, 15035, desde dic/2018). Pasto es `15026`; las demás:
+  15013 Bogotá, 15014 Cali, 15015 Medellín, 15016 Barranquilla, 15017 Armenia,
+  15018 Bucaramanga, 15019 Cartagena, 15020 Cúcuta, 15021 Florencia,
+  15022 Ibagué, 15023 Manizales, 15024 Montería, 15025 Neiva, 15027 Pereira,
+  15028 Popayán, 15029 Riohacha, 15030 Santa Marta, 15031 Sincelejo,
+  15032 Tunja, 15033 Valledupar, 15034 Villavicencio.
+- El catálogo del portal se consulta con `consultaMenuXopcion?opcion=CATALOGO_DATOS`
+  (JSON en Latin-1); las series por ciudad no están ahí, sino en el gráfico de
+  inflación por ciudad del portal. Útil para buscar los ids de tasas en el
+  tramo siguiente.
+- Chequeo: la inflación nacional diciembre a diciembre da 9,28 % (2023) y
+  5,20 % (2024), las cifras oficiales del DANE.
+- Las fechas antes de 1970 llegan con epoch negativo: convertir con
+  `date(1970, 1, 1) + timedelta(milliseconds=t)`, porque
+  `datetime.fromtimestamp` falla en Windows con valores negativos.
+
 **Riesgo.** La API de SUAMECA es la que usa el portal del BanRep por dentro; no
 está documentada como servicio público y puede cambiar sin aviso. Se mitiga
 con: caché local, copia versionada de cada serie usada, y la verificación
@@ -35,7 +57,9 @@ Con consultas en paralelo el servidor rechazó las conexiones: siempre en serie.
 - Catálogo `config/series.yaml`: clave estable → fuente, id en la fuente,
   geografía, unidad. Ej.: `ipc_nacional`, `ipc_pasto`. Un análisis pide
   `serie("ipc", geografia="Pasto")` y recibe la de la ciudad o la nacional
-  con un supuesto que lo dice.
+  con un supuesto que lo dice. Lo mismo si la ciudad existe pero su serie no
+  cubre las fechas pedidas (antes de 2017): se usa la nacional con supuesto,
+  no `None`.
 - Cargadores: `banrep.py` (SUAMECA → `Serie`), `dane.py` (anexo IPC → `Serie`).
   Descarga separada de la transformación (como `supersociedades.py`), para
   probar la transformación sin red.
@@ -81,7 +105,7 @@ def desde_suameca(respuesta: dict, clave: str, geografia: str) -> Serie:
 ## Tests
 
 - Transformación SUAMECA y DANE con fixtures reales recortados (fechas epoch →
-  mes, decimales, orden, duplicados).
+  mes, epoch negativo antes de 1970, decimales, orden, duplicados).
 - `Serie.promedio` y `valor` con casos calculados a mano.
 - Catálogo: ciudad disponible, ciudad no disponible → nacional + supuesto,
   caché fresca, caché vieja con advertencia, sin caché y sin red → error.
@@ -108,8 +132,6 @@ def desde_suameca(respuesta: dict, clave: str, geografia: str) -> Serie:
 
 ## Preguntas abiertas
 
-1. Ids de SUAMECA del IPC nacional y del IPC de Pasto: es la primera tarea
-   (buscarlos en el catálogo del portal, a mano o con consultas en serie).
-2. Si SUAMECA no publica el IPC de Pasto, la alternativa es el anexo de
-   variaciones por ciudad del DANE (solo el mes publicado: habría que
-   acumular la historia en la caché). Se decide al resolver la pregunta 1.
+Ninguna. Los ids del IPC nacional y de Pasto quedaron resueltos el 11/10/2026
+(sección Fuentes): SUAMECA publica las 23 ciudades, así que no hace falta el
+anexo por ciudad del DANE.

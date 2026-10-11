@@ -74,8 +74,9 @@ python -m app.eval --bloques H
 - Caso a mano: ingresos 1.000 → 1.100 con IPC promedio 100 → 105 da
   nominal 10 %, inflación 5 %, real 4,76 % (y no 5 %).
 - Periodo de 6 meses: promedia solo esos meses y anualiza ingresos.
-- Ciudad sin IPC → nacional + supuesto; sin periodo anterior → `None` +
-  advertencia; IPC sin cobertura de las fechas → `None` + advertencia.
+- Ciudad sin IPC, o con IPC que no cubre las fechas (antes de 2017) →
+  nacional + supuesto; sin periodo anterior → `None` + advertencia; ni el
+  IPC nacional cubre las fechas (mes aún no publicado) → `None` + advertencia.
 - Hallazgo dice "cayeron" cuando el real es negativo aunque el nominal suba.
 - Orquestador con LLM falso: enruta y redacta con las cifras del resultado.
 
@@ -97,4 +98,9 @@ python -m app.eval --bloques H
 
 ## Preguntas abiertas
 
-Ninguna propia; depende de que `series-externas` resuelva el IPC de Pasto.
+Ninguna. El IPC de Pasto existe en SUAMECA (id 15026, desde 2017).
+
+Con los datos reales, las dos decisiones económicas pesan: en 2024 la
+inflación nacional promedio fue 6,61 % y la de diciembre a diciembre 5,20 %
+(deflactar con la de diciembre sobrestimaría el crecimiento real en 1,4
+puntos); la de Pasto promedio fue 5,83 %, 0,8 puntos por debajo de la nacional.
