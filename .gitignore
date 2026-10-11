@@ -24,3 +24,7 @@ exploracion/salidas/caratula_*.csv
 
 # Informes del set de evaluación (se regeneran con python -m app.eval)
 data/eval/
+
+# Configuración local de Obsidian e informe de graphify (se regenera)
+docs/.obsidian/
+docs/GRAPH_REPORT.md
