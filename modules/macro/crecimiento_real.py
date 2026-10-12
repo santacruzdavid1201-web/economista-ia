@@ -10,6 +10,11 @@ Decisiones (SPEC-crecimiento-real.md):
   inflación" se aleja del valor correcto cuando la inflación es alta.
 - Solo describe el pasado: dice si los ingresos subieron o cayeron en términos
   reales, sin calificar el resultado.
+- Con el IPC general, crecer en términos reales significa que los ingresos
+  subieron más que los precios al consumidor, no que se vendió más cantidad:
+  las tarifas de la empresa pueden haber subido más o menos que el IPC. La
+  distinción va en un hallazgo porque el 7B la ignoró cuando solo estaba en
+  los supuestos.
 """
 from __future__ import annotations
 
@@ -23,6 +28,11 @@ from modules.esquema_financiero import EstadoFinanciero, HistorialFinanciero
 SUPUESTO_DEFLACTOR = (
     "Se descontó la inflación con el IPC general: los precios propios de la empresa "
     "(sus tarifas) pueden haber subido más o menos que el promedio de la economía."
+)
+LIMITE_IPC = (
+    "Este crecimiento real descuenta la inflación general (IPC), no las tarifas propias "
+    "de la empresa: no permite saber si cambió la cantidad vendida o si sus precios "
+    "subieron más o menos que la inflación."
 )
 
 
@@ -47,9 +57,11 @@ def _hallazgo(anio_ant: int, anio: int, nominal: float, inflacion: float, real: 
         return (f"{entre} subieron {_pct(nominal)} en pesos corrientes, menos que la "
                 f"inflación promedio {de} ({_pct(inflacion)}): en términos reales cayeron "
                 f"{_pct(-real)}.")
-    return (f"{entre} crecieron {_pct(nominal)} en pesos corrientes; descontando la "
-            f"inflación promedio {de} ({_pct(inflacion)}), el crecimiento real fue "
-            f"{_pct(real)}: la empresa vendió más, no solo más caro.")
+    # Nominal y real en paralelo: si el hallazgo compara con la inflación, el 7B pega la
+    # comparación al real ("el crecimiento real de 9,3 % superó la inflación de 5,8 %")
+    return (f"{entre} crecieron {_pct(nominal)} en pesos corrientes y {_pct(real)} en "
+            f"términos reales, es decir, descontada la inflación promedio {de} "
+            f"({_pct(inflacion)}).")
 
 
 def crecimiento_real(historial: HistorialFinanciero, i: int, ipc: Serie) -> ResultadoModulo:
@@ -92,8 +104,8 @@ def crecimiento_real(historial: HistorialFinanciero, i: int, ipc: Serie) -> Resu
             a_precios_actuales = ingresos_ant * ipc_actual / ipc_ant
             if nominal is not None:
                 real = (1 + nominal) / (1 + inflacion) - 1
-                hallazgos.append(_hallazgo(ant.fecha_corte.year, ef.fecha_corte.year, nominal,
-                                           inflacion, real, ipc.geografia))
+                hallazgos += [_hallazgo(ant.fecha_corte.year, ef.fecha_corte.year, nominal,
+                                        inflacion, real, ipc.geografia), LIMITE_IPC]
 
     indicadores = [
         Indicador(clave="crecimiento_nominal_ingresos",

@@ -5,7 +5,7 @@ import pytest
 
 from data_sources.externos.series.modelo import Serie
 from modules.esquema_financiero import HistorialFinanciero
-from modules.macro.crecimiento_real import crecimiento_real
+from modules.macro.crecimiento_real import LIMITE_IPC, crecimiento_real
 from tests.conftest import hacer_historial, periodo_2023
 
 
@@ -44,9 +44,19 @@ def test_caso_a_mano_formula_exacta():
 def test_hallazgo_crecimiento_real_positivo():
     r = crecimiento_real(historial(1_000, 1_100), 1, IPC_5)
     assert r.hallazgos == [
-        "Entre 2023 y 2024 los ingresos operacionales crecieron 10,0 % en pesos corrientes; "
-        "descontando la inflación promedio de Pasto (5,0 %), el crecimiento real fue 4,8 %: "
-        "la empresa vendió más, no solo más caro."]
+        "Entre 2023 y 2024 los ingresos operacionales crecieron 10,0 % en pesos corrientes "
+        "y 4,8 % en términos reales, es decir, descontada la inflación promedio de Pasto "
+        "(5,0 %).",
+        LIMITE_IPC]
+
+
+@pytest.mark.parametrize("ingresos_2024", [1_100, 1_030, 900])
+def test_advierte_que_no_mide_cantidad_vendida(ingresos_2024):
+    # El IPC general no son las tarifas de la empresa: el modelo afirmó "vendiste más
+    # servicios" y "volumen de ventas" cuando el hallazgo no lo permitía (11/10/2026)
+    r = crecimiento_real(historial(1_000, ingresos_2024), 1, IPC_5)
+    assert r.hallazgos[-1] == LIMITE_IPC
+    assert not any("vendió más" in h for h in r.hallazgos)
 
 
 def test_hallazgo_cayeron_aunque_el_nominal_suba():
@@ -54,14 +64,16 @@ def test_hallazgo_cayeron_aunque_el_nominal_suba():
     assert r.valor("crecimiento_real_ingresos") < 0
     assert r.hallazgos == [
         "Entre 2023 y 2024 los ingresos operacionales subieron 3,0 % en pesos corrientes, "
-        "menos que la inflación promedio de Pasto (5,0 %): en términos reales cayeron 1,9 %."]
+        "menos que la inflación promedio de Pasto (5,0 %): en términos reales cayeron 1,9 %.",
+        LIMITE_IPC]
 
 
 def test_hallazgo_caida_nominal():
     r = crecimiento_real(historial(1_000, 900), 1, IPC_5)
     assert r.hallazgos == [
         "Entre 2023 y 2024 los ingresos operacionales cayeron 10,0 % en pesos corrientes; "
-        "con la inflación promedio de Pasto (5,0 %), la caída real fue 14,3 %."]
+        "con la inflación promedio de Pasto (5,0 %), la caída real fue 14,3 %.",
+        LIMITE_IPC]
 
 
 def test_ipc_nacional_se_nombra_asi():

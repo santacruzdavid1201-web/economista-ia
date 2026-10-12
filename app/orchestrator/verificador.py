@@ -11,7 +11,10 @@ from modules.base import ResultadoModulo, formatear
 
 # "0,67", "148.000.000", "12,3", "2024"; el signo y el símbolo $ no importan
 NUMERO = re.compile(r"\d+(?:[.,]\d+)*")
-# Enteros pequeños que aparecen en redacción normal ("dos años", "3 indicadores")
+# La misma cifra con el $ que la precede o el % que la sigue, si los hay
+CIFRA = re.compile(r"(\$\s*)?(\d+(?:[.,]\d+)*)(\s*%)?")
+# Enteros pequeños que aparecen en redacción normal ("dos años", "3 indicadores");
+# como porcentaje o monto ya no son libres: "5 %" es una cifra
 LIBRES = {str(n) for n in range(11)}
 
 
@@ -21,8 +24,9 @@ def numeros(texto: str) -> set[str]:
 
 def cifras_no_respaldadas(respuesta: str, *fuentes: str) -> list[str]:
     """Cifras de la respuesta que no aparecen en ninguna de las fuentes."""
-    permitidas = set().union(*(numeros(f) for f in fuentes)) | LIBRES
-    return sorted(n for n in numeros(respuesta) if n not in permitidas)
+    permitidas = set().union(*(numeros(f) for f in fuentes))
+    return sorted({n for peso, n, pct in CIFRA.findall(respuesta) if n not in permitidas
+                   and (n not in LIBRES or peso or pct)})
 
 
 def respaldo(resultados: list[ResultadoModulo]) -> str:

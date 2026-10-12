@@ -172,12 +172,19 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    Hecho `crecimiento-real` (`modules/macro/crecimiento_real.py`, herramienta
    `analizar_crecimiento_real`, IPC de `municipio` de la empresa, bloque H del
    set de evaluación, casos 29-32). Conciliado con el cálculo a mano del
-   usuario (11/10/2026). Bloque H: 4/4 en reglas automáticas, pero con dos
-   errores de sentido por corregir: en la conceptual definió el crecimiento
-   real como "valor de la empresa" y lo calculó restando (la nota no trae la
-   fórmula); en las de cálculo dijo "vendiste más servicios" / "volumen de
-   ventas", que el IPC general no permite afirmar. Después:
-   `sensibilidad-tasas` (agrega tasas a series-externas).
+   usuario (11/10/2026). Errores de sentido corregidos el 12/10/2026: el
+   hallazgo de Python ya no dice "vendió más" (con el IPC general, crecer en
+   términos reales es subir más que los precios al consumidor, no vender más
+   cantidad) y un segundo hallazgo lo advierte. El hallazgo da nominal y real
+   en paralelo, sin compararlos con la inflación: cuando lo hacía, el 7B decía
+   que "el crecimiento real superó la inflación". Nota nueva
+   `conocimiento/crecimiento-real.md` con la fórmula exacta en símbolos y en
+   palabras (el 7B copia la versión en palabras), con `revisado: false`
+   hasta que el usuario la revise. El verificador ya no deja libres los
+   enteros 0-10 cuando llevan % o $ (así pasó un ejemplo inventado). Bloque
+   H: 4/4 en dos corridas con reglas nuevas (sin "volumen"; nominal y real
+   en 30; "1 más el crecimiento nominal" en 32). Después: `sensibilidad-tasas` (agrega
+   tasas a series-externas).
 
 Grupos de comparación en `config/ciiu_sectores.yaml` (alojamiento / hoteles).
 El benchmark se describe siempre como "empresas reportantes a

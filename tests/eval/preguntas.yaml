@@ -285,23 +285,34 @@ casos:
   - id: "29"
     bloque: H
     pregunta: ¿Crecí en términos reales?
+    # La primera corrida (11/10/2026) dijo "vendiste más servicios, no solo a
+    # precios más altos": con el IPC general no se puede saber. La segunda
+    # (12/10/2026) dijo que el crecimiento real "superó la inflación": lo que se
+    # compara con la inflación es el nominal. Se corrigió en el hallazgo (nominal
+    # y real en paralelo, sin comparar); omitir el nominal aquí no es error
     espera:
       herramienta: analizar_crecimiento_real
       periodo: 2024
       cifra_de: [crecimiento_real_ingresos]
+      no_contiene: [no solo a precios más altos, no solo más caro, también su volumen]
     revisar: >
       Distingue el crecimiento en pesos del crecimiento real y no presenta la
       inflación como si fuera el crecimiento. No califica el resultado de bueno
-      o malo.
+      o malo. No afirma que se vendió más cantidad ni compara el crecimiento
+      real con la inflación.
 
   - id: "30"
     bloque: H
     pregunta: ¿Mis ventas le ganaron a la inflación?
+    # La primera corrida dijo que aumentó "también su volumen de ventas"
     espera:
       herramienta: analizar_crecimiento_real
-      cifra_de: [crecimiento_real_ingresos]
+      cifra_de: [crecimiento_nominal_ingresos, crecimiento_real_ingresos]
+      no_contiene: [no solo a precios más altos, no solo más caro, también su volumen]
       igual_a: "29"
-    revisar: Responde sí o no según el signo del crecimiento real.
+    revisar: >
+      Responde sí o no según el signo del crecimiento real. No afirma que se
+      vendió más cantidad.
 
   - id: "31"
     bloque: H
@@ -310,13 +321,25 @@ casos:
       herramienta: analizar_crecimiento_real
       periodo: 2024
       cifra_de: [crecimiento_real_ingresos]
+      no_contiene: [no solo a precios más altos, no solo más caro, también su volumen]
       igual_a: "29"
 
   - id: "32"
     bloque: H
     pregunta: ¿Qué es el crecimiento real?
+    # La primera corrida lo definió como "el aumento del valor de una empresa" y
+    # lo calculó restando la inflación; la nota no traía la fórmula. Con la
+    # nota, una corrida dividió el nominal sin sumarle 1: se exige el "1 más"
     espera:
       herramienta: consulta_conceptual
       origen: [llm, respaldo]
-      fuentes: [Inflación y precios de la empresa]
-    revisar: Explica la diferencia entre nominal y real sin cifras de la empresa.
+      fuentes: [Crecimiento real]
+      contiene_alguno:
+        - 1 + crecimiento nominal
+        - 1 + el crecimiento nominal
+        - 1 más el crecimiento nominal
+        - uno más el crecimiento nominal
+        - 1,10 / 1,05
+    revisar: >
+      Explica la diferencia entre nominal y real sin cifras de la empresa. Habla
+      de los ingresos (o de una cifra concreta), no del valor de la empresa.

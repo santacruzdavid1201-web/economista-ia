@@ -4,9 +4,13 @@ Módulo del [mapa macro](SPEC-mapa-macro.md). Depende de
 [series-externas](SPEC-series-externas.md) y del módulo 1. Estado: aprobado
 y construido el 11/10/2026. Criterio 1 cumplido el 11/10/2026: el cálculo a
 mano del economista coincidió con el módulo (diferencias de 10⁻¹¹ por
-redondeo). Criterio 2: el bloque H pasó las reglas automáticas (4 de 4), pero
-la revisión de sentido encontró dos errores (fórmula por resta en la
-pregunta conceptual; "volumen de ventas" en las de cálculo), por corregir.
+redondeo). Criterio 2: la primera corrida del bloque H pasó las reglas
+automáticas, pero con dos errores de sentido: "volumen de ventas" en las de
+cálculo (lo decía el propio hallazgo de Python) y fórmula por resta en la
+conceptual (la nota no la traía). Corregidos el 12/10/2026 con un hallazgo
+sobre el límite del IPC general y la nota `conocimiento/crecimiento-real.md`
+(pendiente de revisión del economista); el bloque H pasó 4 de 4 con las
+reglas nuevas y la conceptual dio la fórmula correcta 6 de 6 veces.
 
 ## Objetivo
 
@@ -29,8 +33,11 @@ Usuario: el gerente, a través del orquestador.
 - **IPC de la ciudad de la empresa** si existe (Pasto para el hotel demo);
   si no, el nacional, y se registra como supuesto.
 - **El IPC general como deflactor** es un supuesto que se declara: los
-  precios propios de la empresa (tarifas) pueden subir distinto. Cuando
-  exista la MMH (`sector-hotelero`) se podrá contrastar.
+  precios propios de la empresa (tarifas) pueden subir distinto. Por eso un
+  crecimiento real positivo significa que los ingresos subieron más que los
+  precios al consumidor (más poder de compra), no que se vendió más
+  cantidad; un hallazgo lo dice siempre. Cuando exista la MMH
+  (`sector-hotelero`) se podrá contrastar.
 - Es un dato observado del pasado, sin juicio de "bueno/malo": el hallazgo
   dice si los ingresos subieron o cayeron en términos reales, nada más.
 
@@ -46,9 +53,14 @@ Usuario: el gerente, a través del orquestador.
 | `crecimiento_real_ingresos` | proporción | (1 + nominal) / (1 + inflación) − 1 |
 | `ingresos_anteriores_a_precios_actuales` | pesos | Ingresos t−1 × IPC prom. t / IPC prom. t−1 |
 
-Hallazgo de ejemplo (redactado en Python): "Los ingresos crecieron 12,4 % en
-pesos corrientes; descontando la inflación promedio de Pasto (6,1 %), el
-crecimiento real fue 5,9 %: la empresa vendió más, no solo más caro."
+Hallazgos de ejemplo (redactados en Python): "Entre 2023 y 2024 los ingresos
+operacionales crecieron 15,6 % en pesos corrientes y 9,3 % en términos reales,
+es decir, descontada la inflación promedio de Pasto (5,8 %)." (nominal y real
+en paralelo: si el hallazgo compara con la inflación, el 7B pega la
+comparación al real) y "Este crecimiento real descuenta la inflación
+general (IPC), no las tarifas propias de la empresa: no permite saber si
+cambió la cantidad vendida o si sus precios subieron más o menos que la
+inflación."
 
 Sin periodo anterior, o si el IPC no cubre los meses de algún periodo:
 indicadores `None` con advertencia, nunca un número engañoso.
@@ -63,7 +75,7 @@ indicadores `None` con advertencia, nunca un número engañoso.
   "¿Crecí en términos reales?", "¿Mis ventas le ganaron a la inflación?",
   "¿Cuánto crecí en 2024 descontando la inflación?" (todas
   `analizar_crecimiento_real`, `cifra_de: [crecimiento_real_ingresos]`), y
-  "¿Qué es el crecimiento real?" (conceptual, nota de inflación).
+  "¿Qué es el crecimiento real?" (conceptual, nota de crecimiento real).
 
 ## Comandos
 

@@ -58,7 +58,7 @@ def main() -> int:
     ahora = datetime.now()
     texto = informe(resultados, s, f"Evaluación · {ahora:%Y-%m-%d %H:%M} · {modelo}")
     SALIDA.mkdir(parents=True, exist_ok=True)
-    ruta = SALIDA / f"{ahora:%Y-%m-%d_%H%M}.md"
+    ruta = SALIDA / f"{ahora:%Y-%m-%d_%H%M%S}.md"
     ruta.write_text(texto, encoding="utf-8")
 
     res = resumir(resultados, s)

@@ -71,9 +71,9 @@ inflacion_promedio: >-
   anterior, según el IPC (de la ciudad de la empresa si existe; si no, el
   nacional).
 crecimiento_real_ingresos: >-
-  Cuánto crecieron los ingresos después de descontar la inflación: si es
-  positivo, la empresa vendió más, no solo más caro; si es negativo, sus
-  ingresos subieron menos que los precios.
+  Cuánto crecieron los ingresos después de descontar la inflación general
+  (IPC): si es positivo, subieron más que los precios al consumidor; si es
+  negativo, subieron menos. No mide la cantidad vendida.
 ingresos_anteriores_a_precios_actuales: >-
   Los ingresos del año anterior expresados en pesos de hoy: con ellos se
   comparan los ingresos actuales sin el efecto de la inflación.

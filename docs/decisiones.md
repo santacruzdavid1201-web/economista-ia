@@ -22,6 +22,9 @@ tags: [economista-ia, bitacora]
 - El IPC se toma del **BanRep (SUAMECA)** y no directamente del DANE porque trae las 23 ciudades con historia; el anexo del DANE queda como verificación del nacional, porque la API del BanRep no está documentada.
 - Si la ciudad de la empresa no tiene IPC, o el suyo no cubre el periodo (empieza en 2017), se usa el **IPC nacional con un supuesto declarado**, en vez de dejar el indicador vacío.
 - El crecimiento real de los ingresos se calcula con el **IPC promedio del periodo** (no el de diciembre) y con la fórmula exacta (1 + nominal) / (1 + inflación) − 1, porque los ingresos son un flujo acumulado en el año; en 2024 usar el de diciembre habría inflado el crecimiento real en 1,4 puntos.
+- Con el IPC general, un crecimiento real positivo se redacta como **ingresos que subieron más que los precios al consumidor**, no como "vendió más": sin un índice de las tarifas de la empresa no se puede separar cantidad de precio, y el hallazgo lo advierte siempre.
+- El verificador dejó de tratar como libres los enteros del 0 al 10 cuando llevan **% o $**: "5 %" es una cifra, y así había pasado un ejemplo inventado ("ingresos que suben 5 % con inflación del 3 %").
+- Las notas de conocimiento con fórmulas las traen también **en palabras**: con solo la versión simbólica, el 7B la verbalizó mal; con la versión en palabras la copió bien en 6 de 6 corridas.
 
 ---
 Vuelve a [[resumen]]

@@ -152,6 +152,11 @@ def test_verificador():
     datos = "Razón corriente: 2,04 veces; capital: $ 280; percentil 19"
     assert cifras_no_respaldadas("Es 2,04 y percentil 19, en 3 años", datos) == []
     assert cifras_no_respaldadas("Es 2,1 y mejor que el 81 %", datos) == ["2,1", "81"]
+    # Los enteros pequeños son libres en "3 años", pero no como porcentaje o monto: así
+    # pasó un ejemplo inventado ("ingresos que suben 5 % con inflación del 3 %")
+    assert cifras_no_respaldadas("Suben 5 % con inflación del 3%: crecen 2 %", datos) == [
+        "2", "3", "5"]
+    assert cifras_no_respaldadas("Cuesta $ 7 en 2 días", datos) == ["7"]
 
 
 def test_datos_incluyen_glosario_solo_de_lo_usado(ctx):
