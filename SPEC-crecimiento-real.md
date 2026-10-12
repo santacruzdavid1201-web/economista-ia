@@ -2,7 +2,11 @@
 
 Módulo del [mapa macro](SPEC-mapa-macro.md). Depende de
 [series-externas](SPEC-series-externas.md) y del módulo 1. Estado: aprobado
-y construido el 11/10/2026; faltan los criterios de éxito 1 y 2.
+y construido el 11/10/2026. Criterio 1 cumplido el 11/10/2026: el cálculo a
+mano del economista coincidió con el módulo (diferencias de 10⁻¹¹ por
+redondeo). Criterio 2: el bloque H pasó las reglas automáticas (4 de 4), pero
+la revisión de sentido encontró dos errores (fórmula por resta en la
+pregunta conceptual; "volumen de ventas" en las de cálculo), por corregir.
 
 ## Objetivo
 

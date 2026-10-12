@@ -171,10 +171,13 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    data_sources.externos.series.catalogo Pasto`.
    Hecho `crecimiento-real` (`modules/macro/crecimiento_real.py`, herramienta
    `analizar_crecimiento_real`, IPC de `municipio` de la empresa, bloque H del
-   set de evaluación, casos 29-32). Pendiente: correr `python -m app.eval
-   --bloques H` con el modelo real y comparar el hotel demo con el cálculo a
-   mano del usuario (criterios 1 y 2 de la spec). Después: `sensibilidad-tasas`
-   (agrega tasas a series-externas).
+   set de evaluación, casos 29-32). Conciliado con el cálculo a mano del
+   usuario (11/10/2026). Bloque H: 4/4 en reglas automáticas, pero con dos
+   errores de sentido por corregir: en la conceptual definió el crecimiento
+   real como "valor de la empresa" y lo calculó restando (la nota no trae la
+   fórmula); en las de cálculo dijo "vendiste más servicios" / "volumen de
+   ventas", que el IPC general no permite afirmar. Después:
+   `sensibilidad-tasas` (agrega tasas a series-externas).
 
 Grupos de comparación en `config/ciiu_sectores.yaml` (alojamiento / hoteles).
 El benchmark se describe siempre como "empresas reportantes a
