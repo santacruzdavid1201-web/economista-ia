@@ -21,6 +21,12 @@ def suameca(nombre: str) -> dict:
     return json.loads((DATOS / f"suameca_ipc_{nombre}.json").read_text(encoding="utf-8"))[0]
 
 
+def suameca_tasa(clave: str) -> dict:
+    """Respuesta real de SUAMECA del 12/10/2026, recortada: último dato de cada mes y
+    la historia diaria del último mes."""
+    return json.loads((DATOS / f"suameca_{clave}.json").read_text(encoding="utf-8"))[0]
+
+
 def hacer_serie(obs: list[tuple[date, float]], **campos) -> Serie:
     base = dict(clave="x", nombre="x", fuente="x", unidad="x", frecuencia="mensual",
                 geografia="nacional", consultada=HOY)
@@ -102,6 +108,30 @@ def test_inflacion_promedio_2024_con_datos_reales():
     assert round(inflacion * 100, 2) == 6.61
 
 
+def test_valor_al_es_el_ultimo_dato_en_o_antes_de_la_fecha():
+    s = hacer_serie([(date(2024, 1, 2), 10.0), (date(2024, 1, 5), 10.5), (date(2024, 2, 1), 11.0)],
+                    frecuencia="diaria")
+    assert s.valor_al(date(2024, 1, 5)) == 10.5
+    assert s.valor_al(date(2024, 1, 31)) == 10.5      # sin dato ese día: el anterior
+    assert s.valor_al(date(2030, 1, 1)) == 11.0
+    assert s.valor_al(date(2024, 1, 1)) is None       # antes de que empiece la serie
+
+
+def test_fin_de_mes_deja_el_ultimo_dato_de_cada_mes():
+    s = hacer_serie([(date(2024, 1, 2), 10.0), (date(2024, 1, 30), 10.5), (date(2024, 2, 1), 11.0),
+                     (date(2024, 2, 28), 11.5)], frecuencia="diaria")
+    assert s.fin_de_mes() == [(date(2024, 1, 30), 10.5), (date(2024, 2, 28), 11.5)]
+
+
+def test_tasa_de_politica_real():
+    """12,25 % al 12/10/2026 y 9,25 % un año antes (consultado al averiguar los ids)."""
+    s = banrep.desde_suameca(suameca_tasa("tasa_politica"), "tasa_politica_nacional",
+                             "nacional", HOY)
+    assert s.unidad == "Tasa efectiva anual base 365."
+    assert s.observaciones[-1] == (date(2026, 10, 12), 12.25)
+    assert s.valor_al(date(2025, 10, 12)) == 9.25
+
+
 def test_verificar():
     a = hacer_serie([(date(2024, 1, 31), 138.98), (date(2024, 2, 29), 140.49)])
     b = hacer_serie([(date(2024, 1, 31), 138.98), (date(2024, 2, 29), 140.5)])
@@ -117,10 +147,11 @@ def descargas(monkeypatch):
     """SUAMECA falso: responde con los fixtures y anota cada id pedido."""
     pedidas = []
     respuestas = {15000: "nacional", 15026: "pasto"}
+    tasas = {59: "tasa_politica", 243: "ibr_3m"}
 
     def descargar(id_serie):
         pedidas.append(id_serie)
-        return suameca(respuestas[id_serie])
+        return suameca_tasa(tasas[id_serie]) if id_serie in tasas             else suameca(respuestas[id_serie])
 
     monkeypatch.setattr(banrep, "descargar", descargar)
     return pedidas
@@ -192,3 +223,11 @@ def test_sin_red_y_sin_copia_es_error_util(tmp_path, monkeypatch):
 def test_tildes_y_mayusculas_no_importan():
     assert catalogo._buscar("ipc", "BOGOTA") == ("Bogotá", 15013)
     assert catalogo._buscar("ipc", " cúcuta ") == ("Cúcuta", 15020)
+
+
+@pytest.mark.parametrize("variable, id_serie", [("tasa_politica", 59), ("ibr_3m", 243)])
+def test_tasas_son_nacionales_sin_supuesto(tmp_path, descargas, variable, id_serie):
+    s = serie(variable, hoy=HOY, directorio=tmp_path)
+    assert descargas == [id_serie]
+    assert s.clave == f"{variable}_nacional" and s.supuestos == []
+    assert (tmp_path / f"{variable}_nacional.json").exists()

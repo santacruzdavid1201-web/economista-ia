@@ -77,3 +77,22 @@ crecimiento_real_ingresos: >-
 ingresos_anteriores_a_precios_actuales: >-
   Los ingresos del año anterior expresados en pesos de hoy: con ellos se
   comparan los ingresos actuales sin el efecto de la inflación.
+tasa_implicita_deuda: >-
+  Lo que en promedio le costó la deuda a la empresa en el año: gastos
+  financieros divididos entre la deuda financiera promedio. Es aproximada,
+  porque los gastos financieros incluyen comisiones además de intereses.
+intereses_por_punto: >-
+  Cuánto suben los gastos financieros en un año si la tasa de la deuda sube un
+  punto porcentual. Un punto es una diferencia entre tasas (de doce a trece por
+  ciento), no subir la tasa un uno por ciento.
+mayor_alza_ibr_12m: >-
+  La mayor subida de la IBR a tres meses en un año desde que existe la serie.
+  Es un dato del pasado, no una predicción.
+tasa_politica: >-
+  Tasa que fija la junta del Banco de la República para controlar la inflación.
+  No es la tasa que paga la empresa, pero las tasas de los créditos la siguen
+  con algún rezago.
+ibr_3m: >-
+  Indicador Bancario de Referencia a tres meses: tasa de referencia del mercado
+  interbancario. Muchos créditos a tasa variable se pactan como IBR más un
+  margen.

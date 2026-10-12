@@ -183,8 +183,17 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    hasta que el usuario la revise. El verificador ya no deja libres los
    enteros 0-10 cuando llevan % o $ (así pasó un ejemplo inventado). Bloque
    H: 4/4 en dos corridas con reglas nuevas (sin "volumen"; nominal y real
-   en 30; "1 más el crecimiento nominal" en 32). Después: `sensibilidad-tasas` (agrega
-   tasas a series-externas).
+   en 30; "1 más el crecimiento nominal" en 32).
+   Hecho `sensibilidad-tasas` (12/10/2026, `modules/macro/sensibilidad_tasas.py`,
+   herramienta `analizar_sensibilidad_tasas` con argumento opcional `puntos`,
+   bloque I, casos 33-39): tasa de política (SUAMECA 59) e IBR a 3 meses (243)
+   en series-externas; exposición máxima; escenarios ±1/±2/±3, el pedido (solo
+   ese) y el histórico de la IBR (+8,24 puntos en 2022). El orquestador descarta
+   argumentos numéricos que no están en la pregunta. Lección: con el 7B, menos
+   cifras parecidas en DATOS (quitar las que no responden la pregunta) evita
+   que las mezcle. Pendiente: el 7B califica ("incremento significativo") sin
+   referencia sectorial, y decidir si el caso 18 ("¿cómo me afecta que el
+   BanRep suba las tasas?") va a la herramienta o a la nota.
 
 Grupos de comparación en `config/ciiu_sectores.yaml` (alojamiento / hoteles).
 El benchmark se describe siempre como "empresas reportantes a

@@ -10,6 +10,7 @@ Las copias se guardan en `data/series/` y se versionan: la demo y los tests
 de punta a punta no dependen de la red.
 
     python -m data_sources.externos.series.catalogo Pasto   # refresca y verifica
+    python -m data_sources.externos.series.catalogo --tasas # tasa de política e IBR
 """
 from __future__ import annotations
 
@@ -29,6 +30,7 @@ RAIZ = Path(__file__).resolve().parents[3]
 CATALOGO = RAIZ / "config" / "series.yaml"
 DIRECTORIO = RAIZ / "data" / "series"
 VIGENCIA = timedelta(days=7)
+TASAS = ["tasa_politica", "ibr_3m"]
 MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
          "septiembre", "octubre", "noviembre", "diciembre"]
 
@@ -122,8 +124,16 @@ def main(argv: list[str] | None = None) -> int:
         description="Refresca el IPC nacional (y el de las ciudades dadas) y lo verifica "
                     "contra el anexo del DANE.")
     parser.add_argument("ciudades", nargs="*", help="p. ej. Pasto Bogotá")
+    parser.add_argument("--tasas", action="store_true",
+                        help="refresca solo las tasas (política monetaria e IBR)")
     args = parser.parse_args(argv)
     hoy = date.today()
+    if args.tasas:
+        for variable in TASAS:
+            s = obtener(variable, "nacional", hoy, forzar=True)
+            fecha, valor = s.observaciones[-1]
+            print(f"{s.clave}: {len(s.observaciones)} datos, último {fecha:%d/%m/%Y} = {valor}")
+        return 0
     for geografia in ["nacional", *args.ciudades]:
         if _buscar("ipc", geografia) is None:
             print(f"No hay IPC de {geografia} en config/series.yaml.")

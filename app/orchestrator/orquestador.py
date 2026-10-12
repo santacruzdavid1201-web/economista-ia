@@ -23,10 +23,11 @@ from app.orchestrator.tools_registry import (
     POR_NOMBRE,
     ContextoEmpresa,
     ErrorHerramienta,
+    Herramienta,
     esquema_openai,
     indice_periodo,
 )
-from app.orchestrator.verificador import cifras_no_respaldadas, respaldo
+from app.orchestrator.verificador import cifras_no_respaldadas, numeros, respaldo
 from app.rag.retriever import Buscador
 from modules.base import ResultadoModulo, formatear
 
@@ -134,6 +135,27 @@ def datos_para_redactar(ctx: ContextoEmpresa, resultados: list[ResultadoModulo])
     return datos
 
 
+def _inventados(herramienta: Herramienta, argumentos: dict, pregunta: str) -> list[str]:
+    """
+    Argumentos numéricos que no aparecen en la pregunta: el enrutador (7B) los inventa
+    ("¿cuánto me ahorro si bajan las tasas?" → puntos = -1). Si no es un número, se deja
+    pasar: la herramienta responde con el error útil.
+    """
+    en_pregunta = numeros(pregunta)
+    inventados = []
+    for clave, esquema in herramienta.parametros.items():
+        valor = argumentos.get(clave)
+        if esquema.get("type") != "number" or valor in (None, ""):
+            continue
+        try:
+            texto = f"{abs(float(valor)):g}"
+        except (TypeError, ValueError):
+            continue
+        if not {texto, texto.replace(".", ",")} & en_pregunta:
+            inventados.append(clave)
+    return inventados
+
+
 def _notas(resultados: list[ResultadoModulo]) -> list[str]:
     vistas: list[str] = []
     for r in resultados:
@@ -231,16 +253,20 @@ def responder(pregunta: str, ctx: ContextoEmpresa, cliente: ClienteChat | None =
         respuesta.argumentos = argumentos
         return respuesta
 
-    # 2. Calcular (Python)
+    # 2. Calcular (Python), sin los números que el enrutador inventó
+    inventados = _inventados(herramienta, argumentos, pregunta)
+    for clave in inventados:
+        argumentos.pop(clave)
+    eventos = [f"argumento '{c}' descartado: su valor no está en la pregunta" for c in inventados]
     try:
-        i = indice_periodo(ctx.historial, llamada.argumentos.get("periodo"))
-        resultados = herramienta.ejecutar(ctx, i, llamada.argumentos)
+        i = indice_periodo(ctx.historial, argumentos.get("periodo"))
+        resultados = herramienta.ejecutar(ctx, i, argumentos)
     except ErrorHerramienta as e:
         return Respuesta(texto=str(e), origen="sin_llm", herramienta=herramienta.nombre,
-                         argumentos=argumentos)
+                         argumentos=argumentos, eventos=eventos)
     base = Respuesta(texto="", origen="llm", herramienta=herramienta.nombre, argumentos=argumentos,
                      periodo=ctx.historial.periodos[i].fecha_corte.year,
-                     resultados=resultados, notas=_notas(resultados))
+                     resultados=resultados, notas=_notas(resultados), eventos=eventos)
 
     # 3. Redactar y verificar
     datos = json.dumps(datos_para_redactar(ctx, resultados), ensure_ascii=False, indent=1)

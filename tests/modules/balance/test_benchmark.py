@@ -93,6 +93,9 @@ def test_formatear_por_unidad():
     assert formatear(53.32, "dias") == "53 días"
     assert formatear(1.514, "veces") == "1,51 veces"
     assert formatear(520_000_000, "pesos") == "$ 520.000.000"
+    # Dos decimales: la tasa de política se mueve de a 0,25 puntos
+    assert formatear(0.1225, "tasa") == "12,25 %"
+    assert formatear(0.0824, "puntos") == "8,24 puntos"
 
 
 def test_hallazgo_incluye_valor_y_mediana_legibles(historial):

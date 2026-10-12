@@ -1,7 +1,8 @@
 # Spec: series-externas (primer tramo: IPC)
 
 Módulo del [mapa macro](SPEC-mapa-macro.md). Estado: aprobado el 11/10/2026;
-primer tramo (IPC) construido el 11/10/2026.
+primer tramo (IPC) construido el 11/10/2026; segundo tramo (tasas) construido el
+12/10/2026 (detalle en [sensibilidad-tasas](SPEC-sensibilidad-tasas.md)).
 
 ## Objetivo
 
@@ -41,6 +42,11 @@ fuente DANE, fecha = último día del mes:
 - Las fechas antes de 1970 llegan con epoch negativo: convertir con
   `date(1970, 1, 1) + timedelta(milliseconds=t)`, porque
   `datetime.fromtimestamp` falla en Windows con valores negativos.
+
+**Ids de tasas (averiguado el 12/10/2026)**, rama "Tasas de interés y sector
+financiero" del catálogo, nacionales y diarias: `59` tasa de política monetaria
+(efectiva anual, desde 1998) y `243` IBR a 3 meses (nominal, desde 2012). `Serie`
+ganó `valor_al(fecha)` y `fin_de_mes()`; refrescar con `--tasas`.
 
 **Riesgo.** La API de SUAMECA es la que usa el portal del BanRep por dentro; no
 está documentada como servicio público y puede cambiar sin aviso. Se mitiga

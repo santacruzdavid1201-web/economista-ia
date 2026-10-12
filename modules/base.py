@@ -13,8 +13,9 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 # "proporcion" se guarda como fracción (0.42); la interfaz la muestra como 42 %.
+# "tasa" y "puntos" también son fracciones, con dos decimales ("12,25 %", "3,00 puntos").
 # "percentil" va de 0 a 100.
-Unidad = Literal["veces", "proporcion", "dias", "pesos", "percentil"]
+Unidad = Literal["veces", "proporcion", "tasa", "puntos", "dias", "pesos", "percentil"]
 
 
 class Indicador(BaseModel):
@@ -55,6 +56,10 @@ def formatear(valor: float, unidad: str) -> str:
     """Valor legible según su unidad, con coma decimal: un 8B lee mal "0.02"."""
     if unidad == "proporcion":
         texto = f"{valor * 100:.1f} %"
+    elif unidad == "tasa":                   # tasas de interés: se mueven de a 0,25
+        texto = f"{valor * 100:.2f} %"
+    elif unidad == "puntos":                 # diferencia entre dos tasas
+        texto = f"{valor * 100:.2f} puntos"
     elif unidad == "dias":
         texto = f"{valor:.0f} días"
     elif unidad == "veces":

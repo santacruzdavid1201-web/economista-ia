@@ -2,7 +2,10 @@
 
 Módulo del [mapa macro](SPEC-mapa-macro.md). Depende de
 [series-externas](SPEC-series-externas.md) (segundo tramo: tasas) y del
-módulo 1. Estado: aprobado el 12/10/2026.
+módulo 1. Estado: aprobado y construido el 12/10/2026. Criterio 3: el bloque I
+pasa las reglas de cifras y enrutamiento; queda un calificativo que el 7B agrega
+("incremento significativo"), pendiente de decisión del economista. Ver
+"Cambios al construir".
 
 ## Objetivo
 
@@ -89,13 +92,12 @@ puntos: float | None = None) -> ResultadoModulo`
 | `deuda_financiera` | pesos | Obligaciones financieras CP + LP al corte |
 | `tasa_implicita_deuda` | tasa | Gastos financieros anuales / Deuda financiera promedio |
 | `intereses_por_punto` | pesos | Deuda financiera al corte × 1 punto |
+| `gastos_financieros_anuales`, `cobertura_intereses` | pesos, veces | Situación actual (anualizada) |
 | `gastos_financieros_mas_N`, `gastos_financieros_menos_N` (N = 1, 2, 3) | pesos | Gastos financieros anuales ± deuda al corte × N puntos |
 | `cobertura_mas_N`, `cobertura_menos_N` | veces | Utilidad operacional anual / gastos financieros del escenario |
 | `gastos_financieros_historico`, `cobertura_historico` | pesos, veces | Escenario con la mayor alza de la IBR en 12 meses |
 | `gastos_financieros_pedido`, `cobertura_pedido` | pesos, veces | Solo si el gerente dio una cifra |
-| `alza_cobertura_uno` | puntos | (Utilidad operacional − Gastos financieros) / Deuda al corte |
 | `tasa_politica`, `ibr_3m` | tasa | Último dato publicado |
-| `cambio_tasa_politica_12m` | puntos | Último dato − dato de 12 meses antes |
 | `mayor_alza_ibr_12m` | puntos | Máximo cambio a 12 meses de la IBR, fin de mes, desde 2012 |
 
 Unidades nuevas en `formatear`: `tasa` ("12,25 %", dos decimales porque la
@@ -111,18 +113,27 @@ cobertura llegaría a 1 con un alza de 52,94 puntos.
 
 Hallazgos (redactados en Python, sin comparar cifras entre sí en el texto del
 modelo):
-- "Cada punto que suba la tasa le suma $6.800.000 al año en intereses (1 % de
-  la deuda financiera de $680.000.000)."
-- "Con 3 puntos más, los gastos financieros pasarían de $95.000.000 a
-  $115.400.000 y la cobertura de intereses de 4,79 a 3,94 veces; con 3 puntos
-  menos, a $74.600.000 y 6,10 veces."
-- "En 2022 la IBR a 3 meses subió 8,24 puntos en 12 meses: con un alza así, los
-  gastos financieros serían $151.045.600 y la cobertura 3,01 veces."
-- "La utilidad operacional dejaría de cubrir los gastos financieros con un
-  alza de 52,94 puntos."
-- Contexto: "Al 12/10/2026 la tasa de política monetaria es 12,25 % (hace un
-  año, 9,25 %); la IBR a 3 meses, referencia de los créditos a tasa variable,
-  11,70 %."
+- "Cada punto que suba la tasa de la deuda le suma $ 6.800.000 al año en gastos
+  financieros (1 % de la deuda financiera de $ 680.000.000)."
+- "Con 3 puntos más, los gastos financieros pasarían de $ 95.000.000 a
+  $ 115.400.000 al año y la cobertura de intereses de 4,79 veces a 3,94 veces;
+  con 3 puntos menos, a $ 74.600.000 y 6,10 veces."
+- "La mayor alza de la IBR a 3 meses en un año fue de 8,24 puntos, en 2022 (de
+  diciembre de 2021 a diciembre de 2022): si la tasa de la deuda subiera eso,
+  los gastos financieros aumentarían $ 56.045.600 al año, hasta
+  $ 151.045.600, y la cobertura bajaría a 3,01 veces."
+- "Aun con un alza como la de 2022, la utilidad operacional seguiría
+  alcanzando para pagar los gastos financieros." (el punto de quiebre, 52,94
+  puntos, solo se cita si es menor que el alza histórica)
+- "Al 12/10/2026 la tasa de política monetaria del Banco de la República es
+  12,25 %; la IBR a 3 meses, referencia de muchos créditos a tasa variable,
+  estaba en 11,70 % al 09/10/2026."
+- "Son escenarios hipotéticos sobre la tasa de la deuda, no un pronóstico de
+  las tasas, y no hay referencia del sector para calificar si el efecto es
+  alto o bajo."
+- Con un escenario pedido (p. ej. 5 puntos), solo ese: "Con 5 puntos más, los
+  gastos financieros serían $ 129.000.000 al año y la cobertura de intereses
+  3,53 veces."
 
 Casos sin cálculo, nunca con un número engañoso:
 - Sin deuda financiera: hallazgo "La empresa no tiene deuda financiera al
@@ -141,6 +152,29 @@ Supuestos fijos: exposición máxima (toda la deuda se reprecia), traslado
 completo, deuda y utilidad operacional constantes, deuda del corte del
 balance (si cambió desde entonces, el efecto cambia en proporción), 5305
 incluye más que intereses, solo el canal de intereses, antes de impuestos.
+
+## Cambios al construir (12/10/2026)
+
+Con el modelo real aparecieron errores de sentido que se corrigieron en Python,
+no en el prompt:
+
+- El punto de quiebre (`alza_cobertura_uno`) dejó de ser indicador: el 7B lo
+  mezcló con la cobertura de otro escenario y, por su nombre ("apenas cubre"),
+  dijo que +5 puntos "apenas cubriría" los intereses. Ahora es un hallazgo que
+  lo compara con el alza histórica: con cifra si es menor ("con un alza de 2,50
+  puntos, menor que la de 2022…"); si no, "aun con un alza como la de 2022, la
+  utilidad operacional seguiría alcanzando".
+- Se quitó el cambio a 12 meses de la tasa de política: el 7B le atribuyó el
+  escenario de 2022. El contexto queda en niveles.
+- El hallazgo histórico da el año primero y separa aumento y nivel ("aumentarían
+  $ 56.045.600 al año, hasta $ 151.045.600"): el 7B lo ubicó "en el último año"
+  y llamó "aumento" al nivel.
+- Con un escenario pedido se devuelve solo ese (con la clave fija si es ±1, ±2
+  o ±3): con todos a la vez el 7B los comparaba por su cuenta.
+- El orquestador descarta un argumento numérico que no esté en la pregunta: el
+  enrutador pasaba `puntos = -1` a "¿cuánto me ahorro?".
+- `NO_ES_PRONOSTICO` dice además que no hay referencia del sector para calificar
+  el efecto; aun así el 7B escribe "significativo".
 
 ## Integración
 

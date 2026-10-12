@@ -28,3 +28,14 @@ ipc:
     Tunja: 15032
     Valledupar: 15033
     Villavicencio: 15034
+
+# Tasas (12/10/2026): rama "Tasas de interés y sector financiero" del catálogo
+# del portal. Solo nacionales y diarias; cada una en su unidad oficial.
+tasa_politica:
+  nombre: tasa de política monetaria     # efectiva anual, base 365; desde 1998
+  ids:
+    nacional: 59
+ibr_3m:
+  nombre: IBR a 3 meses                  # nominal, base 360; desde 2012
+  ids:
+    nacional: 243

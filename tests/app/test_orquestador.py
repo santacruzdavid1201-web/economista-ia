@@ -247,3 +247,58 @@ def test_crecimiento_real_sin_ipc_disponible():
     r = responder("¿Crecí?", ctx_con_ipc(sin_red),
                   LLMFalso(herramienta("analizar_crecimiento_real")), HOY)
     assert r.origen == "sin_llm" and "Revise la conexión" in r.texto
+
+
+# --------------------------------------------------------------------------- #
+# Sensibilidad a tasas (series externas inyectadas: sin red)
+# --------------------------------------------------------------------------- #
+def serie_tasas(pedidas):
+    from data_sources.externos.series.modelo import Serie
+
+    def serie(variable, geografia, desde):
+        pedidas.append((variable, geografia, desde))
+        obs = ([(date(2024, 10, 4), 10.25), (date(2025, 10, 3), 9.25)] if variable == "tasa_politica"
+               else [(date(2021, 12, 31), 3.418), (date(2022, 12, 30), 11.66)])
+        return Serie(clave=f"{variable}_nacional", nombre=variable, fuente="BanRep",
+                     unidad="tasa", frecuencia="diaria", geografia="nacional", consultada=HOY,
+                     observaciones=obs)
+    return serie
+
+
+def test_sensibilidad_tasas_enruta_y_pasa_los_puntos():
+    pedidas = []
+    llm = LLMFalso(herramienta("analizar_sensibilidad_tasas", puntos=5),
+                   texto("Con un alza así, sus gastos financieros subirían."))
+    r = responder("¿Y si las tasas suben 5 puntos?", ctx_con_ipc(serie_tasas(pedidas)), llm, HOY)
+    assert r.origen == "llm" and r.herramienta == "analizar_sensibilidad_tasas"
+    assert pedidas == [("tasa_politica", "nacional", None), ("ibr_3m", "nacional", None)]
+    # Deuda al corte 750 y gastos financieros 50: 50 + 750 × 5 % = 87,5
+    assert r.resultados[0].valor("gastos_financieros_pedido") == pytest.approx(87.5)
+    assert "intereses_por_punto" in llm.llamadas[1]["usuario"]      # glosario
+    assert any("toda la deuda financiera" in n for n in r.notas)
+
+
+@pytest.mark.parametrize("pregunta, puntos", [("¿Y si suben 40 puntos?", 40),
+                                              ("¿Y si suben muchísimo?", "mucho")])
+def test_sensibilidad_tasas_puntos_invalidos(pregunta, puntos):
+    r = responder(pregunta, ctx_con_ipc(serie_tasas([])),
+                  LLMFalso(herramienta("analizar_sensibilidad_tasas", puntos=puntos)), HOY)
+    assert r.origen == "sin_llm" and "entre −10 y 10" in r.texto
+
+
+def test_descarta_un_numero_que_no_esta_en_la_pregunta():
+    # El 7B pasó puntos=-1 a "¿cuánto me ahorro?" y puntos=5 a una pregunta sin cifras
+    llm = LLMFalso(herramienta("analizar_sensibilidad_tasas", puntos=-1),
+                   texto("Cada punto menos le ahorra intereses."))
+    r = responder("Si bajan las tasas, ¿cuánto me ahorro?", ctx_con_ipc(serie_tasas([])), llm,
+                  HOY)
+    assert r.origen == "llm" and "puntos" not in r.argumentos
+    assert not any("Con 1 punto menos" in h for h in r.resultados[0].hallazgos)
+    assert any("puntos" in e and "no está en la pregunta" in e for e in r.eventos)
+
+
+@pytest.mark.parametrize("pregunta", ["¿Y si suben 1,5 puntos?", "¿Y si bajan 1.5 puntos?"])
+def test_acepta_decimales_con_coma_o_punto(pregunta):
+    llm = LLMFalso(herramienta("analizar_sensibilidad_tasas", puntos=1.5), texto("Subirían."))
+    r = responder(pregunta, ctx_con_ipc(serie_tasas([])), llm, HOY)
+    assert r.argumentos["puntos"] == 1.5

@@ -27,7 +27,7 @@
 
 criterios:
   # Reglas duras: deben pasar al 100 %
-  bloques_duros: [A, B, C, F, G, H]
+  bloques_duros: [A, B, C, F, G, H, I]
   # Si más de esta fracción de las respuestas redactables sale de respaldo,
   # hay que ajustar el prompt de redacción
   max_respaldo: 0.20
@@ -41,6 +41,7 @@ bloques:
   F: Fuera de alcance
   G: Robustez y seguridad
   H: Entorno macro
+  I: Tasas de interés
 
 casos:
   # ------------------------------------------------------------------------ #
@@ -343,3 +344,80 @@ casos:
     revisar: >
       Explica la diferencia entre nominal y real sin cifras de la empresa. Habla
       de los ingresos (o de una cifra concreta), no del valor de la empresa.
+
+  # ------------------------------------------------------------------------ #
+  # I. Tasas de interés (desde el 12/10/2026): sensibilidad de los gastos
+  # financieros con la deuda al corte; tasa de política e IBR del día
+  - id: "33"
+    bloque: I
+    pregunta: ¿Cómo me afectan las tasas de interés?
+    espera:
+      herramienta: analizar_sensibilidad_tasas
+      periodo: 2024
+      cifra_de: [intereses_por_punto]
+      no_contiene: [significativ, preocupante]
+    # Primeras corridas (12/10/2026): mezcló el punto de quiebre (52,94 puntos)
+    # con la cobertura de +3 (3,94 veces), ubicó el alza de 2022 "en el último
+    # año", llamó "aumento" al nivel de los gastos, atribuyó el escenario de 2022
+    # al cambio de la tasa de política en 12 meses y calificó el efecto
+    # ("significativamente") sin referencia sectorial. Se corrigió en los
+    # hallazgos y quitando cifras que se prestaban a confusión
+    revisar: >
+      Presenta los escenarios como hipotéticos, no como pronóstico. Habla de
+      puntos de tasa, no de "subir la tasa un 3 %". No confunde la tasa de
+      política con la tasa que paga la empresa. Si menciona el alza histórica,
+      la ubica en 2022. No mezcla cifras de escenarios distintos.
+
+  - id: "34"
+    bloque: I
+    pregunta: ¿Cuánto me cuesta cada punto de tasa?
+    espera:
+      herramienta: analizar_sensibilidad_tasas
+      cifra_de: [intereses_por_punto]
+      igual_a: "33"
+    revisar: Igual que el 33.
+
+  - id: "35"
+    bloque: I
+    pregunta: ¿Qué pasa si las tasas suben 2 puntos?
+    espera:
+      herramienta: analizar_sensibilidad_tasas
+      cifra_de: [gastos_financieros_mas_2, cobertura_mas_2]
+    revisar: Presenta el escenario como hipotético, con las cifras de +2 puntos.
+
+  - id: "36"
+    bloque: I
+    pregunta: ¿Qué pasa con mis intereses si las tasas suben 5 puntos?
+    espera:
+      herramienta: analizar_sensibilidad_tasas
+      argumentos: {puntos: 5}
+      cifra_de: [gastos_financieros_pedido]
+      # Dijo que con +5 la utilidad "apenas cubriría" los intereses (cobertura 3,53)
+      # y que era "un escenario preocupante"
+      no_contiene: [significativ, preocupante, apenas]
+    revisar: Presenta el escenario como hipotético, con las cifras de +5 puntos.
+
+  - id: "37"
+    bloque: I
+    pregunta: Si el Banco de la República baja las tasas, ¿cuánto me ahorro?
+    espera:
+      herramienta: analizar_sensibilidad_tasas
+      cifra_de: [intereses_por_punto]
+    revisar: No promete que las tasas vayan a bajar.
+
+  - id: "38"
+    bloque: I
+    pregunta: ¿Va a subir la tasa del Banco de la República?
+    # Es un pronóstico: cualquier ruta sirve mientras no lo haga
+    espera:
+      herramienta: [fuera_de_alcance, consulta_conceptual, analizar_sensibilidad_tasas]
+    revisar: No pronostica la tasa.
+
+  - id: "39"
+    bloque: I
+    pregunta: ¿Por qué me afecta que el Banco de la República suba las tasas?
+    espera:
+      herramienta: consulta_conceptual
+      origen: [llm, respaldo]
+      fuentes: [Tasas de interés del Banco de la República]
+    revisar: Explica el mecanismo con la nota, sin cifras de la empresa.

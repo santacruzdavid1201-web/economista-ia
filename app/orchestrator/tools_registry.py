@@ -21,6 +21,7 @@ from modules.balance.razones import actividad, endeudamiento, liquidez, rentabil
 from modules.base import ResultadoModulo
 from modules.esquema_financiero import HistorialFinanciero
 from modules.macro.crecimiento_real import crecimiento_real, meses_del_periodo
+from modules.macro.sensibilidad_tasas import MAX_PUNTOS, ErrorPuntos, sensibilidad_tasas
 
 
 class ErrorHerramienta(ValueError):
@@ -101,6 +102,21 @@ def _crecimiento_real(ctx: ContextoEmpresa, i: int) -> list[ResultadoModulo]:
     return [crecimiento_real(ctx.historial, i, ipc)]
 
 
+def _sensibilidad_tasas(ctx: ContextoEmpresa, i: int, argumentos: dict) -> list[ResultadoModulo]:
+    """Tasas del día de la consulta (no del corte) y el escenario que pidió el gerente."""
+    puntos = argumentos.get("puntos")
+    try:
+        puntos = None if puntos in (None, "") else float(puntos)
+    except (TypeError, ValueError):
+        raise ErrorHerramienta(f"El cambio de tasa debe ser un número de puntos entre "
+                               f"−{MAX_PUNTOS} y {MAX_PUNTOS} (se recibió '{puntos}').") from None
+    try:
+        tasas = [ctx.serie(variable, "nacional", None) for variable in ("tasa_politica", "ibr_3m")]
+        return [sensibilidad_tasas(ctx.historial, i, *tasas, puntos)]
+    except (catalogo.ErrorSerie, ErrorPuntos) as e:
+        raise ErrorHerramienta(str(e)) from e
+
+
 HERRAMIENTAS: list[Herramienta] = [
     Herramienta(
         "analizar_liquidez",
@@ -139,6 +155,17 @@ HERRAMIENTAS: list[Herramienta] = [
         "de los ingresos frente al año anterior.",
         lambda c, i, a: _crecimiento_real(c, i)),
     Herramienta(
+        "analizar_sensibilidad_tasas",
+        "¿Cómo me afectan las tasas de interés? ¿Qué pasa con mis intereses si suben o bajan "
+        "las tasas? ¿Cuánto me cuesta cada punto de tasa? Escenarios con los números de la "
+        "empresa: gastos financieros y cobertura de intereses si la tasa de la deuda sube o "
+        "baja.",
+        _sensibilidad_tasas,
+        parametros={"puntos": {
+            "type": "number",
+            "description": "Puntos que sube (positivo) o baja (negativo) la tasa, solo si la "
+                           "pregunta da una cifra; p. ej. 5 o -2."}}),
+    Herramienta(
         "comparar_con_sector",
         "¿Cómo está la empresa frente a empresas similares de su sector? Ubica cada "
         "indicador en la distribución de los pares.",
@@ -156,9 +183,9 @@ HERRAMIENTAS: list[Herramienta] = [
     Herramienta(
         "consulta_conceptual",
         "Preguntas de criterio económico o teoría que no piden calcular indicadores de la "
-        "empresa: qué es un concepto (EBITDA, capital de trabajo, RevPAR), cómo afectan "
-        "las tasas de interés o la inflación, si conviene subir precios o endeudarse, "
-        "punto de equilibrio.",
+        "empresa: qué es un concepto (EBITDA, capital de trabajo, RevPAR), por qué las "
+        "tasas de interés o la inflación afectan a las empresas, si conviene subir precios "
+        "o endeudarse, punto de equilibrio.",
         lambda c, i, a: [], usa_periodo=False),
     Herramienta(
         "fuera_de_alcance",
