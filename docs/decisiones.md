@@ -25,6 +25,7 @@ tags: [economista-ia, bitacora]
 - Con el IPC general, un crecimiento real positivo se redacta como **ingresos que subieron más que los precios al consumidor**, no como "vendió más": sin un índice de las tarifas de la empresa no se puede separar cantidad de precio, y el hallazgo lo advierte siempre.
 - El verificador dejó de tratar como libres los enteros del 0 al 10 cuando llevan **% o $**: "5 %" es una cifra, y así había pasado un ejemplo inventado ("ingresos que suben 5 % con inflación del 3 %").
 - Las notas de conocimiento con fórmulas las traen también **en palabras**: con solo la versión simbólica, el 7B la verbalizó mal; con la versión en palabras la copió bien en 6 de 6 corridas.
+- La sensibilidad a tasas supone **exposición máxima** (toda la deuda financiera se reprecia en el año), porque el balance no dice qué parte es a tasa fija; incluye como escenario la mayor alza de la IBR a 3 meses en 12 meses (+8,24 puntos en 2022) para mostrar que ±3 puntos es moderado, y aplaza comparar la tasa implícita con la de colocación porque la cuenta 5305 mezcla intereses con comisiones.
 
 ---
 Vuelve a [[resumen]]
