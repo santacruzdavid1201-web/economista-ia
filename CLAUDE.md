@@ -22,8 +22,9 @@ y redacta el resultado. Todo número sale de funciones de Python probadas.
 - `data_sources/`: cargadores de datos de empresa (`empresa/puc.py`) y fuentes
   externas (`externos/supersociedades.py`, `externos/referencia.py`).
 - `exploracion/`: scripts exploratorios, no forman parte del sistema.
-- Futuro: `app/` (FastAPI + orquestador LangGraph o enrutador propio),
-  `frontend/` (Streamlit), PostgreSQL + pgvector, Docker.
+- `app/main.py` (FastAPI) sirve la interfaz web de `frontend/` (plantillas
+  Jinja + HTMX, ver `SPEC-interfaz.md`).
+- Futuro: PostgreSQL + pgvector, Docker.
 
 ## Módulos del MVP
 
@@ -126,14 +127,19 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    Python al final; el LLM solo redacta. Lecciones con el modelo real: 8/8 en
    enrutamiento; inventó una definición sin glosario; el verificador atrapa
    cifras inventadas, pero no errores de sentido (p. ej. confundir "mejor que
-   el 78 % de los pares" con un margen de 78 %). Interfaz: `streamlit run
-   frontend/app.py` (hotel de demostración o balances subidos, con validación
-   de archivos); arranque completo con `.\iniciar.ps1`. Tema "libro contable"
-   (12/10/2026, `.streamlit/config.toml`): papel de libro mayor, tinta azul para
-   las cifras calculadas, rojo contable para negativos; Source Serif 4 para
-   títulos y respuestas, Archivo para la interfaz. Cada cifra de la respuesta
-   muestra su indicador y fórmula al pasar el cursor (`frontend/cifras.py`,
-   que escapa el HTML del modelo antes de marcar).
+   el 78 % de los pares" con un margen de 78 %). Interfaz web (12/10/2026,
+   reemplazó a Streamlit por su parpadeo al recargar y sus límites de diseño):
+   `python -m uvicorn app.main:app --port 8000`, o arranque completo con
+   `.\iniciar.ps1`. FastAPI + Jinja + HTMX (vendorizado en
+   `frontend/static/`): portada con módulos ilustrados (Balance y Entorno
+   macro activos; Proyectos y Econometría "próximamente"), una conversación
+   por módulo, navegación sin recargar (View Transitions) y la respuesta
+   pedida en un segundo paso porque el modelo tarda. Paleta menta y coral
+   sobre gris azulado, Outfit y Manrope, ilustraciones SVG propias en
+   `frontend/static/ilustraciones/`. Cada cifra de la respuesta muestra su
+   indicador y fórmula (`frontend/cifras.py`, que escapa el HTML del modelo).
+   Sesiones en memoria; carga de balances en dos pasos (archivos y luego
+   fechas y reclasificaciones), probada con SECOLINSA.
    Tres tipos de pregunta (acordado el 6/10/2026): (1) cálculo con
    herramientas de Python; (2) criterio o teoría respondido SOLO con la base
    de conocimiento `conocimiento/*.md` (RAG híbrido: embeddings nomic de LM

@@ -1,7 +1,7 @@
 ﻿# Enciende todo lo que necesita la interfaz del economista IA, en orden:
 #   1. Servidor de LM Studio (API en http://localhost:1234)
 #   2. Modelo cargado en la tarjeta gráfica (si no lo está)
-#   3. Interfaz de Streamlit (http://localhost:8501)
+#   3. Interfaz web (http://localhost:8000), que se abre en el navegador
 #
 # Uso, desde la carpeta del proyecto en PowerShell:
 #   .\iniciar.ps1
@@ -39,5 +39,6 @@ if ($cargados -notmatch [regex]::Escape($modelo)) {
     }
 }
 
-Write-Host "3/3 Abriendo la interfaz en http://localhost:8501 (Ctrl+C para cerrarla)..." -ForegroundColor Cyan
-& $python -m streamlit run (Join-Path $PSScriptRoot "frontend\app.py") --browser.gatherUsageStats false
+Write-Host "3/3 Abriendo la interfaz en http://localhost:8000 (Ctrl+C para cerrarla)..." -ForegroundColor Cyan
+Start-Process "http://localhost:8000"   # el navegador reintenta mientras el servidor arranca
+& $python -m uvicorn app.main:app --port 8000 --app-dir $PSScriptRoot

@@ -1,0 +1,4 @@
+<div class="turno">
+  <p class="burbuja-pregunta">{{ t.pregunta }}</p>
+  {% with r = t.r %}{% include "_respuesta.html" %}{% endwith %}
+</div>

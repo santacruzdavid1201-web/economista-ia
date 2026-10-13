@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <clipPath id="forma"><path d="M10 22C14 8 30 2 44 6c14 4 20 18 18 32-2 16-16 24-30 24C16 62 4 50 6 36c0-5 2-10 4-14Z"/></clipPath>
+  </defs>
+  <g clip-path="url(#forma)">
+    <rect width="64" height="64" fill="#3CC6A6"/>
+    <path d="M64 20 20 64h44Z" fill="#F2726B"/>
+  </g>
+</svg>

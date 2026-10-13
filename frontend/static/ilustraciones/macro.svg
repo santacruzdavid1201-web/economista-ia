@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+  <!-- Gráfica de inflación y tasas con una flecha que sube y el signo de porcentaje -->
+  <path d="M64 150C80 72 178 28 272 36c96 8 168 70 170 154 2 86-70 140-158 150-90 10-188-20-218-90-14-32-14-66-2-100Z" fill="#FCE1DC"/>
+
+  <rect x="96" y="92" width="276" height="196" rx="18" fill="#FFFFFF"/>
+  <path d="M120 140h228M120 186h228M120 232h228" stroke="#E6EEF1" stroke-width="4" stroke-linecap="round"/>
+  <polyline points="122,252 168,222 204,236 246,186 284,198 334,140" fill="none" stroke="#1F4E5F" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="334" cy="140" r="9" fill="#1F4E5F"/>
+
+  <!-- Flecha -->
+  <polyline points="112,316 214,222 246,252 350,150" fill="none" stroke="#F2726B" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M408 92 382 182 318 120Z" fill="#F2726B"/>
+
+  <!-- Porcentaje -->
+  <circle cx="98" cy="86" r="40" fill="#1F4E5F"/>
+  <circle cx="85" cy="73" r="8" fill="#FFFFFF"/>
+  <circle cx="111" cy="99" r="8" fill="#FFFFFF"/>
+  <path d="M114 68 82 104" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- Montañas pequeñas y puntos -->
+  <path d="M352 318l44-46 26 26 20-18 34 38Z" fill="#3CC6A6"/>
+  <circle cx="420" cy="58" r="6" fill="#F2726B"/>
+  <circle cx="190" cy="56" r="5" fill="#FFFFFF"/>
+  <circle cx="44" cy="232" r="6" fill="#FFFFFF"/>
+</svg>

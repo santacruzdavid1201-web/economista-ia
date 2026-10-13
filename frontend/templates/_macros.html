@@ -1,0 +1,5 @@
+{#- Enlace que reemplaza solo #pagina, con transición: navegar sin recargar todo -#}
+{%- macro enlace(url, clase="") -%}
+<a href="{{ url }}" class="{{ clase }}" hx-get="{{ url }}" hx-target="#pagina" hx-select="#pagina"
+   hx-swap="outerHTML transition:true show:window:top" hx-push-url="true">{{ caller() }}</a>
+{%- endmacro -%}

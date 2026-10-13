@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+  <!-- Una planta que crece de las monedas y una grúa que levanta la obra -->
+  <path d="M72 126C102 56 200 28 288 42c90 14 152 74 152 156 0 84-66 136-152 144-88 8-180-20-212-86-20-42-20-90-4-130Z" fill="#F8CEC6"/>
+
+  <!-- Grúa y edificio -->
+  <rect x="330" y="78" width="12" height="226" fill="#1F4E5F"/>
+  <rect x="236" y="76" width="168" height="12" rx="3" fill="#1F4E5F"/>
+  <path d="M342 88l42-30v30" fill="none" stroke="#1F4E5F" stroke-width="5" stroke-linejoin="round"/>
+  <rect x="384" y="88" width="22" height="20" fill="#2E6B7E"/>
+  <path d="M262 88v66" stroke="#1F4E5F" stroke-width="3"/>
+  <rect x="240" y="154" width="44" height="30" rx="4" fill="#F2726B"/>
+  <path d="M296 304V214h104v90" fill="none" stroke="#1F4E5F" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M296 244h104M296 274h104M330 214v90M366 214v90" stroke="#1F4E5F" stroke-width="3"/>
+
+  <!-- Monedas -->
+  <rect x="96" y="290" width="84" height="16" fill="#2BA88B"/>
+  <ellipse cx="138" cy="306" rx="42" ry="10" fill="#2BA88B"/>
+  <ellipse cx="138" cy="290" rx="42" ry="10" fill="#3CC6A6"/>
+  <rect x="96" y="274" width="84" height="16" fill="#2BA88B"/>
+  <ellipse cx="138" cy="274" rx="42" ry="10" fill="#3CC6A6"/>
+  <rect x="96" y="258" width="84" height="16" fill="#2BA88B"/>
+  <ellipse cx="138" cy="258" rx="42" ry="10" fill="#3CC6A6"/>
+
+  <!-- Planta -->
+  <path d="M138 258c0-40-6-74 10-112" stroke="#1F4E5F" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M146 180c-44 6-72-18-78-56 42-6 72 18 78 56Z" fill="#3CC6A6"/>
+  <path d="M144 150c10-44 46-64 86-56-8 42-44 62-86 56Z" fill="#2BA88B"/>
+  <path d="M150 120c-6-28 8-50 30-60 8 28-6 50-30 60Z" fill="#3CC6A6"/>
+
+  <path d="M48 310h392" stroke="#1F4E5F" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="214" cy="232" r="6" fill="#FFFFFF"/>
+  <circle cx="70" cy="214" r="5" fill="#F2726B"/>
+</svg>

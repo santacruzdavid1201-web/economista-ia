@@ -1,7 +1,12 @@
 """
-Cifras rastreables: cada número de la respuesta que salió de un cálculo se marca
-con su origen (el indicador y su fórmula, o el hallazgo que lo contiene), para que
-el gerente vea de dónde sale al pasar el cursor o al enfocarlo con el teclado.
+Presentación de las respuestas en HTML.
+
+- Cifras rastreables: cada número de la respuesta que salió de un cálculo se
+  marca con su origen (el indicador y su fórmula, o el hallazgo que lo
+  contiene), para que el gerente vea de dónde sale al pasar el cursor o al
+  enfocarlo con el teclado.
+- Renglones de libro: tablas de concepto, cifra y fórmula.
+- Markdown mínimo: párrafos, listas y negritas, lo único que usa el modelo.
 
 El texto del modelo se escapa antes de marcarlo: nunca se inserta HTML suyo.
 """
@@ -17,8 +22,15 @@ from modules.base import ResultadoModulo, formatear
 CIFRA = re.compile(r"(?P<signo>[-−])?(?P<peso>\$\s?)?(?P<num>\d+(?:[.,]\d+)*)"
                    r"(?P<unidad>\s?(?:%|veces|puntos|días))?")
 ANIO = re.compile(r"(19|20)\d{2}")
+VINETA = re.compile(r"^\s*[-*•]\s+(.*)$")
+NUMERADA = re.compile(r"^\s*\d+[.)]\s+(.*)$")
+TITULO = re.compile(r"^\s*#{1,6}\s+(.*)$")
+NEGRITA = re.compile(r"\*\*(.+?)\*\*")
 
 
+# --------------------------------------------------------------------------- #
+# Cifras rastreables
+# --------------------------------------------------------------------------- #
 def origenes(resultados: list[ResultadoModulo]) -> dict[str, tuple[str, bool]]:
     """Número tal como se escribe ("6.800.000", "2,04") → (origen, es negativo)."""
     mapa: dict[str, tuple[str, bool]] = {}
@@ -42,7 +54,7 @@ def _es_cifra(m: re.Match) -> bool:
 
 
 def marcar(texto: str, resultados: list[ResultadoModulo]) -> str:
-    """Markdown con cada cifra calculada envuelta en un <span> con su origen."""
+    """Texto escapado con cada cifra calculada envuelta en un <span> con su origen."""
     mapa = origenes(resultados)
 
     def sustituir(m: re.Match) -> str:
@@ -50,22 +62,71 @@ def marcar(texto: str, resultados: list[ResultadoModulo]) -> str:
             return m.group(0)
         origen, negativo = mapa[m["num"]]
         clase = "cifra negativa" if negativo or m["signo"] else "cifra"
-        atributo = html.escape(origen, quote=True).replace("$", "&#36;")
+        atributo = html.escape(origen, quote=True)
         return f'<span class="{clase}" tabindex="0" data-origen="{atributo}">{m.group(0)}</span>'
 
-    marcado = CIFRA.sub(sustituir, html.escape(texto, quote=False))
-    # Streamlit lee "$...$" como LaTeX: el $ visible se escapa (el del atributo ya es entidad)
-    return marcado.replace("$", "\\$")
+    return CIFRA.sub(sustituir, html.escape(texto, quote=False))
 
 
+# --------------------------------------------------------------------------- #
+# Markdown mínimo
+# --------------------------------------------------------------------------- #
+def a_html(texto: str) -> str:
+    """
+    Párrafos, listas (con viñeta o numeradas), negritas y títulos (como párrafo en
+    negrita). Recibe texto YA escapado: solo agrega estas etiquetas.
+    """
+    partes: list[str] = []
+    parrafo: list[str] = []
+    lista: tuple[str, list[str]] | None = None
+
+    def cerrar() -> None:
+        nonlocal lista
+        if parrafo:
+            partes.append(f"<p>{'<br>'.join(parrafo)}</p>")
+            parrafo.clear()
+        if lista:
+            etiqueta, items = lista
+            partes.append(f"<{etiqueta}>{''.join(f'<li>{i}</li>' for i in items)}</{etiqueta}>")
+            lista = None
+
+    for linea in texto.splitlines():
+        linea = NEGRITA.sub(r"<strong>\1</strong>", linea.rstrip())
+        if not linea.strip():
+            cerrar()
+        elif m := TITULO.match(linea):
+            cerrar()
+            partes.append(f"<p><strong>{m[1]}</strong></p>")
+        elif (m := VINETA.match(linea)) or (m := NUMERADA.match(linea)):
+            etiqueta = "ul" if VINETA.match(linea) else "ol"
+            if parrafo or (lista and lista[0] != etiqueta):
+                cerrar()
+            lista = lista or (etiqueta, [])
+            lista[1].append(m[1])
+        else:
+            if lista:
+                cerrar()
+            parrafo.append(linea.strip())
+    cerrar()
+    return "".join(partes)
+
+
+def respuesta_html(texto: str, resultados: list[ResultadoModulo]) -> str:
+    """Respuesta del modelo lista para insertar: escapada, con cifras marcadas y formato."""
+    return a_html(marcar(texto, resultados))
+
+
+# --------------------------------------------------------------------------- #
+# Renglones de libro
+# --------------------------------------------------------------------------- #
 def libro(filas: list[tuple[str, str, str | None]],
           encabezado: tuple[str, ...] | None = None) -> str:
     """
-    Tabla en renglones de libro: concepto a la izquierda, cifra a la derecha en tinta
-    azul (roja si es negativa) y, si la hay, la fórmula. Todo se escapa.
+    Tabla en renglones: concepto a la izquierda, cifra a la derecha (en coral si es
+    negativa) y, si la hay, la fórmula. Todo se escapa.
     """
     def e(t: str) -> str:
-        return html.escape(t, quote=True).replace("$", "&#36;")
+        return html.escape(t, quote=True)
 
     con_formula = any(f is not None for _, _, f in filas)
     renglones = []

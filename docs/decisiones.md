@@ -30,6 +30,7 @@ tags: [economista-ia, bitacora]
 - Con el 7B, **menos cifras parecidas en los datos**: de la sensibilidad a tasas se quitaron el punto de quiebre como indicador y el cambio a 12 meses de la tasa de política, y con un escenario pedido se devuelve solo ese, porque el modelo mezclaba cifras de escenarios distintos.
 - Cuando un análisis no trae comparación sectorial, el verificador **rechaza los calificativos** ("significativo", "preocupante", "grave") y pide reescribir una vez nombrando las palabras: ni el prompt ni un hallazgo lograron que el 7B dejara de calificar sin referencia.
 - La interfaz usa el tema **"libro contable"** (papel de libro mayor, tinta azul para las cifras calculadas, rojo contable para negativos) y sigue en Streamlit; lo distintivo es que **cada cifra de la respuesta muestra su origen** (indicador y fórmula) al pasar el cursor, porque la promesa del producto es que ninguna cifra la inventa el modelo.
+- La interfaz pasó de Streamlit a **FastAPI + Jinja + HTMX** (sin React): Streamlit recarga toda la página en cada interacción (se atenúa y luego aparece todo de golpe) y no permite el estilo ilustrado que pidió el economista; con HTMX solo cambia la parte nueva. El estilo pasó del "libro contable" a **ilustraciones planas con menta y coral** y una portada con los módulos; las cifras rastreables se mantienen.
 
 ---
 Vuelve a [[resumen]]

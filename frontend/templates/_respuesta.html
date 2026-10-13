@@ -1,0 +1,40 @@
+<article class="respuesta{% if r.origen in ('error', 'sin_llm') %} sin-calculo{% endif %}">
+  <div class="memo">{{ r.memo | safe }}</div>
+
+  {% if r.origen == "respaldo" %}
+    <p class="nota-respaldo">El modelo no produjo una redacción verificable: se muestran los
+      resultados calculados directamente.</p>
+  {% endif %}
+
+  {% if r.avisos %}
+    <div class="avisos">
+      <p class="avisos-titulo">Para tener en cuenta</p>
+      <ul>{% for a in r.avisos %}<li>{{ a }}</li>{% endfor %}</ul>
+    </div>
+  {% endif %}
+
+  {% if r.fuentes %}
+    <div class="fuentes">
+      <p class="avisos-titulo">Fuentes</p>
+      <ul>{% for f in r.fuentes %}<li>{{ f }}</li>{% endfor %}</ul>
+    </div>
+  {% endif %}
+
+  {% if r.supuestos %}
+    <details class="desplegable">
+      <summary>Supuestos del cálculo ({{ r.supuestos | length }})</summary>
+      <ul>{% for s in r.supuestos %}<li>{{ s }}</li>{% endfor %}</ul>
+    </details>
+  {% endif %}
+
+  {% if r.detalle %}
+    <details class="desplegable">
+      <summary>De dónde salen las cifras</summary>
+      <p class="detalle-analisis">Análisis de {{ r.analisis }}, con los estados de {{ r.periodo }}.</p>
+      {% for d in r.detalle %}
+        {% if d.hallazgos %}<ul>{% for h in d.hallazgos %}<li>{{ h }}</li>{% endfor %}</ul>{% endif %}
+        {% if d.tabla %}<div class="tabla-desplazable">{{ d.tabla | safe }}</div>{% endif %}
+      {% endfor %}
+    </details>
+  {% endif %}
+</article>

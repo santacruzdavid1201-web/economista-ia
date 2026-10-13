@@ -1,0 +1,8 @@
+<div class="turno">
+  <p class="burbuja-pregunta">{{ pregunta }}</p>
+  <div class="respuesta pendiente" hx-get="/respuesta/{{ pid }}" hx-trigger="load"
+       hx-swap="outerHTML">
+    <p class="analizando">Analizando<span class="puntos" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span></p>
+    <p class="analizando-nota">El modelo local puede tardar hasta un minuto.</p>
+  </div>
+</div>

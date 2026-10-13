@@ -1,0 +1,35 @@
+<form class="formulario" hx-post="/empresa/cargar" hx-target="this" hx-swap="outerHTML">
+  <p>Revise la fecha de corte de cada archivo. El PUC no separa el corto del largo plazo: indique
+    qué parte de cada cuenta es de largo plazo, en {{ unidad | lower }}.</p>
+  {% if errores %}
+    <ul class="errores" role="alert">{% for e in errores %}<li>{{ e }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% for a in archivos %}
+    <fieldset class="archivo">
+      <legend>{{ a.nombre }}</legend>
+      <label>Fecha de corte
+        <input type="date" name="fecha_{{ a.i }}" value="{{ a.fecha }}" required>
+      </label>
+      {% for campo, par, etiqueta in reclasif %}
+        {% if campo == deuda_lp %}
+          <label>{{ etiqueta }}
+            <input type="number" name="{{ campo }}_{{ a.i }}" min="0" step="any"
+                   value="{{ valores.get(campo ~ '_' ~ a.i, '0') }}">
+          </label>
+        {% endif %}
+      {% endfor %}
+      <details class="desplegable">
+        <summary>Otras reclasificaciones de plazo (opcional)</summary>
+        {% for campo, par, etiqueta in reclasif %}
+          {% if campo != deuda_lp %}
+            <label>{{ etiqueta }}
+              <input type="number" name="{{ campo }}_{{ a.i }}" min="0" step="any"
+                     value="{{ valores.get(campo ~ '_' ~ a.i, '0') }}">
+            </label>
+          {% endif %}
+        {% endfor %}
+      </details>
+    </fieldset>
+  {% endfor %}
+  <button type="submit" class="boton">Cargar balances</button>
+</form>

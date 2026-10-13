@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 460" width="560" height="460">
+  <!-- Hotel frente a los Andes, con monedas y una gráfica que sube -->
+  <path d="M86 132C120 52 236 18 330 40c96 22 176 86 196 176 20 92-38 178-132 206-92 28-196 14-268-40C52 330 46 214 86 132Z" fill="#CDEFE4"/>
+  <circle cx="424" cy="108" r="40" fill="#F2726B"/>
+  <path d="M146 116c0-15 12-26 27-26 6-15 23-23 39-17 11-9 28-7 36 6 15 0 26 11 26 24H146Z" fill="#FFFFFF"/>
+  <path d="M356 176c0-10 9-18 20-18 5-10 17-15 28-11 8-6 19-4 25 4 10 0 18 7 18 16h-91Z" fill="#FFFFFF"/>
+
+  <!-- Montañas -->
+  <path d="M60 330 190 168l70 86 58-66 182 142Z" fill="#2E6B7E"/>
+  <path d="M190 168 161 204l11-6 10 8 11-9 11 8 10-7Z" fill="#FFFFFF"/>
+  <path d="M318 188 295 214l10-6 9 7 11-8 10 6 10-4Z" fill="#FFFFFF"/>
+  <path d="M14 366 150 250l62 54 70-62 158 124Z" fill="#1F4E5F"/>
+
+  <!-- Suelo -->
+  <path d="M24 374c94-30 236-20 306-12 70 8 150-8 208 4v48c0 11-9 20-20 20H44c-11 0-20-9-20-20Z" fill="#3CC6A6"/>
+
+  <!-- Hotel -->
+  <path d="M290 168v34" stroke="#1F4E5F" stroke-width="4" stroke-linecap="round"/>
+  <path d="M290 170l26 8-26 9Z" fill="#3CC6A6"/>
+  <path d="M212 244 290 200l78 44Z" fill="#F2726B"/>
+  <rect x="224" y="240" width="132" height="142" rx="6" fill="#FFFFFF"/>
+  <rect x="242" y="258" width="22" height="22" rx="3" fill="#1F4E5F"/>
+  <rect x="279" y="258" width="22" height="22" rx="3" fill="#F8CEC6"/>
+  <rect x="316" y="258" width="22" height="22" rx="3" fill="#1F4E5F"/>
+  <rect x="242" y="294" width="22" height="22" rx="3" fill="#F8CEC6"/>
+  <rect x="279" y="294" width="22" height="22" rx="3" fill="#1F4E5F"/>
+  <rect x="316" y="294" width="22" height="22" rx="3" fill="#F8CEC6"/>
+  <rect x="242" y="330" width="22" height="22" rx="3" fill="#1F4E5F"/>
+  <rect x="316" y="330" width="22" height="22" rx="3" fill="#1F4E5F"/>
+  <path d="M276 382v-36c0-7 6-13 14-13s14 6 14 13v36Z" fill="#F2726B"/>
+
+  <!-- Monedas -->
+  <rect x="104" y="364" width="72" height="14" fill="#F2726B"/>
+  <ellipse cx="140" cy="378" rx="36" ry="9" fill="#F2726B"/>
+  <ellipse cx="140" cy="364" rx="36" ry="9" fill="#F8CEC6"/>
+  <rect x="104" y="350" width="72" height="14" fill="#F2726B"/>
+  <ellipse cx="140" cy="350" rx="36" ry="9" fill="#F8CEC6"/>
+  <rect x="110" y="336" width="72" height="14" fill="#F2726B"/>
+  <ellipse cx="146" cy="336" rx="36" ry="9" fill="#F8CEC6"/>
+  <rect x="104" y="322" width="72" height="14" fill="#F2726B"/>
+  <ellipse cx="140" cy="322" rx="36" ry="9" fill="#F8CEC6"/>
+  <path d="M128 322h24" stroke="#F2726B" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Gráfica que sube -->
+  <rect x="404" y="340" width="22" height="40" rx="4" fill="#1F4E5F"/>
+  <rect x="436" y="314" width="22" height="66" rx="4" fill="#1F4E5F"/>
+  <rect x="468" y="284" width="22" height="96" rx="4" fill="#1F4E5F"/>
+  <polyline points="392,322 428,288 452,302 494,256" fill="none" stroke="#F2726B" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M512 236l-6 38-30-26Z" fill="#F2726B"/>
+
+  <!-- Hojas y puntos -->
+  <path d="M40 396c-14-44 4-88 46-104 10 44-6 84-46 104Z" fill="#2BA88B"/>
+  <path d="M40 396c22-34 26-58 38-86" stroke="#1F4E5F" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <circle cx="110" cy="214" r="6" fill="#FFFFFF"/>
+  <circle cx="470" cy="190" r="5" fill="#FFFFFF"/>
+  <circle cx="96" cy="250" r="4" fill="#F2726B"/>
+</svg>

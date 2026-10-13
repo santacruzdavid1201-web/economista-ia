@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "_macros.html" import enlace %}
+{% block titulo %}{{ m.nombre }} · Economista IA{% endblock %}
+{% block tono %}{{ m.color }}{% endblock %}
+{% block contenido %}
+<div class="modulo">
+  <aside class="modulo-lado">
+    {% call enlace("/", "volver") %}Volver a los módulos{% endcall %}
+    <div class="modulo-figura">
+      <span class="forma" aria-hidden="true"></span>
+      <img src="{{ m.ilustracion }}" alt="" width="320" height="240">
+    </div>
+    <h1>{{ m.nombre }}</h1>
+    <p class="entrada">{{ m.resumen }}</p>
+    {% if m.activo %}
+      <h2 class="titulo-ejemplos">Puede empezar por</h2>
+      <ul class="ejemplos">
+        {% for e in m.ejemplos %}
+          <li><button type="button" class="ejemplo" hx-post="/modulo/{{ m.clave }}/preguntar"
+                      hx-vals='{{ {"pregunta": e} | tojson }}' hx-target="#conversacion"
+                      hx-swap="beforeend show:bottom">{{ e }}</button></li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </aside>
+
+  <section class="conversacion" aria-label="Conversación">
+    {% if m.activo %}
+      <div id="conversacion" class="turnos" aria-live="polite">
+        {% for t in turnos %}
+          {% include "_turno.html" %}
+        {% else %}
+          <div class="vacio">
+            <p class="vacio-titulo">¿Qué quiere saber?</p>
+            <p>Escriba su pregunta abajo o elija una de las sugeridas. Cada cifra resaltada en la
+              respuesta muestra de dónde sale.</p>
+          </div>
+        {% endfor %}
+      </div>
+      <form class="pregunta" hx-post="/modulo/{{ m.clave }}/preguntar" hx-target="#conversacion"
+            hx-swap="beforeend show:bottom" hx-on::after-request="if (event.detail.successful) this.reset()">
+        <label for="campo-pregunta" class="oculto">Su pregunta</label>
+        <textarea id="campo-pregunta" name="pregunta" rows="2" maxlength="1000" required
+                  placeholder="Escriba su pregunta"
+                  onkeydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); this.form.requestSubmit(); }"></textarea>
+        <button type="submit" class="boton">Preguntar</button>
+      </form>
+    {% else %}
+      <div class="en-construccion">
+        <p>Este módulo está en construcción. Mientras tanto, el balance financiero y el entorno
+          macro ya responden preguntas.</p>
+        {% call enlace("/", "boton") %}Ver los módulos disponibles{% endcall %}
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
