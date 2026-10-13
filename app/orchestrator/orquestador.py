@@ -27,7 +27,7 @@ from app.orchestrator.tools_registry import (
     esquema_openai,
     indice_periodo,
 )
-from app.orchestrator.verificador import cifras_no_respaldadas, numeros, respaldo
+from app.orchestrator.verificador import calificativos, cifras_no_respaldadas, numeros, respaldo
 from app.rag.retriever import Buscador
 from modules.base import ResultadoModulo, formatear
 
@@ -174,8 +174,11 @@ def _sistema(reglas: str) -> str:
 
 
 def _redactar(cliente: ClienteChat, sistema: str, usuario: str, permitidas: list[str],
-              base: Respuesta) -> str | None:
-    """Redacta y verifica cifras; un reintento con la corrección. None si no lo logra."""
+              base: Respuesta, sin_calificar: bool = False) -> str | None:
+    """
+    Redacta y verifica cifras (y, si no hay comparación sectorial, calificativos); un
+    reintento con la corrección. None si no lo logra.
+    """
     for intento in (1, 2):
         try:
             texto = (cliente.chat(sistema, usuario, temperatura=0.2).texto or "").strip()
@@ -183,14 +186,23 @@ def _redactar(cliente: ClienteChat, sistema: str, usuario: str, permitidas: list
             base.eventos.append(f"redacción: {e}")
             return None
         sobrantes = cifras_no_respaldadas(texto, *permitidas)
-        if texto and not sobrantes:
+        juicios = calificativos(texto) if sin_calificar else []
+        if texto and not sobrantes and not juicios:
             return texto
         if not texto:
             base.eventos.append(f"intento {intento}: respuesta vacía")
             continue
-        base.eventos.append(f"intento {intento}: cifras sin respaldo {sobrantes}")
-        usuario += ("\n\nTu respuesta anterior incluía cifras que no están en los datos: "
-                    f"{', '.join(sobrantes)}. Reescríbela usando solo cifras que estén ahí.")
+        if sobrantes:
+            base.eventos.append(f"intento {intento}: cifras sin respaldo {sobrantes}")
+            usuario += ("\n\nTu respuesta anterior incluía cifras que no están en los datos: "
+                        f"{', '.join(sobrantes)}. Reescríbela usando solo cifras que estén ahí.")
+        if juicios:
+            base.eventos.append(f"intento {intento}: calificativos sin respaldo {juicios}")
+            # Nombrar las palabras: con una instrucción general el 7B repetía la misma
+            usuario += ("\n\nTu respuesta anterior calificaba el resultado sin una comparación "
+                        "con el sector que lo respalde. Reescríbela sin calificativos: no uses "
+                        "«significativo», «significativamente», «preocupante», «alarmante» ni "
+                        "«grave»; describe las cifras.")
     return None
 
 
@@ -270,8 +282,10 @@ def responder(pregunta: str, ctx: ContextoEmpresa, cliente: ClienteChat | None =
 
     # 3. Redactar y verificar
     datos = json.dumps(datos_para_redactar(ctx, resultados), ensure_ascii=False, indent=1)
+    con_sector = any(r.analisis == "benchmark" for r in resultados)
     texto = _redactar(cliente, _sistema("redaccion_calculo.md"),
-                      f"PREGUNTA:\n{pregunta}\n\nDATOS:\n{datos}", [datos, pregunta], base)
+                      f"PREGUNTA:\n{pregunta}\n\nDATOS:\n{datos}", [datos, pregunta], base,
+                      sin_calificar=not con_sector)
     if texto is None:
         base.texto, base.origen = respaldo(resultados), "respaldo"
     else:

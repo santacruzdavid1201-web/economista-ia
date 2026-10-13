@@ -6,6 +6,7 @@ calcula): si redondea, resta o inventa, se detecta aquí.
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from modules.base import ResultadoModulo, formatear
 
@@ -27,6 +28,19 @@ def cifras_no_respaldadas(respuesta: str, *fuentes: str) -> list[str]:
     permitidas = set().union(*(numeros(f) for f in fuentes))
     return sorted({n for peso, n, pct in CIFRA.findall(respuesta) if n not in permitidas
                    and (n not in LIBRES or peso or pct)})
+
+
+# Sin comparación sectorial no hay con qué calificar un resultado; el 7B lo hacía igual
+# ("incremento significativo"), aunque el prompt y un hallazgo lo prohibían. Raíces, sin
+# tildes; la lista crece con los errores que aparezcan en la evaluación.
+CALIFICATIVOS = ("significativ", "preocupante", "alarmante", "grave")
+
+
+def calificativos(texto: str) -> list[str]:
+    """Raíces de CALIFICATIVOS presentes en el texto (sin distinguir tildes ni mayúsculas)."""
+    normal = "".join(c for c in unicodedata.normalize("NFKD", texto.lower())
+                     if not unicodedata.combining(c))
+    return [c for c in CALIFICATIVOS if c in normal]
 
 
 def respaldo(resultados: list[ResultadoModulo]) -> str:

@@ -193,10 +193,11 @@ casos:
   - id: "18"
     bloque: E
     pregunta: ¿Cómo me afecta que el Banco de la República suba las tasas?
+    # Desde el 12/10/2026 (sensibilidad a tasas) valen las dos rutas: con los números
+    # de la empresa o con el mecanismo de la nota; el mecanismo lo prueba el caso 39
     espera:
-      herramienta: consulta_conceptual
+      herramienta: [consulta_conceptual, analizar_sensibilidad_tasas]
       origen: [llm, respaldo]
-      fuentes: [Tasas de interés del Banco de la República]
 
   - id: "19"
     bloque: E
@@ -400,9 +401,10 @@ casos:
   - id: "37"
     bloque: I
     pregunta: Si el Banco de la República baja las tasas, ¿cuánto me ahorro?
+    # Vale el ahorro por punto o el del escenario de 3 puntos menos
     espera:
       herramienta: analizar_sensibilidad_tasas
-      cifra_de: [intereses_por_punto]
+      contiene_alguno: ["6.800.000", "20.400.000"]
     revisar: No promete que las tasas vayan a bajar.
 
   - id: "38"

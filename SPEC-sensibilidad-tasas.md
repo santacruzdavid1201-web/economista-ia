@@ -3,9 +3,9 @@
 Módulo del [mapa macro](SPEC-mapa-macro.md). Depende de
 [series-externas](SPEC-series-externas.md) (segundo tramo: tasas) y del
 módulo 1. Estado: aprobado y construido el 12/10/2026. Criterio 3: el bloque I
-pasa las reglas de cifras y enrutamiento; queda un calificativo que el 7B agrega
-("incremento significativo"), pendiente de decisión del economista. Ver
-"Cambios al construir".
+pasa 7 de 7 y el set completo, todos los bloques (12/10/2026). Los calificativos
+que el 7B agregaba ("incremento significativo") los atrapa el verificador con un
+reintento, por decisión del economista. Ver "Cambios al construir".
 
 ## Objetivo
 

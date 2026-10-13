@@ -195,28 +195,30 @@ def sensibilidad_tasas(historial: HistorialFinanciero, i: int, tasa_politica: Se
         hallazgos.append(f"Cada punto que suba la tasa de la deuda le suma {_pesos(por_punto)} "
                          f"al año en gastos financieros (1 % de la deuda financiera de "
                          f"{_pesos(deuda)}).")
-    if con_base and puntos is not None:
-        g_pedido = gastos_con(puntos / 100)
-        frase = (f"Con {_puntos(puntos)}, los gastos financieros serían "
-                 f"{_pesos(g_pedido)} al año" if g_pedido is not None else
-                 f"Con {_puntos(puntos)}, los gastos financieros llegarían a cero")
-        if g_pedido is not None and cobertura(g_pedido) is not None:
-            frase += f" y la cobertura de intereses {_veces(cobertura(g_pedido))}"
-        hallazgos.append(frase + ".")
-    elif con_base:
-        mas3, menos3 = gastos_con(0.03), gastos_con(-0.03)
+    def frase_escenario(cambio: float) -> str:
+        """Aumento y nivel por separado: sin el aumento, el 7B lo calculaba por su cuenta
+        (2 × $ 6.800.000) y el verificador rechazaba la respuesta."""
+        g = gastos_con(cambio / 100)
+        if g is None:
+            return f"Con {_puntos(cambio)}, los gastos financieros llegarían a cero."
+        sube = cambio > 0
+        frase = (f"Con {_puntos(cambio)}, los gastos financieros "
+                 f"{'aumentarían' if sube else 'disminuirían'} {_pesos(abs(g - gastos))} al "
+                 f"año, hasta {_pesos(g)}")
+        if cobertura(g) is not None:
+            frase += (f", y la cobertura de intereses {'bajaría' if sube else 'subiría'} a "
+                      f"{_veces(cobertura(g))}")
+        return frase + "."
+
+    if con_base:
+        actual = f"En {ef.fecha_corte.year} los gastos financieros fueron {_pesos(gastos)}"
         if cobertura_hoy is not None:
-            frase = (f"Con 3 puntos más, los gastos financieros pasarían de {_pesos(gastos)} a "
-                     f"{_pesos(mas3)} al año y la cobertura de intereses de "
-                     f"{_veces(cobertura_hoy)} a {_veces(cobertura(mas3))}")
-            if menos3 is not None:
-                frase += f"; con 3 puntos menos, a {_pesos(menos3)} y {_veces(cobertura(menos3))}"
-        else:
-            frase = (f"Con 3 puntos más, los gastos financieros pasarían de {_pesos(gastos)} a "
-                     f"{_pesos(mas3)} al año")
-            if menos3 is not None:
-                frase += f"; con 3 puntos menos, a {_pesos(menos3)}"
-        hallazgos.append(frase + ".")
+            actual += f" y la cobertura de intereses {_veces(cobertura_hoy)}"
+        hallazgos.append(actual + ".")
+    if con_base and puntos is not None:
+        hallazgos.append(frase_escenario(puntos))
+    elif con_base:
+        hallazgos += [frase_escenario(3), frase_escenario(-3)]
         # El año del alza histórica va primero y explícito: el 7B la presentó como "del
         # último año"
         g_hist = gastos_con(alza_hist) if alza_hist is not None else None

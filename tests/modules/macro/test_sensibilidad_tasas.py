@@ -93,9 +93,11 @@ def test_hallazgos():
     assert calcular().hallazgos == [
         "Cada punto que suba la tasa de la deuda le suma $ 10 al año en gastos financieros "
         "(1 % de la deuda financiera de $ 1.000).",
-        "Con 3 puntos más, los gastos financieros pasarían de $ 95 a $ 125 al año y la "
-        "cobertura de intereses de 3,16 veces a 2,40 veces; con 3 puntos menos, a $ 65 y "
-        "4,62 veces.",
+        "En 2024 los gastos financieros fueron $ 95 y la cobertura de intereses 3,16 veces.",
+        "Con 3 puntos más, los gastos financieros aumentarían $ 30 al año, hasta $ 125, y la "
+        "cobertura de intereses bajaría a 2,40 veces.",
+        "Con 3 puntos menos, los gastos financieros disminuirían $ 30 al año, hasta $ 65, y la "
+        "cobertura de intereses subiría a 4,62 veces.",
         "La mayor alza de la IBR a 3 meses en un año fue de 8,24 puntos, en 2022 (de diciembre "
         "de 2021 a diciembre de 2022): si la tasa de la deuda subiera eso, los gastos "
         "financieros aumentarían $ 82 al año, hasta $ 177, y la cobertura bajaría a 1,69 "
@@ -125,8 +127,9 @@ def test_escenario_pedido_va_solo():
     assert r.hallazgos == [
         "Cada punto que suba la tasa de la deuda le suma $ 10 al año en gastos financieros "
         "(1 % de la deuda financiera de $ 1.000).",
-        "Con 5 puntos más, los gastos financieros serían $ 145 al año y la cobertura de "
-        "intereses 2,07 veces.",
+        "En 2024 los gastos financieros fueron $ 95 y la cobertura de intereses 3,16 veces.",
+        "Con 5 puntos más, los gastos financieros aumentarían $ 50 al año, hasta $ 145, y la "
+        "cobertura de intereses bajaría a 2,07 veces.",
         "Al 12/10/2026 la tasa de política monetaria del Banco de la República es 12,25 %; "
         "la IBR a 3 meses, referencia de muchos créditos a tasa variable, estaba en 11,70 % "
         "al 09/10/2026.",
@@ -138,11 +141,11 @@ def test_escenario_pedido_de_los_fijos_usa_su_clave():
     assert r.valor("gastos_financieros_menos_2") == pytest.approx(75)
     assert r.valor("cobertura_menos_2") == pytest.approx(4.0)
     assert all(i.clave != "gastos_financieros_pedido" for i in r.indicadores)
-    assert ("Con 2 puntos menos, los gastos financieros serían $ 75 al año y la cobertura "
-            "de intereses 4,00 veces.") in r.hallazgos
+    assert ("Con 2 puntos menos, los gastos financieros disminuirían $ 20 al año, hasta "
+            "$ 75, y la cobertura de intereses subiría a 4,00 veces.") in r.hallazgos
     r = calcular(puntos=1)
-    assert ("Con 1 punto más, los gastos financieros serían $ 105 al año y la cobertura "
-            "de intereses 2,86 veces.") in r.hallazgos
+    assert ("Con 1 punto más, los gastos financieros aumentarían $ 10 al año, hasta $ 105, "
+            "y la cobertura de intereses bajaría a 2,86 veces.") in r.hallazgos
 
 
 @pytest.mark.parametrize("puntos", [0, 15, -10.5])

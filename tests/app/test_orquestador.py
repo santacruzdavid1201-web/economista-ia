@@ -12,7 +12,7 @@ from app.orchestrator.orquestador import (
     validar_pregunta,
 )
 from app.orchestrator.tools_registry import ContextoEmpresa, esquema_openai
-from app.orchestrator.verificador import cifras_no_respaldadas
+from app.orchestrator.verificador import calificativos, cifras_no_respaldadas
 from modules.balance.razones import liquidez
 from tests.conftest import hacer_historial
 
@@ -302,3 +302,30 @@ def test_acepta_decimales_con_coma_o_punto(pregunta):
     llm = LLMFalso(herramienta("analizar_sensibilidad_tasas", puntos=1.5), texto("Subirían."))
     r = responder(pregunta, ctx_con_ipc(serie_tasas([])), llm, HOY)
     assert r.argumentos["puntos"] == 1.5
+
+
+# --------------------------------------------------------------------------- #
+# Calificativos sin comparación sectorial
+# --------------------------------------------------------------------------- #
+def test_calificativos_sin_tildes_ni_mayusculas():
+    assert calificativos("Un incremento SIGNIFICATIVO y un escenario preocupante") == [
+        "significativ", "preocupante"]
+    assert calificativos("Los gastos subirían $ 6.800.000 por punto.") == []
+
+
+def test_reescribe_si_califica_sin_comparacion_sectorial():
+    # El 7B escribía "incremento significativo" en casi todas las respuestas de tasas
+    llm = LLMFalso(herramienta("analizar_sensibilidad_tasas"),
+                   texto("Es un incremento significativo en los costos."),
+                   texto("Los gastos financieros subirían con cada punto."))
+    r = responder("¿Cómo me afectan las tasas?", ctx_con_ipc(serie_tasas([])), llm, HOY)
+    assert r.origen == "llm" and r.texto == "Los gastos financieros subirían con cada punto."
+    assert any("calificativos sin respaldo" in e for e in r.eventos)
+    assert "sin calificativos" in llm.llamadas[2]["usuario"]
+
+
+def test_si_insiste_en_calificar_sale_el_respaldo():
+    llm = LLMFalso(herramienta("analizar_sensibilidad_tasas"),
+                   texto("Un aumento significativo."), texto("Algo preocupante."))
+    r = responder("¿Cómo me afectan las tasas?", ctx_con_ipc(serie_tasas([])), llm, HOY)
+    assert r.origen == "respaldo"
