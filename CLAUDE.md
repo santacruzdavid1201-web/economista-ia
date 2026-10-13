@@ -128,7 +128,12 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    cifras inventadas, pero no errores de sentido (p. ej. confundir "mejor que
    el 78 % de los pares" con un margen de 78 %). Interfaz: `streamlit run
    frontend/app.py` (hotel de demostración o balances subidos, con validación
-   de archivos); arranque completo con `.\iniciar.ps1`.
+   de archivos); arranque completo con `.\iniciar.ps1`. Tema "libro contable"
+   (12/10/2026, `.streamlit/config.toml`): papel de libro mayor, tinta azul para
+   las cifras calculadas, rojo contable para negativos; Source Serif 4 para
+   títulos y respuestas, Archivo para la interfaz. Cada cifra de la respuesta
+   muestra su indicador y fórmula al pasar el cursor (`frontend/cifras.py`,
+   que escapa el HTML del modelo antes de marcar).
    Tres tipos de pregunta (acordado el 6/10/2026): (1) cálculo con
    herramientas de Python; (2) criterio o teoría respondido SOLO con la base
    de conocimiento `conocimiento/*.md` (RAG híbrido: embeddings nomic de LM
@@ -191,9 +196,12 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    ese) y el histórico de la IBR (+8,24 puntos en 2022). El orquestador descarta
    argumentos numéricos que no están en la pregunta. Lección: con el 7B, menos
    cifras parecidas en DATOS (quitar las que no responden la pregunta) evita
-   que las mezcle. Pendiente: el 7B califica ("incremento significativo") sin
-   referencia sectorial, y decidir si el caso 18 ("¿cómo me afecta que el
-   BanRep suba las tasas?") va a la herramienta o a la nota.
+   que las mezcle. Los calificativos sin comparación sectorial
+   ("significativo", "preocupante"...) los atrapa el verificador con un
+   reintento que nombra las palabras (`CALIFICATIVOS` en `verificador.py`); si
+   el modelo insiste, sale el respaldo. El caso 18 ("¿cómo me afecta que el
+   BanRep suba las tasas?") acepta la herramienta o la nota. Set completo (41
+   casos) el 12/10/2026: todos los bloques al 100 %, respaldo 3 %.
 
 Grupos de comparación en `config/ciiu_sectores.yaml` (alojamiento / hoteles).
 El benchmark se describe siempre como "empresas reportantes a

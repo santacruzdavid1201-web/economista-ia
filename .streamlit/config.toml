@@ -1,0 +1,21 @@
+# Tema "libro contable" (aprobado el 12/10/2026): papel de libro mayor, tinta azul
+# para las cifras calculadas y rojo contable para negativos y errores.
+[theme]
+base = "light"
+backgroundColor = "#F1F4EE"           # papel
+secondaryBackgroundColor = "#E4EBE1"  # papel sombreado: barra lateral, campos
+textColor = "#1E2B3A"                 # tinta
+primaryColor = "#1F4FA3"              # cifra: azul tinta
+linkColor = "#1F4FA3"
+redColor = "#A8322D"                  # rojo contable
+borderColor = "#C9D6C3"               # renglón
+showWidgetBorder = true
+baseRadius = "0.25rem"
+font = "Archivo:https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&display=swap"
+headingFont = "'Source Serif 4':https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600&display=swap"   # sin comas: Streamlit separa las fuentes por coma
+
+[theme.sidebar]
+backgroundColor = "#E4EBE1"
+
+[client]
+toolbarMode = "minimal"   # sin el botón "Deploy" de la barra de desarrollo

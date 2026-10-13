@@ -28,6 +28,8 @@ tags: [economista-ia, bitacora]
 - La sensibilidad a tasas supone **exposición máxima** (toda la deuda financiera se reprecia en el año), porque el balance no dice qué parte es a tasa fija; incluye como escenario la mayor alza de la IBR a 3 meses en 12 meses (+8,24 puntos en 2022) para mostrar que ±3 puntos es moderado, y aplaza comparar la tasa implícita con la de colocación porque la cuenta 5305 mezcla intereses con comisiones.
 - El orquestador **descarta los argumentos numéricos que no aparecen en la pregunta**: el 7B inventaba escenarios ("¿cuánto me ahorro si bajan las tasas?" → −1 punto).
 - Con el 7B, **menos cifras parecidas en los datos**: de la sensibilidad a tasas se quitaron el punto de quiebre como indicador y el cambio a 12 meses de la tasa de política, y con un escenario pedido se devuelve solo ese, porque el modelo mezclaba cifras de escenarios distintos.
+- Cuando un análisis no trae comparación sectorial, el verificador **rechaza los calificativos** ("significativo", "preocupante", "grave") y pide reescribir una vez nombrando las palabras: ni el prompt ni un hallazgo lograron que el 7B dejara de calificar sin referencia.
+- La interfaz usa el tema **"libro contable"** (papel de libro mayor, tinta azul para las cifras calculadas, rojo contable para negativos) y sigue en Streamlit; lo distintivo es que **cada cifra de la respuesta muestra su origen** (indicador y fórmula) al pasar el cursor, porque la promesa del producto es que ninguna cifra la inventa el modelo.
 
 ---
 Vuelve a [[resumen]]
