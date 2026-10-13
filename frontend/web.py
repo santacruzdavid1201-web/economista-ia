@@ -39,7 +39,7 @@ from data_sources.empresa.puc import (
     cargar_mapeo,
     leer_balance_prueba,
 )
-from data_sources.externos.referencia import cargar_referencia
+from data_sources.externos.referencia import REFERENCIAS, cargar_referencia
 from frontend.cifras import libro, respuesta_html
 from frontend.modulos import MODULOS, POR_CLAVE
 from modules.base import formatear
@@ -67,8 +67,6 @@ ANALISIS = {
     "comparar_con_sector": "comparación con el sector",
     "diagnostico_general": "diagnóstico general",
 }
-SIN_REFERENCIA = ("No hay referencia sectorial para ese CIIU y año: la comparación con el "
-                  "sector no estará disponible.")
 
 router = APIRouter()
 
@@ -226,6 +224,14 @@ def _actualizar(s: Sesion) -> None:
             s.ciiu, historial.ultimo.fecha_corte.year))
 
 
+def _sin_referencia(h: HistorialFinanciero) -> str:
+    """Aviso concreto: qué CIIU y año faltan y qué referencias sí hay."""
+    hay = ", ".join(sorted(r.stem.replace("_", " ") for r in REFERENCIAS.glob("*.json")))
+    return (f"No hay referencia sectorial para el CIIU {h.empresa.ciiu} en "
+            f"{h.ultimo.fecha_corte.year} (por ahora hay: {hay or 'ninguna'}). El resto del "
+            "análisis funciona; solo la comparación con el sector no estará disponible.")
+
+
 def _carga(s: Sesion, errores: list[str] | None = None) -> dict:
     """Lo que muestra la tarjeta de la empresa: datos, archivos leídos y qué falta."""
     if s.ctx:
@@ -240,7 +246,8 @@ def _carga(s: Sesion, errores: list[str] | None = None) -> dict:
     return {
         "razon_social": s.razon_social, "ciiu": s.ciiu, "unidad": s.unidad, "unidades": UNIDADES,
         "max_mb": MAX_MB, "errores": errores or [], "estado": estado, "listo": s.ctx is not None,
-        "sin_referencia": SIN_REFERENCIA if s.ctx and s.ctx.referencia is None else None,
+        "sin_referencia": (_sin_referencia(s.ctx.historial)
+                           if s.ctx and s.ctx.referencia is None else None),
         "reclasif": RECLASIF,
         "archivos": [{"i": i, "nombre": a.nombre, "fecha": a.fecha.isoformat(), "error": a.error,
                       "reclasif": a.reclasif, "renglones": libro([

@@ -209,6 +209,13 @@ def test_sin_razon_social_ni_ciiu_igual_lee_los_archivos(cliente):
     assert sesion_unica().ctx is None
 
 
+def test_aviso_sin_referencia_dice_que_falta_y_que_hay(cliente):
+    r = subir(cliente, [csv_demo(2023)], ciiu="6810")
+    assert "No hay referencia sectorial para el CIIU 6810 en 2023" in r.text
+    assert "hoteles 2024" in r.text
+    assert "hoteles 2024" not in subir(cliente, [], ciiu="5511", fecha_0="2024-12-31").text
+
+
 def test_cifras_en_miles_de_pesos(cliente):
     subir(cliente, [csv_demo(2024)], unidad="miles")
     activo = contexto_demo().historial.ultimo.balance.activo_total
