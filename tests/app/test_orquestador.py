@@ -11,6 +11,7 @@ from app.orchestrator.orquestador import (
     ErrorEntrada,
     Respuesta,
     conversacion_previa,
+    es_cortesia,
     datos_para_redactar,
     responder,
     validar_pregunta,
@@ -126,15 +127,42 @@ def test_fuera_de_alcance_no_llama_redaccion(ctx):
 
 def test_si_el_enrutador_contesta_con_texto_se_trata_como_charla(ctx):
     llm = LLMFalso(texto("¡Hola! ¿En qué puedo ayudarte?"), texto("¡Hola! ¿En qué le ayudo?"))
-    r = responder("Hola", ctx, llm, HOY)
+    r = responder("Hola, ¿qué puedes hacer?", ctx, llm, HOY)
     assert r.herramienta == "conversar" and r.origen == "llm"
     assert r.texto == "¡Hola! ¿En qué le ayudo?"           # la redacción, no el texto del enrutador
     assert "se trató como charla" in r.eventos[0]
 
 
+def test_cortesia_va_directo_a_la_charla():
+    for mensaje in ("Hola", "¡Buenos días!", "Gracias, muy útil", "¿Qué tal? ¿Cómo estás?"):
+        assert es_cortesia(mensaje), mensaje
+    for mensaje in ("Hola, ¿cómo está mi empresa?", "¿Qué es el EBITDA?", "", "liquidez"):
+        assert not es_cortesia(mensaje), mensaje
+    llm = LLMFalso(texto("¡Con gusto!"))
+    r = responder("Gracias", ContextoEmpresa(historial=hacer_historial()), llm, HOY)
+    assert r.texto == "¡Con gusto!" and len(llm.llamadas) == 1        # sin enrutador
+    assert llm.llamadas[0]["herramientas"] is None
+
+
+def test_respuesta_cortada_por_el_tope_no_se_muestra(ctx):
+    cortada = RespuestaLLM(texto="La liquidez es 2,04 👋🚀👋🚀", cortada=True)
+    llm = LLMFalso(herramienta("analizar_liquidez", periodo=2024), cortada, cortada)
+    r = responder("¿Liquidez?", ctx, llm, HOY)
+    assert r.origen == "respaldo" and "👋" not in r.texto
+    assert any("cortada por el tope" in e for e in r.eventos)
+
+
+def test_en_la_charla_el_reintento_pide_explicar_sin_cifras(ctx):
+    llm = LLMFalso(herramienta("consulta_conceptual"), texto("Al 12 % se duplica en 6 años."),
+                   texto("Divide 72 entre la tasa para estimar los años."))
+    r = responder("¿Qué es la regla del 72?", ctx, llm, HOY, buscador=None)
+    assert "sin cifras ni ejemplos numéricos" in llm.llamadas[2]["usuario"]
+    assert r.origen == "llm" and r.texto.startswith("Divide 72")
+
+
 def test_conversar_redacta_sin_herramientas(ctx):
     llm = LLMFalso(herramienta("conversar"), texto("¡Hola! ¿En qué le ayudo con su empresa?"))
-    r = responder("Hola", ctx, llm, HOY)
+    r = responder("Hola, ¿qué puedes hacer?", ctx, llm, HOY)
     assert r.origen == "llm" and r.herramienta == "conversar" and r.texto.startswith("¡Hola!")
     assert llm.llamadas[1]["herramientas"] is None
     assert "CONVERSACIÓN PREVIA:\n(ninguna)" in llm.llamadas[1]["usuario"]

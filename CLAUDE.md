@@ -238,9 +238,11 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    `panorama-macro` (inflación, tasas, TRM —SUAMECA id 1—, PIB y desempleo;
    averiguar los ids de los dos últimos). `sector-hotelero` (MMH + panel de
    Supersociedades + SQL) pasa al módulo 2, que usa la misma infraestructura.
-   Pendiente del usuario: cálculo a mano de sensibilidad-tasas del demo 2024.
-   La tasa de política (12,25 %) y la IBR (11,70 %) las confirmó contra la
-   última reunión del BanRep el 13/10/2026.
+   Sensibilidad-tasas conciliada con el cálculo a mano del usuario (demo 2024,
+   13/10/2026): tasa implícita, aumento por punto, coberturas y escenarios; el
+   alza de 2022 es 8,242 puntos (se muestra 8,24). La tasa de política
+   (12,25 %) y la IBR (11,70 %) las confirmó contra la última reunión del
+   BanRep el 13/10/2026.
 
 Grupos de comparación en `config/ciiu_sectores.yaml` (alojamiento / hoteles).
 El benchmark se describe siempre como "empresas reportantes a

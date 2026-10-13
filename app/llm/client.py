@@ -38,6 +38,7 @@ class LlamadaHerramienta:
 class RespuestaLLM:
     texto: str | None = None
     herramientas: list[LlamadaHerramienta] = field(default_factory=list)
+    cortada: bool = False           # llegó al tope de tokens: el texto quedó incompleto
 
 
 class ClienteChat(Protocol):
@@ -114,7 +115,8 @@ class ClienteLLM:
         if r.status_code != 200:
             raise ErrorLLM(f"El servidor del modelo respondió {r.status_code}: {r.text[:200]}")
         try:
-            mensaje = r.json()["choices"][0]["message"]
+            eleccion = r.json()["choices"][0]
+            mensaje = eleccion["message"]
             llamadas = [
                 LlamadaHerramienta(c["function"]["name"],
                                    json.loads(c["function"].get("arguments") or "{}"))
@@ -122,4 +124,5 @@ class ClienteLLM:
             ]
         except (ValueError, KeyError, IndexError, TypeError) as e:
             raise ErrorLLM(f"Respuesta del modelo con formato inesperado: {e}") from e
-        return RespuestaLLM(texto=mensaje.get("content"), herramientas=llamadas)
+        return RespuestaLLM(texto=mensaje.get("content"), herramientas=llamadas,
+                            cortada=eleccion.get("finish_reason") == "length")

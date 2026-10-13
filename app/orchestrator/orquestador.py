@@ -57,6 +57,11 @@ SIN_EMPRESA = (
 AVISO_SIN_REVISAR = "Parte del material usado aún no ha sido revisado por el economista."
 AVISO_GENERAL = ("Respuesta general: no sale de las notas revisadas por el economista. "
                  "Tómela como orientación.")
+# Mensajes de pura cortesía: van directo a la charla y se ahorran la llamada al enrutador
+# (unos 10 s). ponytail: lista fija de palabras; ampliarla con lo que muestre el uso real
+CORTESIA = set("hola buenas buenos dias tardes noches hey saludos que tal como estas esta "
+               "gracias muchas mil muy amable util genial excelente perfecto listo ok vale "
+               "bien chao adios hasta luego pronto".split())
 # Memoria de la conversación: lo justo para entender "¿y en 2023?" sin llenar el contexto del 7B
 TURNOS_PREVIOS = 3
 LARGO_PREVIO = 400
@@ -166,6 +171,14 @@ def _inventados(herramienta: Herramienta, argumentos: dict, pregunta: str) -> li
     return inventados
 
 
+def es_cortesia(texto: str) -> bool:
+    """Saludo, agradecimiento o despedida sin otra pregunta ("Hola", "Gracias, muy útil")."""
+    normal = "".join(c for c in unicodedata.normalize("NFKD", texto.lower())
+                     if not unicodedata.combining(c))
+    palabras = re.findall(r"[a-z]+", normal)
+    return 0 < len(palabras) <= 6 and all(p in CORTESIA for p in palabras)
+
+
 def conversacion_previa(historial: Sequence[tuple[str, Respuesta]]) -> str:
     """Últimos turnos en texto; cada respuesta recortada (sin partir cifras) y con su análisis."""
     lineas = []
@@ -193,18 +206,30 @@ def _sistema(reglas: str) -> str:
     return "\n\n".join((PROMPTS / f).read_text(encoding="utf-8") for f in ("rol.md", reglas))
 
 
+CORREGIR_CIFRAS = ("Tu respuesta anterior incluía cifras que no están en los datos: {cifras}. "
+                   "Reescríbela usando solo cifras que estén ahí.")
+# En la charla no hay datos de dónde sacar cifras: el 7B repetía su ejemplo numérico
+CORREGIR_CIFRAS_CHARLA = ("Tu respuesta anterior incluía cifras que no puedes dar: {cifras}. "
+                          "Reescríbela sin cifras ni ejemplos numéricos: explícalo con palabras.")
+
+
 def _redactar(cliente: ClienteChat, sistema: str, usuario: str, permitidas: list[str],
-              base: Respuesta, sin_calificar: bool = False, temperatura: float = 0.2) -> str | None:
+              base: Respuesta, sin_calificar: bool = False, temperatura: float = 0.2,
+              corregir_cifras: str = CORREGIR_CIFRAS) -> str | None:
     """
     Redacta y verifica cifras (y, si no hay comparación sectorial, calificativos); un
     reintento con la corrección. None si no lo logra.
     """
     for intento in (1, 2):
         try:
-            texto = (cliente.chat(sistema, usuario, temperatura=temperatura).texto or "").strip()
+            r = cliente.chat(sistema, usuario, temperatura=temperatura)
         except ErrorLLM as e:
             base.eventos.append(f"redacción: {e}")
             return None
+        if r.cortada:            # un desborde que llegó al tope: el texto quedó a medias
+            base.eventos.append(f"intento {intento}: respuesta cortada por el tope de tokens")
+            continue
+        texto = (r.texto or "").strip()
         sobrantes = cifras_no_respaldadas(texto, *permitidas)
         juicios = calificativos(texto) if sin_calificar else []
         if texto and not sobrantes and not juicios:
@@ -214,8 +239,7 @@ def _redactar(cliente: ClienteChat, sistema: str, usuario: str, permitidas: list
             continue
         if sobrantes:
             base.eventos.append(f"intento {intento}: cifras sin respaldo {sobrantes}")
-            usuario += ("\n\nTu respuesta anterior incluía cifras que no están en los datos: "
-                        f"{', '.join(sobrantes)}. Reescríbela usando solo cifras que estén ahí.")
+            usuario += "\n\n" + corregir_cifras.format(cifras=", ".join(sobrantes))
         if juicios:
             base.eventos.append(f"intento {intento}: calificativos sin respaldo {juicios}")
             # Nombrar las palabras: con una instrucción general el 7B repetía la misma
@@ -231,7 +255,7 @@ def _conversar(pregunta: str, cliente: ClienteChat, previa: str, base: Respuesta
     """Charla, comentarios sobre lo anterior o teoría sin nota: sin cifras de memoria."""
     usuario = f"CONVERSACIÓN PREVIA:\n{previa or '(ninguna)'}\n\nMENSAJE:\n{pregunta}"
     texto = _redactar(cliente, _sistema("conversacion.md"), usuario, permitidas, base,
-                      temperatura=0.5)
+                      temperatura=0.5, corregir_cifras=CORREGIR_CIFRAS_CHARLA)
     base.texto, base.origen = (texto, "llm") if texto else (SIN_CHARLA, "sin_llm")
     return base
 
@@ -279,6 +303,10 @@ def responder(pregunta: str, ctx: ContextoEmpresa | None, cliente: ClienteChat |
     cliente = cliente or ClienteLLM()
     hoy = hoy or date.today()
     previa = conversacion_previa(historial)
+    if es_cortesia(pregunta):
+        return _conversar(pregunta, cliente, previa,
+                          Respuesta(texto="", origen="llm", herramienta="conversar",
+                                    eventos=["cortesía: sin enrutador"]), [previa])
 
     # 1. Enrutar: cálculo (tipo 1), criterio o teoría (tipo 2), charla o fuera de alcance (tipo 3)
     mensaje = f"CONVERSACIÓN PREVIA:\n{previa}\n\nPREGUNTA ACTUAL:\n{pregunta}" if previa else pregunta
