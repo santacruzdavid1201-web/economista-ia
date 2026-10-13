@@ -21,6 +21,7 @@ from modules.balance.razones import actividad, endeudamiento, liquidez, rentabil
 from modules.base import ResultadoModulo
 from modules.esquema_financiero import HistorialFinanciero
 from modules.macro.crecimiento_real import crecimiento_real, meses_del_periodo
+from modules.macro.panorama import panorama_macro
 from modules.macro.sensibilidad_tasas import MAX_PUNTOS, ErrorPuntos, sensibilidad_tasas
 
 
@@ -117,6 +118,18 @@ def _sensibilidad_tasas(ctx: ContextoEmpresa, i: int, argumentos: dict) -> list[
         raise ErrorHerramienta(str(e)) from e
 
 
+PANORAMA = ("ipc", "tasa_politica", "ibr_3m", "trm", "pib", "desempleo")
+
+
+def _panorama(ctx: ContextoEmpresa | None, i: int | None, argumentos: dict) -> list[ResultadoModulo]:
+    """Datos nacionales; no necesita empresa (sin ella se usa el catálogo directamente)."""
+    serie = ctx.serie if ctx else catalogo.serie
+    try:
+        return [panorama_macro(*(serie(v, "nacional", None) for v in PANORAMA))]
+    except catalogo.ErrorSerie as e:
+        raise ErrorHerramienta(str(e)) from e
+
+
 HERRAMIENTAS: list[Herramienta] = [
     Herramienta(
         "analizar_liquidez",
@@ -165,6 +178,12 @@ HERRAMIENTAS: list[Herramienta] = [
             "type": "number",
             "description": "Puntos que sube (positivo) o baja (negativo) la tasa, solo si la "
                            "pregunta da una cifra; p. ej. 5 o -2."}}),
+    Herramienta(
+        "consultar_panorama_macro",
+        "¿Cómo está la economía colombiana? ¿Cuál es la inflación? ¿A cuánto está el dólar "
+        "(TRM)? ¿En cuánto está la tasa del Banco de la República? ¿Cuánto creció el PIB? "
+        "¿Cómo va el desempleo? Datos actuales de la economía, no de la empresa.",
+        _panorama, usa_periodo=False),
     Herramienta(
         "comparar_con_sector",
         "¿Cómo está la empresa frente a empresas similares de su sector? Ubica cada "

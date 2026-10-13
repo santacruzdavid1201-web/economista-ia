@@ -74,6 +74,7 @@ ANALISIS = {
     "analizar_riesgo_quiebra": "riesgo financiero (Z'' de Altman)",
     "analizar_crecimiento_real": "crecimiento real de los ingresos",
     "analizar_sensibilidad_tasas": "sensibilidad a las tasas de interés",
+    "consultar_panorama_macro": "panorama de la economía",
     "comparar_con_sector": "comparación con el sector",
     "diagnostico_general": "diagnóstico general",
 }
@@ -295,7 +296,8 @@ def modulo(request: Request, clave: str, s: Sesion = Depends(sesion)):
     m = POR_CLAVE.get(clave)
     if m is None:
         raise HTTPException(404, "Ese módulo no existe.")
-    t = tableros.balance(s.ctx) if clave == "balance" and s.ctx else None
+    t = (tableros.balance(s.ctx) if clave == "balance" and s.ctx else
+         tableros.macro(s.ctx) if clave == "macro" else None)
     return _pagina(request, "modulo.html", _contexto(request, s, m=m, t=t))
 
 

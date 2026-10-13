@@ -36,6 +36,8 @@ tags: [economista-ia, bitacora]
 - La interfaz **ya no carga una empresa por defecto**: el usuario sube sus balances de prueba en la portada y **cada archivo se lee al subirlo** (activo, pasivo y patrimonio, o el error de ese archivo), de a uno y en cualquier orden. Reemplazó al diálogo de dos pasos, que solo mostraba algo al final. Sin empresa, el chat conversa y explica, pero pide los estados antes de calcular. El hotel ficticio queda para el set de evaluación y la demo por terminal.
 - Sin referencia sectorial del año de la empresa se usa **la del año más cercano, a máximo 2 años** (en empate, la más reciente), con aviso en la tarjeta y en la comparación: es más útil que no comparar, y el tope evita comparar años de ciclo distinto (en hoteles, 2020-2021 frente a 2024 mediría la pandemia, no la gestión).
 - Las gráficas de los tableros son **HTML y CSS, no SVG ni una librería de gráficos**: Python calcula las posiciones en porcentaje y la plantilla dibuja franjas, rayas y puntos. Es lo más simple que alcanza para barras y posiciones, se adapta solo al celular y no suma dependencias.
+- El panorama macro compara cada variable con **la misma fecha de un año antes**: el desempleo del DANE no viene ajustado por estacionalidad, y compararlo con el mes anterior confundiría la temporada con la tendencia. Las líneas de tendencia del tablero son un SVG simple (una polilínea calculada en Python), la única excepción a las gráficas en HTML y CSS.
+- `sector-hotelero` pasó al módulo 2 y el módulo 4 se cerró con el panorama macro: el análisis sectorial es un panel, como la econometría, y hacerlo ahora obligaba a montar PostgreSQL antes de tener un motivo real.
 
 ---
 Vuelve a [[resumen]]

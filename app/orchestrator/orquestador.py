@@ -134,7 +134,7 @@ def _glosario(resultados: list[ResultadoModulo]) -> dict[str, str]:
     return {k: definiciones[k] for k in sorted(claves) if k in definiciones}
 
 
-def datos_para_redactar(ctx: ContextoEmpresa, resultados: list[ResultadoModulo]) -> dict:
+def datos_para_redactar(ctx: ContextoEmpresa | None, resultados: list[ResultadoModulo]) -> dict:
     """Todo lo que el LLM puede usar, con cifras ya formateadas."""
     indicadores = [f"{i.nombre}: {formatear(i.valor, i.unidad)}"
                    for r in resultados if r.analisis != "benchmark"   # sus cifras van en hallazgos
@@ -142,7 +142,7 @@ def datos_para_redactar(ctx: ContextoEmpresa, resultados: list[ResultadoModulo])
     no_calculables = [i.nombre for r in resultados for i in r.indicadores if i.valor is None]
     corte = next((r.fecha_corte for r in resultados if r.fecha_corte), None)
     datos = {
-        "empresa": ctx.historial.empresa.razon_social,
+        "empresa": ctx.historial.empresa.razon_social if ctx else None,
         "fecha_corte": f"{corte:%d/%m/%Y}" if corte else None,
         "indicadores": indicadores,
         "hallazgos": [h for r in resultados for h in r.hallazgos],
@@ -354,7 +354,8 @@ def responder(pregunta: str, ctx: ContextoEmpresa | None, cliente: ClienteChat |
         respuesta.eventos = evento + respuesta.eventos
         return respuesta
 
-    if ctx is None:
+    # Los análisis por periodo necesitan los estados; el panorama de la economía, no
+    if ctx is None and herramienta.usa_periodo:
         return Respuesta(texto=SIN_EMPRESA, origen="sin_llm", herramienta=herramienta.nombre,
                          argumentos=argumentos)
 
@@ -364,13 +365,14 @@ def responder(pregunta: str, ctx: ContextoEmpresa | None, cliente: ClienteChat |
         argumentos.pop(clave)
     eventos = [f"argumento '{c}' descartado: su valor no está en la pregunta" for c in inventados]
     try:
-        i = indice_periodo(ctx.historial, argumentos.get("periodo"))
+        i = indice_periodo(ctx.historial, argumentos.get("periodo")) if herramienta.usa_periodo \
+            else None
         resultados = herramienta.ejecutar(ctx, i, argumentos)
     except ErrorHerramienta as e:
         return Respuesta(texto=str(e), origen="sin_llm", herramienta=herramienta.nombre,
                          argumentos=argumentos, eventos=eventos)
     base = Respuesta(texto="", origen="llm", herramienta=herramienta.nombre, argumentos=argumentos,
-                     periodo=ctx.historial.periodos[i].fecha_corte.year,
+                     periodo=ctx.historial.periodos[i].fecha_corte.year if i is not None else None,
                      resultados=resultados, notas=_notas(resultados), eventos=eventos)
 
     # 3. Redactar y verificar

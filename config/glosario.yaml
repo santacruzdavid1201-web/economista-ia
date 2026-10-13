@@ -96,3 +96,16 @@ ibr_3m: >-
   Indicador Bancario de Referencia a tres meses: tasa de referencia del mercado
   interbancario. Muchos créditos a tasa variable se pactan como IBR más un
   margen.
+inflacion_anual: >-
+  Cuánto subieron los precios al consumidor en los últimos doce meses (IPC del
+  mes frente al del mismo mes del año anterior).
+trm: >-
+  Tasa Representativa del Mercado: cuántos pesos cuesta un dólar, según la
+  Superintendencia Financiera. Si sube, el peso pierde valor frente al dólar.
+variacion_anual_trm: Cuánto cambió el precio del dólar en pesos frente a un año antes.
+crecimiento_pib: >-
+  Cuánto creció la producción de la economía colombiana (PIB real) frente al
+  mismo trimestre del año anterior.
+desempleo: >-
+  Qué parte de las personas que buscan trabajo no lo consiguen. Se compara con
+  el mismo mes del año anterior porque la serie no corrige la estacionalidad.

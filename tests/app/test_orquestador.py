@@ -208,6 +208,18 @@ def test_sin_empresa_conversa_pero_no_calcula():
     assert responder("Hola", None, llm, HOY).texto == "¡Hola!"
 
 
+def test_panorama_macro_sin_empresa(monkeypatch):
+    from app.orchestrator import tools_registry
+    from tests.modules.macro.test_panorama import DESEMPLEO, IBR, IPC, PIB, TASA, TRM
+    series = dict(zip(tools_registry.PANORAMA, (IPC, TASA, IBR, TRM, PIB, DESEMPLEO)))
+    monkeypatch.setattr(tools_registry.catalogo, "serie", lambda v, g, d: series[v])
+    llm = LLMFalso(herramienta("consultar_panorama_macro"),
+                   texto("El dólar está en $ 3.200, 20,0 % menos que un año antes."))
+    r = responder("¿A cuánto está el dólar?", None, llm, HOY)
+    assert r.origen == "llm" and r.herramienta == "consultar_panorama_macro" and r.periodo is None
+    assert "$ 3.200" in r.texto
+
+
 def test_anio_sin_datos(ctx):
     r = responder("¿Liquidez en 2019?", ctx, LLMFalso(herramienta("analizar_liquidez",
                                                                    periodo=2019)), HOY)

@@ -5,13 +5,23 @@ calculan las posiciones en porcentaje y la plantilla solo las dibuja.
 """
 from __future__ import annotations
 
-from app.orchestrator.tools_registry import ContextoEmpresa
+from datetime import date
+
+from app.orchestrator.tools_registry import (
+    PANORAMA,
+    POR_NOMBRE,
+    ContextoEmpresa,
+    ErrorHerramienta,
+)
 from data_sources.externos.referencia import homologar_empresa
+from data_sources.externos.series import catalogo
+from data_sources.externos.series.modelo import Serie
 from modules.balance.altman import ZONA_RIESGO, ZONA_SEGURA, altman, calificacion_equivalente, zona
 from modules.balance.benchmark import DIRECCION, comparar
 from modules.balance.dupont import variacion
 from modules.balance.razones import actividad, endeudamiento, liquidez, rentabilidad
 from modules.base import ResultadoModulo, formatear
+from modules.macro.panorama import inflacion_anual, panorama_macro
 
 TEMAS = (("Liquidez", liquidez), ("Endeudamiento", endeudamiento),
          ("Rentabilidad", rentabilidad), ("Actividad", actividad), ("Riesgo financiero", altman))
@@ -167,3 +177,113 @@ def balance(ctx: ContextoEmpresa) -> dict:
         "dupont": _dupont(ctx, i),
         "por_anio": _por_anio(ctx),
     }
+
+
+# --------------------------------------------------------------------------- #
+# Tablero macro
+# --------------------------------------------------------------------------- #
+MESES_LINEA = 36            # meses de historia en las líneas de tendencia
+ESCENARIOS = (("menos_3", "3 puntos menos"), ("menos_1", "1 punto menos"), ("", "Sin cambio de tasa"),
+              ("mas_1", "1 punto más"), ("mas_3", "3 puntos más"), ("historico", "Alza de 2022"))
+
+
+def _linea(puntos: list[tuple[date, float]], ancho: int = 200, alto: int = 44) -> dict | None:
+    """Puntos de una línea SVG (y crece hacia abajo en SVG: se invierte)."""
+    if len(puntos) < 2:
+        return None
+    valores = [v for _, v in puntos]
+    bajo, alto_v = min(valores), max(valores)
+    rango = (alto_v - bajo) or 1
+    xy = [(round(k / (len(valores) - 1) * ancho, 1), round(alto - 4 - (v - bajo) / rango * (alto - 8), 1))
+          for k, v in enumerate(valores)]
+    return {"puntos": " ".join(f"{x},{y}" for x, y in xy), "ultimo": xy[-1], "ancho": ancho,
+            "alto": alto, "desde": puntos[0][0], "hasta": puntos[-1][0]}
+
+
+def _mensual_reciente(serie: Serie, meses: int = MESES_LINEA) -> list[tuple[date, float]]:
+    return serie.fin_de_mes()[-meses:]
+
+
+def _economia(ctx: ContextoEmpresa | None) -> dict:
+    obtener = ctx.serie if ctx else catalogo.serie
+    s = {v: obtener(v, "nacional", None) for v in PANORAMA}
+    r = panorama_macro(*s.values())
+    v = _valores([r])
+
+    def tarjeta(clave, titulo, unidad, comparacion, linea):
+        ind = v[clave]
+        return {"titulo": titulo, "nombre": ind.nombre, "formula": ind.formula,
+                "valor": formatear(ind.valor, unidad) if ind.valor is not None else "—",
+                "comparacion": comparacion, "linea": linea}
+
+    def previo(clave, texto):
+        return f"{texto}: {formatear(v[clave].valor, v[clave].unidad)}" if clave in v and \
+            v[clave].valor is not None else None
+
+    ipc = s["ipc"].observaciones
+    inflacion = [(f, x) for f, _ in ipc[-MESES_LINEA:] if (x := inflacion_anual(s["ipc"], f)) is not None]
+    return {
+        "tarjetas": [
+            tarjeta("inflacion_anual", "Inflación anual", "tasa",
+                    previo("inflacion_anual_previa", "Un año antes"), _linea(inflacion)),
+            tarjeta("tasa_politica", "Tasa del Banco de la República", "tasa",
+                    previo("tasa_politica_previa", "Un año antes") + " · IBR a 3 meses: "
+                    + formatear(v["ibr_3m"].valor, "tasa") if "tasa_politica_previa" in v else None,
+                    _linea(_mensual_reciente(s["tasa_politica"]))),
+            tarjeta("trm", "Dólar (TRM)", "pesos",
+                    previo("variacion_anual_trm", "Variación en un año"),
+                    _linea(_mensual_reciente(s["trm"]))),
+            tarjeta("crecimiento_pib", "Crecimiento del PIB", "tasa",
+                    f"Trimestre anterior: {formatear(s['pib'].observaciones[-2][1] / 100, 'tasa')}",
+                    _linea(s["pib"].observaciones[-12:])),
+            tarjeta("desempleo", "Desempleo", "tasa",
+                    previo("desempleo_previo", "Mismo mes del año anterior"),
+                    _linea(_mensual_reciente(s["desempleo"]))),
+        ],
+        "hallazgos": r.hallazgos, "fuentes": r.fuentes, "advertencias": r.advertencias,
+    }
+
+
+def _empresa_macro(ctx: ContextoEmpresa) -> dict:
+    """Crecimiento real y sensibilidad a tasas de la empresa, con las mismas herramientas del chat."""
+    i = len(ctx.historial.periodos) - 1
+    salida: dict = {}
+    try:
+        cr = POR_NOMBRE["analizar_crecimiento_real"].ejecutar(ctx, i, {})[0]
+        v = _valores([cr])
+        salida["crecimiento"] = {
+            "cifras": [(v[c].nombre, formatear(v[c].valor, v[c].unidad)) for c in
+                       ("crecimiento_nominal_ingresos", "inflacion_promedio", "crecimiento_real_ingresos")
+                       if c in v and v[c].valor is not None],
+            # Sin los supuestos de la carga del balance (deudores, reclasificaciones): no son de aquí
+            "hallazgos": cr.hallazgos,
+            "avisos": [a for a in cr.advertencias + cr.supuestos
+                       if a not in {x for p in ctx.historial.periodos for x in p.supuestos_carga}]}
+    except ErrorHerramienta as e:
+        salida["crecimiento"] = {"cifras": [], "hallazgos": [], "avisos": [str(e)]}
+    try:
+        st = POR_NOMBRE["analizar_sensibilidad_tasas"].ejecutar(ctx, i, {})[0]
+        v = _valores([st])
+
+        def fila(sufijo, etiqueta):
+            g = v.get(f"gastos_financieros_{sufijo}" if sufijo else "gastos_financieros_anuales")
+            c = v.get(f"cobertura_{sufijo}" if sufijo else "cobertura_intereses")
+            if g is None or g.valor is None:
+                return None
+            return {"escenario": etiqueta, "hoy": not sufijo, "gastos": formatear(g.valor, "pesos"),
+                    "cobertura": formatear(c.valor, "veces") if c and c.valor is not None else "—"}
+
+        salida["tasas"] = {"filas": [f for s, e in ESCENARIOS if (f := fila(s, e))],
+                           "hallazgos": st.hallazgos[:1], "avisos": st.supuestos}
+    except ErrorHerramienta as e:
+        salida["tasas"] = {"filas": [], "hallazgos": [], "avisos": [str(e)]}
+    return salida
+
+
+def macro(ctx: ContextoEmpresa | None) -> dict:
+    """Tablero del entorno macro: la economía siempre; la empresa, si está cargada."""
+    try:
+        economia = _economia(ctx)
+    except catalogo.ErrorSerie as e:
+        economia = {"error": str(e)}
+    return {"economia": economia, "empresa": _empresa_macro(ctx) if ctx else None}

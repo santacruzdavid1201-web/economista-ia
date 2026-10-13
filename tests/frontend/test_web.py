@@ -109,7 +109,14 @@ def test_tablero_de_balance(cliente):
     for parte in ("Frente al sector", "Por qué cambió la rentabilidad del patrimonio",
                   "Indicadores por año", 'class="pista-punto"', "frente a 2023"):
         assert parte in r, parte
-    assert "en construcción" in cliente.get("/modulo/macro").text
+    macro = cliente.get("/modulo/macro").text
+    assert "La economía colombiana" in macro and "¿Cómo le afectan las tasas de interés?" in macro
+
+
+def test_tablero_macro_sin_empresa(cliente):
+    r = cliente.get("/modulo/macro").text
+    assert "Inflación anual" in r and "Dólar (TRM)" in r and "<polyline" in r
+    assert "Subir estados financieros" in r
 
 
 def test_modulo_inactivo_en_construccion(cliente):

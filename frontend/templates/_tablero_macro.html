@@ -1,0 +1,81 @@
+{#- Tablero macro: la economía siempre; la empresa, si está cargada. Todo viene de tableros.py -#}
+{% from "_macros.html" import enlace %}
+{% with e = t.economia %}
+<p class="tablero-corte">La economía colombiana: últimos datos publicados</p>
+{% if e.error %}
+  <p class="aviso">{{ e.error }}</p>
+{% else %}
+  <div class="tarjetas tarjetas-macro">
+    {% for c in e.tarjetas %}
+      <article class="tarjeta">
+        <h2 class="tarjeta-titulo">{{ c.titulo }}</h2>
+        <p class="tarjeta-valor">{{ c.valor }}</p>
+        <p class="tarjeta-nombre" title="{{ c.formula }}">{{ c.nombre }}</p>
+        {% if c.linea %}
+          <svg class="tendencia" viewBox="0 0 {{ c.linea.ancho }} {{ c.linea.alto }}" role="img"
+               aria-label="Tendencia de {{ c.linea.desde.strftime('%m/%Y') }} a {{ c.linea.hasta.strftime('%m/%Y') }}">
+            <polyline points="{{ c.linea.puntos }}"></polyline>
+            <circle cx="{{ c.linea.ultimo[0] }}" cy="{{ c.linea.ultimo[1] }}" r="3.5"></circle>
+          </svg>
+          <p class="tendencia-rango" aria-hidden="true"><span>{{ c.linea.desde.strftime('%m/%Y') }}</span><span>{{ c.linea.hasta.strftime('%m/%Y') }}</span></p>
+        {% endif %}
+        {% if c.comparacion %}<p class="tarjeta-cambio">{{ c.comparacion }}</p>{% endif %}
+      </article>
+    {% endfor %}
+  </div>
+
+  <section class="bloque" aria-labelledby="titulo-datos">
+    <h2 id="titulo-datos">Lo que dicen los datos</h2>
+    <ul class="hallazgos">{% for h in e.hallazgos %}<li>{{ h }}</li>{% endfor %}</ul>
+    <ul class="bloque-avisos">
+      {% for a in e.advertencias %}<li>{{ a }}</li>{% endfor %}
+      {% for f in e.fuentes %}<li>{{ f }}</li>{% endfor %}
+    </ul>
+  </section>
+{% endif %}
+{% endwith %}
+
+<section class="bloque" aria-labelledby="titulo-empresa-macro">
+  <h2 id="titulo-empresa-macro">Su empresa y la economía</h2>
+  {% if t.empresa %}
+    {% with c = t.empresa.crecimiento %}
+      <h3 class="subtema">¿Sus ingresos subieron más que los precios?</h3>
+      {% if c.cifras %}
+        <div class="cifras-caja">
+          {% for nombre, valor in c.cifras %}
+            <div class="caja"><span>{{ nombre }}</span><strong>{{ valor }}</strong></div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% for h in c.hallazgos[:2] %}<p>{{ h }}</p>{% endfor %}
+      {% if c.avisos %}<ul class="bloque-avisos">{% for a in c.avisos %}<li>{{ a }}</li>{% endfor %}</ul>{% endif %}
+    {% endwith %}
+
+    {% with s = t.empresa.tasas %}
+      <h3 class="subtema">¿Cómo le afectan las tasas de interés?</h3>
+      {% if s.filas %}
+        <div class="tabla-desplazable">
+          <table class="libro escenarios">
+            <tr><th>Si la tasa de su deuda cambia</th><th class="numero">Gastos financieros al año</th><th class="numero">Cobertura de intereses</th></tr>
+            {% for f in s.filas %}
+              <tr{% if f.hoy %} class="fila-base"{% endif %}><td>{{ f.escenario }}</td><td class="valor">{{ f.gastos }}</td><td class="valor">{{ f.cobertura }}</td></tr>
+            {% endfor %}
+          </table>
+        </div>
+      {% endif %}
+      {% for h in s.hallazgos %}<p>{{ h }}</p>{% endfor %}
+      {% if s.avisos %}
+        <details class="desplegable">
+          <summary>Supuestos de los escenarios ({{ s.avisos | length }})</summary>
+          <ul>{% for a in s.avisos %}<li>{{ a }}</li>{% endfor %}</ul>
+        </details>
+      {% endif %}
+    {% endwith %}
+  {% else %}
+    <div class="tablero-vacio">
+      <p>Suba los balances de prueba de su empresa en la portada y aquí verá si sus ingresos
+        crecieron más que la inflación y cuánto le cambian los intereses si suben las tasas.</p>
+      {% call enlace("/", "boton") %}Subir estados financieros{% endcall %}
+    </div>
+  {% endif %}
+</section>

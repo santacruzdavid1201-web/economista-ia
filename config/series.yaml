@@ -39,3 +39,18 @@ ibr_3m:
   nombre: IBR a 3 meses                  # nominal, base 360; desde 2012
   ids:
     nacional: 243
+
+# Panorama macro (13/10/2026): catálogo del portal (consultaMenuXopcion?opcion=
+# CATALOGO_DATOS, código en enlace_pagina_externa). Solo nacionales.
+trm:
+  nombre: TRM                            # pesos por dólar, diaria; desde 1991
+  ids:
+    nacional: 1
+pib:
+  nombre: crecimiento del PIB            # variación anual del PIB real, trimestral, DANE
+  ids:
+    nacional: 15271
+desempleo:
+  nombre: tasa de desempleo              # mensual, DANE, sin ajuste estacional
+  ids:
+    nacional: 15312

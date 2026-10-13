@@ -33,10 +33,12 @@ MODULOS = (
             "¿Por qué cambió la rentabilidad del patrimonio?",
             "¿Me conviene subir las tarifas de las habitaciones?")),
     Modulo("macro", "Entorno macro",
-           "Inflación y tasas de interés: cuánto creció la empresa descontando el alza de "
-           "precios y cómo le afectan las tasas.",
+           "La economía colombiana (inflación, tasas, dólar, PIB y desempleo) y cómo afecta a "
+           "la empresa: cuánto creció descontando la inflación y cuánto le cambian las tasas.",
            "coral",
-           ("¿Crecí en términos reales?",
+           ("¿Cómo está la economía?",
+            "¿A cuánto está el dólar?",
+            "¿Crecí en términos reales?",
             "¿Mis ventas le ganaron a la inflación?",
             "¿Cómo me afectan las tasas de interés?",
             "¿Qué pasa si las tasas suben 2 puntos?",

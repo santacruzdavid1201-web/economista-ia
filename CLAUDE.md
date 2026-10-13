@@ -244,10 +244,20 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    (`frontend/tableros.py` + `_tablero_balance.html`: tarjetas con cambio
    anual y posición sectorial, franja p25-p75 con mediana y empresa por
    indicador, palancas DuPont y tabla por año; gráficas en HTML y CSS); (c)
-   tablero Macro, que absorbe
-   `panorama-macro` (inflación, tasas, TRM —SUAMECA id 1—, PIB y desempleo;
-   averiguar los ids de los dos últimos). `sector-hotelero` (MMH + panel de
-   Supersociedades + SQL) pasa al módulo 2, que usa la misma infraestructura.
+   tablero Macro, hecho el 13/10/2026: `panorama-macro`
+   (`modules/macro/panorama.py`, herramienta `consultar_panorama_macro`, que
+   no necesita empresa; bloque K, casos 46-50) con inflación (IPC 15000), tasa
+   de política (59), IBR (243), TRM (1), crecimiento del PIB (15271,
+   trimestral) y desempleo (15312, mensual, sin ajuste estacional: se compara
+   con el mismo mes del año anterior); tarjetas con línea de tendencia de 3
+   años (SVG simple) y, con empresa, crecimiento real y escenarios de tasas.
+   Error de sentido corregido con un hallazgo: con la TRM a la baja el 7B
+   escribió "depreciación del peso"; ahora Python dice si el peso se revaluó
+   o se devaluó. `sector-hotelero` (MMH + panel de Supersociedades + SQL)
+   pasa al módulo 2, que usa la misma infraestructura.
+   Siguiente: módulo 3 (evaluación de proyectos: VPN, TIR, WACC,
+   sensibilidad), con su tablero desde el inicio. Pendiente menor: bajar el
+   contexto del modelo en LM Studio a 8.192 si vuelve a caerse.
    Sensibilidad-tasas conciliada con el cálculo a mano del usuario (demo 2024,
    13/10/2026): tasa implícita, aumento por punto, coberturas y escenarios; el
    alza de 2022 es 8,242 puntos (se muestra 8,24). La tasa de política

@@ -30,7 +30,7 @@
   {% if r.detalle %}
     <details class="desplegable">
       <summary>De dónde salen las cifras</summary>
-      <p class="detalle-analisis">Análisis de {{ r.analisis }}, con los estados de {{ r.periodo }}.</p>
+      <p class="detalle-analisis">Análisis de {{ r.analisis }}{% if r.periodo %}, con los estados de {{ r.periodo }}{% endif %}.</p>
       {% for d in r.detalle %}
         {% if d.hallazgos %}<ul>{% for h in d.hallazgos %}<li>{{ h }}</li>{% endfor %}</ul>{% endif %}
         {% if d.tabla %}<div class="tabla-desplazable">{{ d.tabla | safe }}</div>{% endif %}

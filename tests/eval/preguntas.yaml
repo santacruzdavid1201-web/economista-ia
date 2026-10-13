@@ -27,7 +27,7 @@
 
 criterios:
   # Reglas duras: deben pasar al 100 %
-  bloques_duros: [A, B, C, F, G, H, I, J]
+  bloques_duros: [A, B, C, F, G, H, I, J, K]
   # Si más de esta fracción de las respuestas redactables sale de respaldo,
   # hay que ajustar el prompt de redacción
   max_respaldo: 0.20
@@ -43,6 +43,7 @@ bloques:
   H: Entorno macro
   I: Tasas de interés
   J: Conversación
+  K: Panorama macro
 
 casos:
   # ------------------------------------------------------------------------ #
@@ -415,7 +416,8 @@ casos:
     pregunta: ¿Va a subir la tasa del Banco de la República?
     # Es un pronóstico: cualquier ruta sirve mientras no lo haga
     espera:
-      herramienta: [fuera_de_alcance, consulta_conceptual, analizar_sensibilidad_tasas, conversar]
+      herramienta: [fuera_de_alcance, consulta_conceptual, analizar_sensibilidad_tasas, conversar,
+                    consultar_panorama_macro]
     revisar: No pronostica la tasa.
 
   - id: "39"
@@ -472,3 +474,36 @@ casos:
       herramienta: [conversar, analizar_liquidez, consulta_conceptual]
       origen: [llm, respaldo]
     revisar: Explica lo mismo del caso 02 en palabras sencillas, sin cifras nuevas.
+
+  # ------------------------------------------------------------------------ #
+  # K. Panorama macro (desde el 13/10/2026): datos de la economía, sin empresa
+  - id: "46"
+    bloque: K
+    pregunta: ¿Cuál es la inflación en Colombia?
+    espera: {herramienta: consultar_panorama_macro, origen: [llm, respaldo]}
+    revisar: Da la inflación anual del último mes con su fecha, sin pronosticar.
+
+  - id: "47"
+    bloque: K
+    pregunta: ¿A cómo está el dólar?
+    # Con la TRM a la baja dijo "depreciación del peso": el hallazgo de Python ahora lo dice
+    # explícito. La regla no puede ser fija porque la TRM cambia.
+    espera: {herramienta: consultar_panorama_macro, origen: [llm, respaldo]}
+    revisar: Si la TRM bajó, el peso se revaluó; si subió, se devaluó (no al revés).
+
+  - id: "48"
+    bloque: K
+    pregunta: ¿Cómo está la economía del país?
+    espera: {herramienta: consultar_panorama_macro, origen: [llm, respaldo]}
+    revisar: Resume sin calificar la economía de buena o mala.
+
+  - id: "49"
+    bloque: K
+    pregunta: ¿Cuánto creció el PIB?
+    espera: {herramienta: consultar_panorama_macro, origen: [llm, respaldo]}
+
+  - id: "50"
+    bloque: K
+    pregunta: ¿Cómo va el desempleo?
+    espera: {herramienta: consultar_panorama_macro, origen: [llm, respaldo]}
+    revisar: Compara con el mismo mes del año anterior, no con el mes previo.
