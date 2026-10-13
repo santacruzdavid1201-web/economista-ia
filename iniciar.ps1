@@ -1,4 +1,4 @@
-# Enciende todo lo que necesita la interfaz del economista IA, en orden:
+﻿# Enciende todo lo que necesita la interfaz del economista IA, en orden:
 #   1. LM Studio. La versión 1.1.8 ("Bionic") enciende sola su servidor al
 #      abrirse y carga el modelo con la primera pregunta. Desde la
 #      actualización del 12/10/2026 el CLI `lms` ya no logra encenderlo.
