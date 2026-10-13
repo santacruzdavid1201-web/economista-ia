@@ -108,8 +108,8 @@ def comparar(resultados: list[ResultadoModulo], ref: ReferenciaSectorial) -> Res
 
     if fecha is not None and fecha.year != ref.anio:
         advertencias.append(
-            f"La empresa tiene corte {fecha.year} y la referencia sectorial es de {ref.anio}: "
-            "la comparación mezcla años distintos."
+            f"La empresa tiene corte {fecha.year} y la referencia sectorial es de {ref.anio}, "
+            "el año más cercano con datos: la comparación mezcla años distintos."
         )
 
     pequenas: list[str] = []

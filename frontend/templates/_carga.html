@@ -74,7 +74,7 @@
   </details>
 
   <p class="carga-estado{% if c.listo %} listo{% endif %}" role="status">{{ c.estado }}</p>
-  {% if c.sin_referencia %}<p class="aviso">{{ c.sin_referencia }}</p>{% endif %}
+  {% if c.aviso_referencia %}<p class="aviso">{{ c.aviso_referencia }}</p>{% endif %}
   {% if c.archivos or c.razon_social %}
     <button type="button" class="boton secundario" hx-post="/empresa/borrar" hx-target="#empresa"
             hx-swap="outerHTML" hx-confirm="¿Borrar la empresa, sus archivos y la conversación?">Empezar de nuevo</button>

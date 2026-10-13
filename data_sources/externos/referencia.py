@@ -171,10 +171,25 @@ def grupo_de_ciiu(ciiu: str) -> str | None:
     return min(candidatos)[1] if candidatos else None
 
 
+# Distancia máxima entre el año de la empresa y el de la referencia: más allá, la
+# comparación mide el ciclo (en hoteles, 2020-2021 frente a 2024 mediría la pandemia)
+MAX_DISTANCIA_ANIOS = 2
+
+
 def cargar_referencia(ciiu: str, anio: int) -> ReferenciaSectorial | None:
-    """Referencia guardada para el CIIU y el año; None si no se ha construido."""
+    """
+    Referencia guardada del grupo del CIIU para el año o, si no existe, para el año más
+    cercano a máximo MAX_DISTANCIA_ANIOS (en empate, el más reciente). `comparar` avisa
+    cuando los años no coinciden. None si no hay ninguna.
+    """
     grupo = grupo_de_ciiu(ciiu)
-    archivo = REFERENCIAS / f"{grupo}_{anio}.json"
-    if grupo is None or not archivo.exists():
+    if grupo is None:
         return None
+    anios = [int(a.stem.rsplit("_", 1)[1]) for a in REFERENCIAS.glob(f"{grupo}_*.json")
+             if a.stem.rsplit("_", 1)[1].isdigit()]
+    cercanos = [a for a in anios if abs(a - anio) <= MAX_DISTANCIA_ANIOS]
+    if not cercanos:
+        return None
+    elegido = min(cercanos, key=lambda a: (abs(a - anio), -a))
+    archivo = REFERENCIAS / f"{grupo}_{elegido}.json"
     return ReferenciaSectorial.model_validate_json(archivo.read_text(encoding="utf-8"))

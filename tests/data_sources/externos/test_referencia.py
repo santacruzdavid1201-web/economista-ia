@@ -97,3 +97,18 @@ def test_cargar_referencia_elige_el_grupo_mas_especifico():
     ref = cargar_referencia("5511", 2024)              # versionada en data/referencias
     assert ref is not None and ref.anio == 2024 and "dias_proveedores" in ref.no_comparables
     assert cargar_referencia("5511", 1999) is None
+
+
+def test_sin_el_anio_exacto_usa_el_mas_cercano(tmp_path, monkeypatch):
+    from data_sources.externos import referencia
+    real = referencia.REFERENCIAS / "hoteles_2024.json"
+    for anio in (2022, 2024):
+        (tmp_path / f"hoteles_{anio}.json").write_text(
+            real.read_text(encoding="utf-8").replace('"anio": 2024', f'"anio": {anio}'),
+            encoding="utf-8")
+    monkeypatch.setattr(referencia, "REFERENCIAS", tmp_path)
+    assert referencia.cargar_referencia("5511", 2024).anio == 2024     # el exacto primero
+    assert referencia.cargar_referencia("5511", 2025).anio == 2024
+    assert referencia.cargar_referencia("5511", 2023).anio == 2024     # empate: el más reciente
+    assert referencia.cargar_referencia("5511", 2020).anio == 2022     # a 2 años, todavía
+    assert referencia.cargar_referencia("5511", 2019) is None          # a 3 años, ya no

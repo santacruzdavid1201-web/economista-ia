@@ -233,12 +233,18 @@ def _actualizar(s: Sesion) -> None:
             s.ciiu, historial.ultimo.fecha_corte.year))
 
 
-def _sin_referencia(h: HistorialFinanciero) -> str:
-    """Aviso concreto: qué CIIU y año faltan y qué referencias sí hay."""
-    hay = ", ".join(sorted(r.stem.replace("_", " ") for r in REFERENCIAS.glob("*.json")))
-    return (f"No hay referencia sectorial para el CIIU {h.empresa.ciiu} en "
-            f"{h.ultimo.fecha_corte.year} (por ahora hay: {hay or 'ninguna'}). El resto del "
-            "análisis funciona; solo la comparación con el sector no estará disponible.")
+def _aviso_referencia(ctx: ContextoEmpresa) -> str | None:
+    """Sin referencia: qué CIIU y año faltan y qué hay. Con la de otro año: cuál se usa."""
+    h, anio = ctx.historial, ctx.historial.ultimo.fecha_corte.year
+    if ctx.referencia is None:
+        hay = ", ".join(sorted(r.stem.replace("_", " ") for r in REFERENCIAS.glob("*.json")))
+        return (f"No hay referencia sectorial para el CIIU {h.empresa.ciiu} cerca de {anio} "
+                f"(por ahora hay: {hay or 'ninguna'}). El resto del análisis funciona; solo la "
+                "comparación con el sector no estará disponible.")
+    if ctx.referencia.anio != anio:
+        return (f"No hay referencia sectorial de {anio}: la comparación con el sector usa la de "
+                f"{ctx.referencia.anio}, el año más cercano con datos.")
+    return None
 
 
 def _carga(s: Sesion, errores: list[str] | None = None) -> dict:
@@ -255,8 +261,7 @@ def _carga(s: Sesion, errores: list[str] | None = None) -> dict:
     return {
         "razon_social": s.razon_social, "ciiu": s.ciiu, "unidad": s.unidad, "unidades": UNIDADES,
         "max_mb": MAX_MB, "errores": errores or [], "estado": estado, "listo": s.ctx is not None,
-        "sin_referencia": (_sin_referencia(s.ctx.historial)
-                           if s.ctx and s.ctx.referencia is None else None),
+        "aviso_referencia": _aviso_referencia(s.ctx) if s.ctx else None,
         "reclasif": RECLASIF,
         "archivos": [{"i": i, "nombre": a.nombre, "fecha": a.fecha.isoformat(), "error": a.error,
                       "reclasif": a.reclasif, "renglones": libro([
