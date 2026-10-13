@@ -232,9 +232,11 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    y 38: falta correrlo con el modelo real.
    Rediseño de la interfaz antes del módulo 3 (decidido el 13/10/2026; el
    módulo 3 se corre unos días y nace con el patrón nuevo): (a) chat global
-   y conversacional, hecho; (b) tablero de Balance (tarjetas, indicadores por
-   año, posición frente al sector p25-mediana-p75, DuPont; gráficas SVG
-   generadas en Python, sin dependencias); (c) tablero Macro, que absorbe
+   y conversacional, hecho; (b) tablero de Balance, hecho el 13/10/2026
+   (`frontend/tableros.py` + `_tablero_balance.html`: tarjetas con cambio
+   anual y posición sectorial, franja p25-p75 con mediana y empresa por
+   indicador, palancas DuPont y tabla por año; gráficas en HTML y CSS); (c)
+   tablero Macro, que absorbe
    `panorama-macro` (inflación, tasas, TRM —SUAMECA id 1—, PIB y desempleo;
    averiguar los ids de los dos últimos). `sector-hotelero` (MMH + panel de
    Supersociedades + SQL) pasa al módulo 2, que usa la misma infraestructura.

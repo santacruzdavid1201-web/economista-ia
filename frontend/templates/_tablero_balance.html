@@ -1,0 +1,107 @@
+{#- Tablero del balance: todo viene calculado de frontend/tableros.py; aquí solo se dibuja -#}
+<p class="tablero-corte">Estados financieros con corte al {{ t.corte.strftime("%d/%m/%Y") }}</p>
+
+<div class="tarjetas">
+  {% for c in t.tarjetas %}
+    <article class="tarjeta">
+      <h2 class="tarjeta-titulo">{{ c.titulo }}</h2>
+      <p class="tarjeta-valor">{{ c.valor }}</p>
+      <p class="tarjeta-nombre" title="{{ c.formula }}">{{ c.nombre }}</p>
+      {% if c.zona %}
+        <p class="tarjeta-zona">{{ c.zona }}</p>
+        {% with a = t.altman %}
+          <div class="zonas" role="img" aria-label="Z'' de {{ a.valor }}: zona {{ a.zona }}. Riesgo por debajo de {{ a.limites[0] }}, segura por encima de {{ a.limites[1] }}.">
+            <span class="zona-riesgo" style="width: {{ a.riesgo }}%"></span>
+            <span class="zona-gris" style="left: {{ a.riesgo }}%; width: {{ a.gris }}%"></span>
+            <span class="zona-punto" style="left: {{ a.x }}%"></span>
+          </div>
+        {% endwith %}
+      {% endif %}
+      {% if c.cambio %}
+        <p class="tarjeta-cambio"><span aria-hidden="true">{{ "▲" if c.cambio.startswith("+") else "▼" }}</span> {{ c.cambio }}</p>
+      {% endif %}
+      {% if c.sector %}<p class="tarjeta-sector">{{ c.sector }}</p>{% endif %}
+    </article>
+  {% endfor %}
+</div>
+
+{% if t.sector %}
+  {% with s = t.sector %}
+  <section class="bloque" aria-labelledby="titulo-sector">
+    <h2 id="titulo-sector">Frente al sector</h2>
+    <p class="bloque-nota">{{ s.universo }}, {{ s.anio }}.</p>
+    <p class="leyenda" aria-hidden="true">
+      <span class="leyenda-banda"></span> mitad central de los pares (percentiles 25 a 75)
+      <span class="leyenda-mediana"></span> mediana
+      <span class="leyenda-punto"></span> su empresa
+    </p>
+    {% for tema in s.temas %}
+      <h3 class="subtema">{{ tema.tema }}</h3>
+      <ul class="comparaciones">
+        {% for f in tema.filas %}
+          <li class="comparacion">
+            <p class="comparacion-texto"><span>{{ f.nombre }}</span> <strong>{{ f.valor }}</strong></p>
+            <div class="pista" role="img"
+                 aria-label="{{ f.nombre }}: {{ f.valor }}. La mitad central de los pares va de {{ f.rango }}; la mediana es {{ f.mediana }}.">
+              <span class="pista-banda" style="left: {{ f.banda[0] }}%; width: {{ f.banda[1] }}%"></span>
+              <span class="pista-mediana" style="left: {{ f.x_mediana }}%"></span>
+              <span class="pista-punto" style="left: {{ f.x_empresa }}%"></span>
+            </div>
+            <p class="comparacion-posicion">{{ f.posicion }} · mediana {{ f.mediana }}</p>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+    <ul class="bloque-avisos">
+      <li>Para comparar, la cartera y los proveedores se agrupan como en los reportes de
+        Supersociedades: por eso los días pueden diferir de la tabla por año.</li>
+      {% for a in s.avisos %}<li>{{ a }}</li>{% endfor %}
+    </ul>
+  </section>
+  {% endwith %}
+{% endif %}
+
+{% if t.dupont %}
+  {% with d = t.dupont %}
+  <section class="bloque" aria-labelledby="titulo-dupont">
+    <h2 id="titulo-dupont">Por qué cambió la rentabilidad del patrimonio</h2>
+    {% if d.palancas %}
+      <p class="bloque-nota">El ROE pasó de {{ d.desde }} a {{ d.hasta }}. Participación de cada
+        palanca en el cambio (descomposición DuPont):</p>
+      <ul class="palancas">
+        {% for p in d.palancas %}
+          <li class="palanca">
+            <span class="palanca-nombre">{{ p.nombre }}</span>
+            <span class="palanca-pista" aria-hidden="true">
+              <span class="palanca-barra{% if p.negativa %} negativa{% endif %}"
+                    style="left: {{ 50 - p.ancho if p.negativa else 50 }}%; width: {{ p.ancho }}%"></span>
+            </span>
+            <span class="palanca-valor">{{ p.texto }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% for h in d.hallazgos %}<p>{{ h }}</p>{% endfor %}
+    {% if d.advertencias %}<ul class="bloque-avisos">{% for a in d.advertencias %}<li>{{ a }}</li>{% endfor %}</ul>{% endif %}
+  </section>
+  {% endwith %}
+{% endif %}
+
+{% with a = t.por_anio %}
+<section class="bloque" aria-labelledby="titulo-anios">
+  <h2 id="titulo-anios">Indicadores por año</h2>
+  <div class="tabla-desplazable">
+    <table class="libro anual">
+      <tr><th>Indicador</th>{% for anio in a.anios %}<th class="numero">{{ anio }}</th>{% endfor %}<th>Fórmula</th></tr>
+      {% for tema in a.temas %}
+        <tr class="fila-tema"><th colspan="{{ a.anios | length + 2 }}">{{ tema.tema }}</th></tr>
+        {% for f in tema.filas %}
+          <tr><td>{{ f.nombre }}</td>
+            {% for v in f.valores %}<td class="valor{% if v.startswith('-') %} negativa{% endif %}">{{ v }}</td>{% endfor %}
+            <td class="formula">{{ f.formula }}</td></tr>
+        {% endfor %}
+      {% endfor %}
+    </table>
+  </div>
+</section>
+{% endwith %}

@@ -40,6 +40,7 @@ from data_sources.empresa.puc import (
     leer_balance_prueba,
 )
 from data_sources.externos.referencia import REFERENCIAS, cargar_referencia
+from frontend import tableros
 from frontend.cifras import libro, respuesta_html
 from frontend.modulos import MODULOS, POR_CLAVE
 from modules.base import formatear
@@ -294,7 +295,8 @@ def modulo(request: Request, clave: str, s: Sesion = Depends(sesion)):
     m = POR_CLAVE.get(clave)
     if m is None:
         raise HTTPException(404, "Ese módulo no existe.")
-    return _pagina(request, "modulo.html", _contexto(request, s, m=m))
+    t = tableros.balance(s.ctx) if clave == "balance" and s.ctx else None
+    return _pagina(request, "modulo.html", _contexto(request, s, m=m, t=t))
 
 
 # --------------------------------------------------------------------------- #

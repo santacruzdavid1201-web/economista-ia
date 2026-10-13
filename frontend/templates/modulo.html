@@ -26,8 +26,18 @@
   </aside>
 
   <section class="tablero" aria-label="Tablero">
-    {% if m.activo %}
-      <p class="tablero-pendiente">Aquí irá el tablero del módulo: indicadores, gráficas y tablas.</p>
+    {% if t %}
+      {% include "_tablero_" ~ m.clave ~ ".html" %}
+    {% elif m.clave == "balance" %}
+      <div class="tablero-vacio">
+        <p class="vacio-titulo">Aún no hay estados financieros</p>
+        <p>Suba los balances de prueba de su empresa en la portada y aquí verá su liquidez, su
+          deuda, su rentabilidad y su riesgo, frente a empresas de su sector.</p>
+        {% call enlace("/", "boton") %}Subir estados financieros{% endcall %}
+      </div>
+    {% elif m.activo %}
+      <p class="tablero-pendiente">El tablero de este módulo está en construcción. Mientras tanto,
+        el economista ya responde sus preguntas.</p>
     {% else %}
       <div class="en-construccion">
         <p>Este módulo está en construcción. Mientras tanto, el balance financiero y el entorno

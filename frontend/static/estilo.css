@@ -172,6 +172,65 @@ main { max-width: 74rem; margin: 0 auto; padding: 0 1.5rem 6rem; }   /* abajo: e
 
 .tablero { min-height: 62vh; padding: 1.75rem; background: var(--lamina); border-radius: var(--radio); }
 .tablero-pendiente { color: var(--gris); }
+.tablero-vacio { display: grid; gap: 0.75rem; justify-items: start; max-width: 46ch; padding: 1rem 0; }
+
+/* Tablero: tarjetas, comparaciones con el sector, DuPont y tabla por año (HTML y CSS) */
+.tablero-corte { color: var(--gris); font-size: 0.9rem; margin-bottom: 1rem; }
+.tarjetas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; }
+.tarjeta {
+  display: flex; flex-direction: column; gap: 0.15rem; padding: 1rem 1.1rem;
+  border-radius: 1rem; background: var(--fondo);
+}
+.tarjeta-titulo { font: 700 0.85rem/1.3 var(--texto); color: var(--gris); }
+.tarjeta-valor {
+  font: 800 1.9rem/1.1 var(--display); color: var(--petroleo); margin: 0.3rem 0 0;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.tarjeta-nombre { font-size: 0.85rem; color: var(--tinta); margin: 0; cursor: help; }
+.tarjeta-cambio, .tarjeta-sector, .tarjeta-zona { font-size: 0.82rem; margin: 0.2rem 0 0; }
+.tarjeta-cambio { color: var(--gris); }
+.tarjeta-sector { color: var(--petroleo); font-weight: 600; }
+.tarjeta-zona { font-weight: 600; }
+.zonas {
+  position: relative; height: 0.5rem; margin: 0.45rem 0 0.2rem; border-radius: 999px;
+  background: var(--menta-clara);
+}
+.zona-riesgo, .zona-gris { position: absolute; top: 0; bottom: 0; }
+.zona-riesgo { left: 0; background: var(--coral-claro); border-radius: 999px 0 0 999px; }
+.zona-gris { background: var(--linea); }
+.zona-punto, .pista-punto {
+  position: absolute; top: 50%; width: 0.85rem; height: 0.85rem; border-radius: 50%;
+  transform: translate(-50%, -50%); background: var(--petroleo); box-shadow: 0 0 0 2px var(--lamina);
+}
+
+.bloque { margin-top: 2.25rem; }
+.bloque h2 { font-size: 1.35rem; font-weight: 800; margin-bottom: 0.35rem; }
+.bloque-nota { color: var(--gris); font-size: 0.9rem; }
+.bloque-avisos { margin: 0.75rem 0 0; padding-left: 1.2rem; font-size: 0.82rem; color: var(--gris); }
+.subtema { font: 700 0.95rem var(--texto); color: var(--petroleo); margin: 1.25rem 0 0.4rem; }
+.leyenda { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.6rem; font-size: 0.8rem; color: var(--gris); }
+.leyenda-banda, .leyenda-mediana, .leyenda-punto { display: inline-block; }
+.leyenda-banda { width: 1.6rem; height: 0.55rem; border-radius: 999px; background: var(--acento-claro); }
+.leyenda-mediana { width: 2px; height: 0.9rem; background: var(--petroleo); margin-left: 0.4rem; }
+.leyenda-punto { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--petroleo); margin-left: 0.4rem; }
+.comparaciones { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.9rem; }
+.comparacion-texto { display: flex; justify-content: space-between; gap: 1rem; margin: 0 0 0.3rem; font-size: 0.92rem; }
+.comparacion-texto strong { color: var(--petroleo); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pista { position: relative; height: 0.9rem; border-radius: 999px; background: var(--fondo); }
+.pista-banda { position: absolute; top: 0; bottom: 0; border-radius: 999px; background: var(--acento-claro); }
+.pista-mediana { position: absolute; top: -0.2rem; bottom: -0.2rem; width: 2px; margin-left: -1px; background: var(--petroleo); opacity: 0.55; }
+.comparacion-posicion { margin: 0.3rem 0 0; font-size: 0.8rem; color: var(--gris); }
+
+.palancas { list-style: none; margin: 0.75rem 0; padding: 0; display: grid; gap: 0.6rem; }
+.palanca { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 4.5rem; align-items: center; gap: 0.75rem; font-size: 0.9rem; }
+.palanca-pista { position: relative; height: 1rem; border-radius: 0.3rem; background: var(--fondo); }
+.palanca-pista::after { content: ""; position: absolute; left: 50%; top: -0.2rem; bottom: -0.2rem; width: 1px; background: var(--gris); }
+.palanca-barra { position: absolute; top: 0; bottom: 0; border-radius: 0.3rem; background: var(--acento); }
+.palanca-barra.negativa { background: var(--coral); }
+.palanca-valor { text-align: right; font-weight: 700; color: var(--petroleo); font-variant-numeric: tabular-nums; }
+
+.anual th.numero { text-align: right; }
+.anual .fila-tema th { padding-top: 1rem; font: 700 0.85rem var(--texto); color: var(--petroleo); border-bottom: 1.5px solid var(--linea); }
 
 /* ------------------------------------------------------------------- chat */
 /* Burbuja tipo Messenger: un círculo con el ícono; al abrir, el ícono gira y se vuelve × */
@@ -347,10 +406,12 @@ main { max-width: 74rem; margin: 0 auto; padding: 0 1.5rem 6rem; }   /* abajo: e
   .portada { grid-template-columns: 1fr; gap: 1rem; padding-top: 0; }
   .portada-ilustracion { order: -1; max-width: 24rem; justify-self: center; margin-top: 0; }
   .rejilla { grid-template-columns: 1fr; }
-  .modulo { grid-template-columns: 1fr; gap: 1.5rem; }
+  /* minmax(0, …): sin él, la tabla por año ensancha la columna y la página se desborda */
+  .modulo { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
   .modulo-lado { position: static; }
   .modulo-figura { max-width: 18rem; }
   .tablero { padding: 1.25rem; }
+  .palanca { grid-template-columns: 7rem minmax(0, 1fr) 4rem; }
 }
 @media (max-width: 640px) {
   .barra { padding: 1rem; }
@@ -360,6 +421,7 @@ main { max-width: 74rem; margin: 0 auto; padding: 0 1.5rem 6rem; }   /* abajo: e
   .chip-nombre { display: block; max-width: 11rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .modulos > h2 { margin-top: 2.5rem; }
   .burbuja-pregunta { max-width: 92%; }
+  .tarjetas { grid-template-columns: minmax(0, 1fr); }
   .chat-boton { right: 1rem; bottom: 1rem; width: 3.5rem; height: 3.5rem; }
   .chat[open] .chat-boton { top: 0.7rem; bottom: auto; right: 0.75rem; width: 2.6rem; height: 2.6rem; box-shadow: none; }
   .chat[open] .chat-boton svg { width: 1.4rem; height: 1.4rem; }

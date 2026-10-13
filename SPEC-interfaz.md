@@ -9,7 +9,7 @@ Falta la prueba del economista (criterio 1).
 Cambio del 13/10/2026 (pedido del economista): el chat es uno solo para toda
 la interfaz, en una burbuja flotante, y conversa (ver `docs/decisiones.md`);
 cada módulo pasa a ser un tablero con gráficas, tablas y hallazgos calculados
-solo con Python. Hecho el chat; los tableros, en construcción. Ese mismo día:
+solo con Python. Hechos el chat y el tablero de Balance; el de Macro, pendiente. Ese mismo día:
 la sesión empieza sin empresa y los balances se suben en la portada, donde
 cada archivo se lee al momento (reemplaza el diálogo de dos pasos).
 

@@ -102,6 +102,16 @@ def test_la_hoja_de_estilos_lleva_su_version(cliente):
     assert cliente.get(re.search(r'href="(/static/estilo\.css\?v=\d+)"', html)[1]).status_code == 200
 
 
+def test_tablero_de_balance(cliente):
+    assert "Aún no hay estados financieros" in cliente.get("/modulo/balance").text
+    subir(cliente, [csv_demo(2023), csv_demo(2024)])
+    r = cliente.get("/modulo/balance").text
+    for parte in ("Frente al sector", "Por qué cambió la rentabilidad del patrimonio",
+                  "Indicadores por año", 'class="pista-punto"', "frente a 2023"):
+        assert parte in r, parte
+    assert "en construcción" in cliente.get("/modulo/macro").text
+
+
 def test_modulo_inactivo_en_construccion(cliente):
     r = cliente.get("/modulo/proyectos")
     assert r.status_code == 200 and "en construcción" in r.text
