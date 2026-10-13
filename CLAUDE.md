@@ -119,7 +119,9 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    (empresa ficticia, generada con `data/demo/generar_demo.py`).
 2. Versión delgada de punta a punta (en curso). Hecho: `app/config.py`
    (variables de entorno, `.env.example`), `app/llm/client.py` (API compatible
-   con OpenAI; LM Studio con qwen2.5-7b-instruct en localhost:1234),
+   con OpenAI; LM Studio con qwen2.5-7b-instruct; desde su actualización a
+   1.1.8 "Bionic" del 12/10/2026 la API está en localhost:1235, fijado en
+   `.env`, y el CLI `lms` ya no la enciende: la abre `iniciar.ps1`),
    `app/orchestrator/` (registro de herramientas, orquestador, verificador de
    cifras con un reintento y respuesta de respaldo armada en Python),
    `config/prompts/`, `config/glosario.yaml` y `app/demo.py`
