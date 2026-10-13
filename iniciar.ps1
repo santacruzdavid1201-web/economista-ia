@@ -47,6 +47,12 @@ if (-not (Servidor-Listo)) {
 }
 Write-Host "    Listo. El modelo se carga con la primera pregunta (unos 15 s más)." -ForegroundColor Gray
 
+if (Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue) {
+    Write-Host ("2/2 El puerto 8000 ya está en uso: la interfaz (u otro programa) ya está corriendo. " +
+                "Se abre el navegador; si no es la interfaz, cierre ese programa y vuelva a ejecutar.") -ForegroundColor Yellow
+    Start-Process "http://localhost:8000"
+    exit 0
+}
 Write-Host "2/2 Abriendo la interfaz en http://localhost:8000 (Ctrl+C para cerrarla)..." -ForegroundColor Cyan
 Start-Process "http://localhost:8000"   # el navegador reintenta mientras el servidor arranca
 & $python -m uvicorn app.main:app --port 8000 --app-dir $PSScriptRoot
