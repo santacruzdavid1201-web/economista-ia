@@ -255,9 +255,17 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    escribió "depreciación del peso"; ahora Python dice si el peso se revaluó
    o se devaluó. `sector-hotelero` (MMH + panel de Supersociedades + SQL)
    pasa al módulo 2, que usa la misma infraestructura.
-   Siguiente: módulo 3 (evaluación de proyectos: VPN, TIR, WACC,
-   sensibilidad), con su tablero desde el inicio. Pendiente menor: bajar el
-   contexto del modelo en LM Studio a 8.192 si vuelve a caerse.
+   Siguiente (sesión del 14/10/2026), antes del módulo 3: actualización
+   diaria del entorno macro, pedida por el usuario. Propuesta presentada el
+   13/10 (falta su visto bueno final): actualizador en segundo plano dentro
+   de la interfaz (al arrancar y cada 6 horas, series en serie), copias del
+   día en `data/cache/series/` (ignorada por Git; `data/series/` queda como
+   respaldo de tests, demo y trabajo sin red), vigencia de 1 día como red de
+   seguridad y "Datos consultados el …" en el tablero. El chat usa las mismas
+   copias, así que queda al día solo. Después: módulo 3 (evaluación de
+   proyectos: VPN, TIR, WACC, sensibilidad), con su tablero desde el inicio.
+   Pendiente menor: bajar el contexto del modelo en LM Studio a 8.192 si
+   vuelve a caerse.
    Sensibilidad-tasas conciliada con el cálculo a mano del usuario (demo 2024,
    13/10/2026): tasa implícita, aumento por punto, coberturas y escenarios; el
    alza de 2022 es 8,242 puntos (se muestra 8,24). La tasa de política
