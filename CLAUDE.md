@@ -208,6 +208,15 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    el modelo insiste, sale el respaldo. El caso 18 ("¿cómo me afecta que el
    BanRep suba las tasas?") acepta la herramienta o la nota. Set completo (41
    casos) el 12/10/2026: todos los bloques al 100 %, respaldo 3 %.
+   Siguiente (sesión del 13/10/2026): especificación de `panorama-macro`
+   (inflación, tasas, TRM —SUAMECA id 1—, PIB y desempleo; averiguar los ids
+   de los dos últimos). Decisión pendiente del usuario: dejar
+   `sector-hotelero` (MMH + panel de Supersociedades + SQL) para el módulo 2,
+   que usa la misma infraestructura, y pasar al módulo 3 después de
+   `panorama-macro` (recomendado), o cerrar todo el módulo 4 antes.
+   Pendientes del usuario: revisar `conocimiento/crecimiento-real.md`
+   (`revisado: false`); cálculo a mano de sensibilidad-tasas del demo 2024;
+   cotejar tasa de política (12,25 %) e IBR (11,70 %) con la página del BanRep.
 
 Grupos de comparación en `config/ciiu_sectores.yaml` (alojamiento / hoteles).
 El benchmark se describe siempre como "empresas reportantes a
