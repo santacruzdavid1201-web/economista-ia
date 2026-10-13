@@ -35,6 +35,7 @@ class Caso:
     pregunta: str
     espera: dict = field(default_factory=dict)
     revisar: str | None = None
+    despues_de: str | None = None   # caso anterior que hace de conversación previa
 
 
 @dataclass
@@ -70,7 +71,8 @@ def cargar_set(ruta: Path) -> SetEvaluacion:
     for c in datos["casos"]:
         caso = Caso(id=str(c["id"]), bloque=c["bloque"],
                     pregunta=c["pregunta"] * int(c.get("repetir", 1)),
-                    espera=c.get("espera") or {}, revisar=c.get("revisar"))
+                    espera=c.get("espera") or {}, revisar=c.get("revisar"),
+                    despues_de=str(c["despues_de"]) if "despues_de" in c else None)
         desconocidas = set(caso.espera) - set(VERIFICACIONES)
         if desconocidas:
             raise ValueError(f"Caso {caso.id}: claves desconocidas en 'espera': {sorted(desconocidas)}")
@@ -90,6 +92,8 @@ def cargar_set(ruta: Path) -> SetEvaluacion:
         ref = c.espera.get("igual_a")
         if ref is not None and (str(ref) not in ids or ids.index(str(ref)) > ids.index(c.id)):
             raise ValueError(f"Caso {c.id}: 'igual_a' debe apuntar a un caso anterior.")
+        if c.despues_de and (c.despues_de not in ids or ids.index(c.despues_de) > ids.index(c.id)):
+            raise ValueError(f"Caso {c.id}: 'despues_de' debe apuntar a un caso anterior.")
     criterios = datos.get("criterios", {})
     return SetEvaluacion(casos=casos, bloques=bloques,
                          bloques_duros=criterios.get("bloques_duros", []),
@@ -271,12 +275,15 @@ def correr(casos: list[Caso], ctx: ContextoEmpresa, cliente, hoy: date | None = 
            al_terminar=None) -> list[Resultado]:
     """Corre los casos en orden; `al_terminar(resultado)` sirve para mostrar avance."""
     previos: dict[str, Respuesta] = {}
+    preguntas = {c.id: c.pregunta for c in casos}
     resultados: list[Resultado] = []
     for caso in casos:
         contado = ClienteContado(cliente)
         inicio = perf_counter()
+        historial = ([(preguntas[caso.despues_de], previos[caso.despues_de])]
+                     if caso.despues_de in previos else [])
         try:
-            respuesta = responder(caso.pregunta, ctx, contado, hoy)
+            respuesta = responder(caso.pregunta, ctx, contado, hoy, historial=historial)
         except Exception as e:  # noqa: BLE001 — cualquier excepción es una falla a registrar
             resultado = Resultado(caso, None, perf_counter() - inicio, contado.llamadas,
                                   error=f"{type(e).__name__}: {e}")

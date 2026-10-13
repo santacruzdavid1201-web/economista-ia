@@ -41,6 +41,7 @@ def main() -> int:
         elegidos = {c.id for c in s.casos if c.id in casos or c.bloque in bloques}
         elegidos |= {str(c.espera["igual_a"]) for c in s.casos
                      if c.id in elegidos and "igual_a" in c.espera}
+        elegidos |= {c.despues_de for c in s.casos if c.id in elegidos and c.despues_de}
         s.casos = [c for c in s.casos if c.id in elegidos]
         if not s.casos:
             print("Ningún caso coincide con el filtro.")

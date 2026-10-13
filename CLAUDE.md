@@ -132,20 +132,27 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    `python -m uvicorn app.main:app --port 8000`, o arranque completo con
    `.\iniciar.ps1`. FastAPI + Jinja + HTMX (vendorizado en
    `frontend/static/`): portada con módulos ilustrados (Balance y Entorno
-   macro activos; Proyectos y Econometría "próximamente"), una conversación
-   por módulo, navegación sin recargar (View Transitions) y la respuesta
-   pedida en un segundo paso porque el modelo tarda. Paleta menta y coral
+   macro activos; Proyectos y Econometría "próximamente"), navegación sin
+   recargar (View Transitions) y la respuesta pedida en un segundo paso
+   porque el modelo tarda. Desde el 13/10/2026 el chat es global (burbuja
+   flotante fuera de `#pagina`, una conversación por sesión con memoria de 3
+   turnos) y cada módulo será un tablero calculado solo con Python. Paleta menta y coral
    sobre gris azulado, Outfit y Manrope, ilustraciones SVG propias en
    `frontend/static/ilustraciones/`. Cada cifra de la respuesta muestra su
    indicador y fórmula (`frontend/cifras.py`, que escapa el HTML del modelo).
    Sesiones en memoria; carga de balances en dos pasos (archivos y luego
    fechas y reclasificaciones), probada con SECOLINSA.
-   Tres tipos de pregunta (acordado el 6/10/2026): (1) cálculo con
-   herramientas de Python; (2) criterio o teoría respondido SOLO con la base
-   de conocimiento `conocimiento/*.md` (RAG híbrido: embeddings nomic de LM
+   Tipos de pregunta (acordado el 6/10/2026, ampliado el 13/10/2026): (1)
+   cálculo con herramientas de Python; (2) criterio o teoría con la base de
+   conocimiento `conocimiento/*.md` (RAG híbrido: embeddings nomic de LM
    Studio + palabras clave; índice en `data/conocimiento/indice.json`, se
-   reconstruye con `python -m app.rag.ingest`; sin nota pertinente no
-   responde); (3) fuera de alcance con remisión al profesional. El rol del
+   reconstruye con `python -m app.rag.ingest`); sin nota pertinente responde
+   en general con el aviso "Respuesta general"; (3) `conversar`: saludos,
+   charla, comentarios sobre la respuesta anterior y temas ajenos (una o dos
+   frases y reconduce), con `config/prompts/conversacion.md`; (4) fuera de
+   alcance (legal, tributario, en qué invertir, pronósticos) con remisión al
+   profesional. Ninguna cifra de memoria: en la charla solo valen las de la
+   conversación previa, ni siquiera las de la pregunta. El rol del
    economista está en `config/prompts/rol.md`, común a la redacción de los
    tipos 1 y 2. Los análisis temáticos incluyen la comparación sectorial
    cuando hay referencia. Las 9 notas fueron revisadas por el usuario el
@@ -207,13 +214,18 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    reintento que nombra las palabras (`CALIFICATIVOS` en `verificador.py`); si
    el modelo insiste, sale el respaldo. El caso 18 ("¿cómo me afecta que el
    BanRep suba las tasas?") acepta la herramienta o la nota. Set completo (41
-   casos) el 12/10/2026: todos los bloques al 100 %, respaldo 3 %.
-   Siguiente (sesión del 13/10/2026): especificación de `panorama-macro`
-   (inflación, tasas, TRM —SUAMECA id 1—, PIB y desempleo; averiguar los ids
-   de los dos últimos). Decisión pendiente del usuario: dejar
-   `sector-hotelero` (MMH + panel de Supersociedades + SQL) para el módulo 2,
-   que usa la misma infraestructura, y pasar al módulo 3 después de
-   `panorama-macro` (recomendado), o cerrar todo el módulo 4 antes.
+   casos) el 12/10/2026: todos los bloques al 100 %, respaldo 3 %. El
+   13/10/2026 se agregó el bloque J (conversación, casos 40-45; `despues_de`
+   da a un caso la conversación de otro) y se ajustaron los casos 20, 27, 28
+   y 38: falta correrlo con el modelo real.
+   Rediseño de la interfaz antes del módulo 3 (decidido el 13/10/2026; el
+   módulo 3 se corre unos días y nace con el patrón nuevo): (a) chat global
+   y conversacional, hecho; (b) tablero de Balance (tarjetas, indicadores por
+   año, posición frente al sector p25-mediana-p75, DuPont; gráficas SVG
+   generadas en Python, sin dependencias); (c) tablero Macro, que absorbe
+   `panorama-macro` (inflación, tasas, TRM —SUAMECA id 1—, PIB y desempleo;
+   averiguar los ids de los dos últimos). `sector-hotelero` (MMH + panel de
+   Supersociedades + SQL) pasa al módulo 2, que usa la misma infraestructura.
    Pendientes del usuario: revisar `conocimiento/crecimiento-real.md`
    (`revisado: false`); cálculo a mano de sensibilidad-tasas del demo 2024;
    cotejar tasa de política (12,25 %) e IBR (11,70 %) con la página del BanRep.

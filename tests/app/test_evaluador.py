@@ -36,7 +36,7 @@ def un_caso(c, ctx, *respuestas):
 # --------------------------------------------------------------------------- #
 def test_set_real_es_valido():
     s = cargar_set(PREGUNTAS)
-    assert len(s.casos) == 41                       # 39 preguntas; 9 y 10 son pares
+    assert len(s.casos) == 47                       # 9 y 10 son pares
     assert {c.bloque for c in s.casos} == set(s.bloques)
     assert set(s.bloques_duros) <= set(s.bloques)
     largo = next(c for c in s.casos if c.id == "25")
@@ -136,6 +136,16 @@ def test_consistencia_entre_casos(ctx):
     llm = LLMFalso(herramienta("analizar_liquidez"), texto("Bien."),
                    herramienta("analizar_liquidez", periodo=2023), texto("Bien."))
     assert not correr([a, b], ctx, llm, HOY)[1].aprobado
+
+
+def test_seguimiento_recibe_la_conversacion_del_caso_anterior(ctx):
+    a = caso({}, id="02")
+    b = Caso(id="44", bloque="A", pregunta="¿Y en 2023?", despues_de="02",
+             espera={"herramienta": "analizar_liquidez", "periodo": 2023})
+    llm = LLMFalso(herramienta("analizar_liquidez"), texto("Bien."),
+                   herramienta("analizar_liquidez", periodo=2023), texto("Bien."))
+    assert all(r.aprobado for r in correr([a, b], ctx, llm, HOY))
+    assert "Cliente: ¿Tengo liquidez?" in llm.llamadas[2]["usuario"]
 
 
 def test_excepcion_se_registra_y_sigue(ctx):

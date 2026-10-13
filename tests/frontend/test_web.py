@@ -1,4 +1,4 @@
-"""Interfaz web con TestClient y un modelo falso: páginas, conversación y carga de balances."""
+"""Interfaz web con TestClient y un modelo falso: páginas, chat global y carga de balances."""
 import json
 import re
 from datetime import date
@@ -19,8 +19,10 @@ class LLMFalso:
 
     def __init__(self, *respuestas):
         self.respuestas = list(respuestas)
+        self.usuarios: list[str] = []
 
     def chat(self, sistema, usuario, herramientas=None, forzar_herramienta=False, temperatura=0.2):
+        self.usuarios.append(usuario)
         return self.respuestas.pop(0)
 
     def disponible(self):
@@ -61,17 +63,20 @@ def test_portada_con_la_empresa_y_los_modulos(cliente):
     assert '<table class="libro">' in r.text
 
 
-def test_modulo_activo_tiene_conversacion_y_ejemplos(cliente):
+def test_modulo_activo_tiene_ejemplos_que_van_al_chat(cliente):
     r = cliente.get("/modulo/balance")
     assert r.status_code == 200
-    assert 'id="conversacion"' in r.text and "¿Cómo está mi empresa?" in r.text
+    assert "¿Cómo está mi empresa?" in r.text and 'hx-post="/preguntar"' in r.text
 
 
-def test_modulo_inactivo_no_tiene_conversacion(cliente):
+def test_el_chat_esta_en_todas_las_paginas(cliente):
+    for url in ("/", "/modulo/balance", "/modulo/macro", "/modulo/proyectos"):
+        assert 'id="chat"' in cliente.get(url).text
+
+
+def test_modulo_inactivo_en_construccion(cliente):
     r = cliente.get("/modulo/proyectos")
     assert r.status_code == 200 and "en construcción" in r.text
-    assert 'id="conversacion"' not in r.text
-    assert cliente.post("/modulo/proyectos/preguntar", data={"pregunta": "x"}).status_code == 404
 
 
 def test_modulo_desconocido(cliente):
@@ -88,15 +93,25 @@ def test_estado_del_modelo(cliente):
 def test_preguntar_y_recibir_la_respuesta(cliente, llm):
     llm.respuestas += [herramienta("analizar_liquidez", periodo=2024),
                        RespuestaLLM(texto="Puede pagar sus deudas de corto plazo.")]
-    r = cliente.post("/modulo/balance/preguntar", data={"pregunta": "¿Puedo pagar mis deudas?"})
+    r = cliente.post("/preguntar", data={"pregunta": "¿Puedo pagar mis deudas?"})
     assert "¿Puedo pagar mis deudas?" in r.text and "Analizando" in r.text
     r = cliente.get(f"/respuesta/{pid_de(r.text)}")
     assert '<article class="respuesta">' in r.text
     assert "<p>Puede pagar sus deudas de corto plazo.</p>" in r.text
     assert "De dónde salen las cifras" in r.text and "Razón corriente" in r.text
-    # La conversación queda en el módulo, no en los demás
-    assert "¿Puedo pagar mis deudas?" in cliente.get("/modulo/balance").text
-    assert "¿Puedo pagar mis deudas?" not in cliente.get("/modulo/macro").text
+    # Una sola conversación: se ve desde cualquier página y en el fragmento del chat
+    assert "¿Puedo pagar mis deudas?" in cliente.get("/modulo/macro").text
+    assert "Puede pagar sus deudas" in cliente.get("/chat").text
+
+
+def test_la_conversacion_previa_llega_al_modelo(cliente, llm):
+    llm.respuestas += [herramienta("analizar_liquidez"), RespuestaLLM(texto="Puede pagar."),
+                       herramienta("conversar"), RespuestaLLM(texto="Con gusto.")]
+    for pregunta in ("¿Puedo pagar mis deudas?", "Gracias"):
+        r = cliente.post("/preguntar", data={"pregunta": pregunta})
+        cliente.get(f"/respuesta/{pid_de(r.text)}")
+    assert llm.usuarios[0] == "¿Puedo pagar mis deudas?"
+    assert "Cliente: ¿Puedo pagar mis deudas?" in llm.usuarios[2]
 
 
 def test_la_respuesta_marca_las_cifras_calculadas(cliente, llm):
@@ -106,7 +121,7 @@ def test_la_respuesta_marca_las_cifras_calculadas(cliente, llm):
     rc = liquidez(ctx.historial).valor("razon_corriente")
     llm.respuestas += [herramienta("analizar_liquidez", periodo=2024),
                        RespuestaLLM(texto=f"Su razón corriente es {formatear(rc, 'veces')}.")]
-    r = cliente.post("/modulo/balance/preguntar", data={"pregunta": "¿Liquidez?"})
+    r = cliente.post("/preguntar", data={"pregunta": "¿Liquidez?"})
     r = cliente.get(f"/respuesta/{pid_de(r.text)}")
     assert 'class="cifra" tabindex="0" data-origen="Razón corriente.' in r.text
 
@@ -114,8 +129,7 @@ def test_la_respuesta_marca_las_cifras_calculadas(cliente, llm):
 def test_la_pregunta_y_la_respuesta_se_escapan(cliente, llm):
     llm.respuestas += [herramienta("analizar_liquidez"),
                        RespuestaLLM(texto='<img src=x onerror="alert(1)">Todo bien.')]
-    r = cliente.post("/modulo/balance/preguntar",
-                     data={"pregunta": "<script>alert(1)</script>"})
+    r = cliente.post("/preguntar", data={"pregunta": "<script>alert(1)</script>"})
     assert "<script>alert(1)</script>" not in r.text and "&lt;script&gt;" in r.text
     r = cliente.get(f"/respuesta/{pid_de(r.text)}")
     assert "<img" not in r.text and "&lt;img" in r.text
@@ -130,11 +144,11 @@ def test_cada_sesion_tiene_su_conversacion(llm):
     web._SESIONES.clear()
     a, b = TestClient(app), TestClient(app)
     llm.respuestas += [herramienta("analizar_liquidez"), RespuestaLLM(texto="Bien.")]
-    r = a.post("/modulo/balance/preguntar", data={"pregunta": "Pregunta de A"})
+    r = a.post("/preguntar", data={"pregunta": "Pregunta de A"})
     a.get(f"/respuesta/{pid_de(r.text)}")
-    assert "Pregunta de A" not in b.get("/modulo/balance").text
+    assert "Pregunta de A" not in b.get("/chat").text
     # Otra sesión no puede pedir respuestas ajenas
-    r = a.post("/modulo/balance/preguntar", data={"pregunta": "Otra de A"})
+    r = a.post("/preguntar", data={"pregunta": "Otra de A"})
     assert "ya no está disponible" in b.get(f"/respuesta/{pid_de(r.text)}").text
 
 
@@ -190,8 +204,17 @@ def test_volver_al_hotel_de_demostracion(cliente):
     subir(cliente, [csv_demo(2024)])
     cliente.post("/empresa/cargar", data={"fecha_0": "2024-12-31"})
     assert "Hotel Mío S.A.S." in cliente.get("/").text
-    assert cliente.post("/empresa/demo").status_code == 204
+    r = cliente.post("/empresa/demo")
+    assert r.status_code == 204 and r.headers["HX-Trigger"] == "empresa-cambiada"
     assert "Hotel Demo Andino S.A.S." in cliente.get("/").text
+
+
+def test_cambiar_de_empresa_vacia_el_chat(cliente, llm):
+    llm.respuestas += [herramienta("conversar"), RespuestaLLM(texto="Hola.")]
+    r = cliente.post("/preguntar", data={"pregunta": "Hola"})
+    cliente.get(f"/respuesta/{pid_de(r.text)}")
+    cliente.post("/empresa/demo")
+    assert "¿en qué le ayudo?" in cliente.get("/chat").text
 
 
 def test_corte_sugerido():

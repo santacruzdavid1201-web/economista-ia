@@ -188,9 +188,17 @@ HERRAMIENTAS: list[Herramienta] = [
         "o endeudarse, punto de equilibrio.",
         lambda c, i, a: [], usa_periodo=False),
     Herramienta(
+        "conversar",
+        "Mensajes que no piden un análisis ni un concepto: saludos, agradecimientos, charla, "
+        "qué puede hacer el sistema, comentarios sobre la respuesta anterior (explícamelo más "
+        "fácil, ¿por qué?) y temas ajenos a la empresa y a la economía (deportes, noticias, "
+        "recetas).",
+        lambda c, i, a: [], usa_periodo=False),
+    Herramienta(
         "fuera_de_alcance",
-        "La pregunta no es de análisis financiero ni de criterio económico (p. ej. temas "
-        "legales o tributarios específicos, trámites, mercadeo, saludos, temas personales).",
+        "Asesoría que exige a otro profesional o que el sistema aún no hace: temas legales o "
+        "tributarios específicos (impuestos a pagar, despidos, contratos), en qué invertir, "
+        "pronósticos de resultados futuros.",
         lambda c, i, a: [], usa_periodo=False),
 ]
 POR_NOMBRE = {h.nombre: h for h in HERRAMIENTAS}

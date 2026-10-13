@@ -1,0 +1,9 @@
+{% for t in turnos %}
+  {% include "_turno.html" %}
+{% else %}
+  <div class="vacio">
+    <p class="vacio-titulo">Hola, ¿en qué le ayudo?</p>
+    <p>Pregúnteme por su empresa, por un concepto económico o lo que quiera conversar. Cada cifra
+      resaltada en mis respuestas muestra de dónde sale.</p>
+  </div>
+{% endfor %}

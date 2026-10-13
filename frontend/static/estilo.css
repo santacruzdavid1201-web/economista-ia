@@ -70,7 +70,7 @@ input, textarea { accent-color: var(--petroleo); }
 .chip-accion { font-size: 0.78rem; color: var(--gris); }
 .chip-empresa:hover .chip-accion { text-decoration: underline; }
 
-main { max-width: 74rem; margin: 0 auto; padding: 0 1.5rem 4rem; }
+main { max-width: 74rem; margin: 0 auto; padding: 0 1.5rem 6rem; }   /* abajo: espacio para la burbuja del chat */
 
 /* ---------------------------------------------------------------- portada */
 .portada {
@@ -142,10 +142,37 @@ main { max-width: 74rem; margin: 0 auto; padding: 0 1.5rem 4rem; }
 }
 .ejemplo:hover { border-color: var(--acento); }
 
-.conversacion {
-  display: flex; flex-direction: column; min-height: 62vh; padding: 1.75rem 1.75rem 0;
-  background: var(--lamina); border-radius: var(--radio);
+.tablero { min-height: 62vh; padding: 1.75rem; background: var(--lamina); border-radius: var(--radio); }
+.tablero-pendiente { color: var(--gris); }
+
+/* ------------------------------------------------------------------- chat */
+.chat-boton {
+  position: fixed; right: 1.5rem; bottom: 1.5rem; z-index: 51; list-style: none; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.85rem 1.3rem;
+  border-radius: 999px; background: var(--petroleo); color: #FFFFFF;
+  font: 700 0.95rem/1.2 var(--texto); box-shadow: 0 0 0 5px var(--fondo);
 }
+.chat-boton::-webkit-details-marker { display: none; }
+.chat-boton::before {
+  content: ""; width: 1.15rem; height: 1.15rem; border-radius: var(--forma); background: var(--menta);
+}
+.chat-boton:hover { background: var(--petroleo-oscuro); }
+.chat[open] .chat-abrir, .chat:not([open]) .chat-cerrar { display: none; }
+.chat-cerrar { font-size: 1.3rem; line-height: 1; }
+.chat-panel {
+  position: fixed; right: 1.5rem; bottom: 5.4rem; z-index: 50;
+  width: min(28rem, calc(100vw - 2rem)); height: min(42rem, calc(100vh - 7.5rem));
+  display: flex; flex-direction: column; background: var(--lamina); border-radius: var(--radio);
+  border: 1.5px solid var(--linea); box-shadow: 0 0 0 6px rgb(230 238 241 / 0.9);
+}
+.chat-cabeza {
+  font-size: 1.15rem; font-weight: 800; padding: 1rem 1.25rem 0.8rem;
+  border-bottom: 1px solid var(--linea);
+}
+.chat .turnos { overflow-y: auto; padding: 1.25rem; gap: 1.5rem; }
+.chat .vacio-titulo { font-size: 1.5rem; }
+.chat .memo p, .chat .memo li { font-size: 0.95rem; }
+
 .turnos { flex: 1; display: flex; flex-direction: column; gap: 2rem; }
 .turnos:has(> .vacio:only-child) { justify-content: center; }
 .vacio { color: var(--gris); max-width: 46ch; padding: 2rem 0; }
@@ -217,16 +244,16 @@ main { max-width: 74rem; margin: 0 auto; padding: 0 1.5rem 4rem; }
 .aviso-chat { color: var(--gris); }
 
 .pregunta {
-  position: sticky; bottom: 0; display: flex; align-items: flex-end; gap: 0.75rem;
-  margin: 1.75rem -1.75rem 0; padding: 1rem 1.75rem 1.5rem; background: var(--lamina);
-  border-top: 1px solid var(--linea); border-radius: 0 0 var(--radio) var(--radio);
+  display: flex; align-items: flex-end; gap: 0.75rem; padding: 0.8rem 1rem 1rem;
+  background: var(--lamina); border-top: 1px solid var(--linea);
+  border-radius: 0 0 var(--radio) var(--radio);
 }
 .pregunta textarea {
   flex: 1; resize: none; font: 500 1rem/1.5 var(--texto); color: var(--tinta);
   border: 1.5px solid var(--linea); border-radius: 0.9rem; padding: 0.7rem 0.9rem;
 }
 .pregunta textarea:focus { outline: 3px solid var(--acento-claro); border-color: var(--petroleo); }
-.en-construccion { display: grid; gap: 1rem; justify-items: start; padding-bottom: 1.75rem; }
+.en-construccion { display: grid; gap: 1rem; justify-items: start; }
 
 /* ---------------------------------------------------------------- botones */
 .boton {
@@ -292,17 +319,21 @@ main { max-width: 74rem; margin: 0 auto; padding: 0 1.5rem 4rem; }
   .modulo { grid-template-columns: 1fr; gap: 1.5rem; }
   .modulo-lado { position: static; }
   .modulo-figura { max-width: 18rem; }
-  .conversacion { padding: 1.25rem 1.25rem 0; }
-  .pregunta { margin: 1.25rem -1.25rem 0; padding: 0.9rem 1.25rem 1.25rem; }
+  .tablero { padding: 1.25rem; }
 }
 @media (max-width: 640px) {
   .barra { padding: 1rem; }
-  main { padding: 0 1rem 3rem; }
+  main { padding: 0 1rem 5rem; }
   .chip-accion, .estado-texto { display: none; }
   .marca { font-size: 1.15rem; }
   .chip-nombre { display: block; max-width: 11rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .modulos > h2 { margin-top: 2.5rem; }
   .burbuja-pregunta { max-width: 92%; }
+  .chat-boton { right: 1rem; bottom: 1rem; }
+  .chat[open] .chat-boton { top: 0.55rem; bottom: auto; right: 0.75rem; box-shadow: none; padding: 0.5rem 0.85rem; }
+  .chat[open] .chat-boton::before { display: none; }
+  .chat-panel { inset: 0; width: auto; height: auto; border: 0; border-radius: 0; box-shadow: none; }
+  .chat .pregunta { border-radius: 0; }
   .cifra::after {
     position: fixed; left: 1rem; right: 1rem; top: auto; bottom: 7.5rem; width: auto; max-width: none;
   }

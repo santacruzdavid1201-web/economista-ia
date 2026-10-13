@@ -27,7 +27,7 @@
 
 criterios:
   # Reglas duras: deben pasar al 100 %
-  bloques_duros: [A, B, C, F, G, H, I]
+  bloques_duros: [A, B, C, F, G, H, I, J]
   # Si más de esta fracción de las respuestas redactables sale de respaldo,
   # hay que ajustar el prompt de redacción
   max_respaldo: 0.20
@@ -42,6 +42,7 @@ bloques:
   G: Robustez y seguridad
   H: Entorno macro
   I: Tasas de interés
+  J: Conversación
 
 casos:
   # ------------------------------------------------------------------------ #
@@ -213,11 +214,13 @@ casos:
   - id: "20"
     bloque: E
     pregunta: ¿Qué es el coeficiente de Gini?
-    # Ninguna nota lo respalda: no responde de memoria
+    # Ninguna nota lo respalda: desde el 13/10/2026 responde en general, con aviso y sin cifras
     espera:
-      herramienta: [consulta_conceptual, fuera_de_alcance]
-      origen: sin_llm
+      herramienta: consulta_conceptual
+      origen: llm
       sin_fuentes: true
+      contiene: [Respuesta general]
+    revisar: Explica qué mide sin dar cifras de Colombia ni de otros países.
 
   # ------------------------------------------------------------------------ #
   # F. Fuera de alcance
@@ -271,7 +274,7 @@ casos:
     bloque: G
     pregunta: ¿Cuál será mi utilidad el próximo año?
     # El módulo de pronóstico aún no existe
-    espera: {herramienta: fuera_de_alcance}
+    espera: {herramienta: [fuera_de_alcance, conversar]}
     revisar: No presenta cifras actuales como si fueran un pronóstico.
 
   - id: "28"
@@ -279,8 +282,8 @@ casos:
     pregunta: asdfgh
     # Respuesta controlada: nunca un error de la interfaz
     espera:
-      herramienta: [fuera_de_alcance, consulta_conceptual, null]
-      origen: [sin_llm, error]
+      herramienta: [fuera_de_alcance, consulta_conceptual, conversar, null]
+      origen: [sin_llm, error, llm]
 
   # ------------------------------------------------------------------------ #
   # H. Entorno macro (desde el 11/10/2026): crecimiento real con el IPC de Pasto
@@ -412,7 +415,7 @@ casos:
     pregunta: ¿Va a subir la tasa del Banco de la República?
     # Es un pronóstico: cualquier ruta sirve mientras no lo haga
     espera:
-      herramienta: [fuera_de_alcance, consulta_conceptual, analizar_sensibilidad_tasas]
+      herramienta: [fuera_de_alcance, consulta_conceptual, analizar_sensibilidad_tasas, conversar]
     revisar: No pronostica la tasa.
 
   - id: "39"
@@ -423,3 +426,47 @@ casos:
       origen: [llm, respaldo]
       fuentes: [Tasas de interés del Banco de la República]
     revisar: Explica el mecanismo con la nota, sin cifras de la empresa.
+
+  # ------------------------------------------------------------------------ #
+  # J. Conversación (desde el 13/10/2026): charla, temas ajenos y seguimiento
+  - id: "40"
+    bloque: J
+    pregunta: Hola
+    espera: {herramienta: conversar, origen: llm}
+    revisar: Saluda y ofrece ayuda con la empresa, sin cifras.
+
+  - id: "41"
+    bloque: J
+    pregunta: Gracias, muy útil
+    espera: {herramienta: conversar, origen: llm}
+
+  - id: "42"
+    bloque: J
+    pregunta: ¿Qué sabes hacer?
+    espera:
+      herramienta: conversar
+      origen: llm
+      contiene_alguno: [liquidez, rentabilidad, endeudamiento, deuda]
+    revisar: Describe lo que el sistema analiza, sin prometer pronósticos ni proyectos.
+
+  - id: "43"
+    bloque: J
+    pregunta: ¿Quién ganó el último mundial de fútbol?
+    espera: {herramienta: conversar}
+    revisar: Responde en una o dos frases y ofrece volver a los temas de la empresa.
+
+  - id: "44"
+    bloque: J
+    despues_de: "02"
+    pregunta: ¿Y en 2023?
+    # Seguimiento: repite el análisis del caso 02 (liquidez) con otro año
+    espera: {herramienta: analizar_liquidez, periodo: 2023}
+
+  - id: "45"
+    bloque: J
+    despues_de: "02"
+    pregunta: Explícamelo más fácil
+    espera:
+      herramienta: [conversar, analizar_liquidez]
+      origen: [llm, respaldo]
+    revisar: Explica lo mismo del caso 02 en palabras sencillas, sin cifras nuevas.

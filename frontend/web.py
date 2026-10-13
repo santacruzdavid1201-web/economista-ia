@@ -3,11 +3,13 @@ Rutas HTML de la interfaz (FastAPI + Jinja + HTMX).
 
 Las páginas se devuelven completas; los enlaces piden a HTMX que tome solo
 #pagina y la reemplace con una transición (sin el parpadeo de recargar todo).
-La pregunta se responde en dos pasos: POST devuelve la pregunta y un marcador
-que pide GET /respuesta/{id}, porque el modelo local puede tardar un minuto.
+El chat es uno solo para toda la interfaz y vive fuera de #pagina, así que sigue
+abierto al navegar. La pregunta se responde en dos pasos: POST devuelve la
+pregunta y un marcador que pide GET /respuesta/{id}, porque el modelo local
+puede tardar un minuto.
 
 Sesiones en memoria (MVP de un solo proceso): una cookie con un token aleatorio
-apunta a la empresa cargada y a las conversaciones de cada módulo.
+apunta a la empresa cargada y a la conversación.
 """
 from __future__ import annotations
 
@@ -39,7 +41,7 @@ from data_sources.empresa.puc import (
 )
 from data_sources.externos.referencia import cargar_referencia
 from frontend.cifras import libro, respuesta_html
-from frontend.modulos import MODULOS, POR_CLAVE, Modulo
+from frontend.modulos import MODULOS, POR_CLAVE
 from modules.base import formatear
 from modules.esquema_financiero import Empresa, HistorialFinanciero
 
@@ -84,8 +86,8 @@ class Turno:
 class Sesion:
     ctx: ContextoEmpresa
     demo: bool = True
-    chats: dict[str, list[Turno]] = field(default_factory=dict)
-    pendientes: dict[str, tuple[str, Turno]] = field(default_factory=dict)
+    chat: list[Turno] = field(default_factory=list)
+    pendientes: dict[str, Turno] = field(default_factory=dict)
     archivos: list[tuple[str, bytes]] = field(default_factory=list)   # paso 1 de la carga
     borrador: dict = field(default_factory=dict)
     aviso: str | None = None                                          # se muestra una vez
@@ -175,10 +177,14 @@ def _vista(r: Respuesta) -> dict:
     }
 
 
+def _turnos(s: Sesion) -> list[dict]:
+    return [{"pregunta": t.pregunta, "r": _vista(t.respuesta)} for t in s.chat if t.respuesta]
+
+
 def _contexto(request: Request, s: Sesion, **extra) -> dict:
     h = s.ctx.historial
     return {"empresa": h.empresa.razon_social, "anios": _anios(h), "ciiu": h.empresa.ciiu,
-            "demo": s.demo, "modulos": MODULOS, **extra}
+            "demo": s.demo, "modulos": MODULOS, "turnos": _turnos(s), **extra}
 
 
 def _pagina(request: Request, plantilla: str, contexto: dict, status: int = 200):
@@ -186,17 +192,14 @@ def _pagina(request: Request, plantilla: str, contexto: dict, status: int = 200)
 
 
 def _a_portada() -> Response:
-    """Tras cambiar de empresa, HTMX trae la portada sin recargar todo."""
+    """
+    Tras cambiar de empresa, HTMX trae la portada sin recargar todo; el chat, que está
+    fuera de #pagina, se vacía con el evento empresa-cambiada.
+    """
     destino = {"path": "/", "target": "#pagina", "select": "#pagina",
                "swap": "outerHTML transition:true"}
-    return Response(status_code=204, headers={"HX-Location": json.dumps(destino)})
-
-
-def _modulo_activo(clave: str) -> Modulo:
-    m = POR_CLAVE.get(clave)
-    if m is None or not m.activo:
-        raise HTTPException(404, "Ese módulo no existe o todavía no está disponible.")
-    return m
+    return Response(status_code=204, headers={"HX-Location": json.dumps(destino),
+                                              "HX-Trigger": "empresa-cambiada"})
 
 
 # --------------------------------------------------------------------------- #
@@ -218,20 +221,22 @@ def modulo(request: Request, clave: str, s: Sesion = Depends(sesion)):
     m = POR_CLAVE.get(clave)
     if m is None:
         raise HTTPException(404, "Ese módulo no existe.")
-    turnos = [{"pregunta": t.pregunta, "r": _vista(t.respuesta)}
-              for t in s.chats.get(clave, []) if t.respuesta]
-    return _pagina(request, "modulo.html", _contexto(request, s, m=m, turnos=turnos))
+    return _pagina(request, "modulo.html", _contexto(request, s, m=m))
 
 
 # --------------------------------------------------------------------------- #
 # Conversación
 # --------------------------------------------------------------------------- #
-@router.post("/modulo/{clave}/preguntar", response_class=HTMLResponse)
-async def preguntar(request: Request, clave: str, s: Sesion = Depends(sesion)):
-    _modulo_activo(clave)
+@router.get("/chat", response_class=HTMLResponse)
+def chat(request: Request, s: Sesion = Depends(sesion)):
+    return _pagina(request, "_conversacion.html", {"turnos": _turnos(s)})
+
+
+@router.post("/preguntar", response_class=HTMLResponse)
+async def preguntar(request: Request, s: Sesion = Depends(sesion)):
     pregunta = str((await request.form()).get("pregunta", ""))
     pid = secrets.token_urlsafe(8)
-    s.pendientes[pid] = (clave, Turno(pregunta=pregunta))
+    s.pendientes[pid] = Turno(pregunta=pregunta)
     return _pagina(request, "_pendiente.html", {"pid": pid, "pregunta": pregunta})
 
 
@@ -239,16 +244,16 @@ async def preguntar(request: Request, clave: str, s: Sesion = Depends(sesion)):
 def respuesta(request: Request, pid: str, s: Sesion = Depends(sesion),
               cliente=Depends(cliente_llm)):
     """Corre el orquestador (en un hilo de FastAPI: puede tardar un minuto)."""
-    item = s.pendientes.pop(pid, None)
-    if item is None:
+    turno = s.pendientes.pop(pid, None)
+    if turno is None:
         return HTMLResponse('<p class="aviso-chat">Esa pregunta ya no está disponible. '
                             'Escríbala de nuevo.</p>')
-    clave, turno = item
+    historial = [(t.pregunta, t.respuesta) for t in s.chat if t.respuesta]
     try:
-        turno.respuesta = responder(turno.pregunta, s.ctx, cliente)
+        turno.respuesta = responder(turno.pregunta, s.ctx, cliente, historial=historial)
     except Exception as e:  # última red: la interfaz nunca se cae
         turno.respuesta = Respuesta(texto=f"Ocurrió un error inesperado: {e}", origen="error")
-    s.chats.setdefault(clave, []).append(turno)
+    s.chat.append(turno)
     return _pagina(request, "_respuesta.html", {"r": _vista(turno.respuesta)})
 
 
@@ -270,7 +275,7 @@ def empresa(request: Request, s: Sesion = Depends(sesion)):
 @router.post("/empresa/demo")
 def usar_demo(s: Sesion = Depends(sesion)):
     s.ctx, s.demo, s.aviso = _demo(), True, None
-    s.chats.clear()
+    s.chat.clear()
     return _a_portada()
 
 
@@ -363,5 +368,5 @@ async def cargar(request: Request, s: Sesion = Depends(sesion)):
     referencia = cargar_referencia(empresa_.ciiu, historial.ultimo.fecha_corte.year)
     s.ctx = ContextoEmpresa(historial=historial, referencia=referencia)
     s.demo, s.aviso, s.archivos = False, (SIN_REFERENCIA if referencia is None else None), []
-    s.chats.clear()
+    s.chat.clear()
     return _a_portada()

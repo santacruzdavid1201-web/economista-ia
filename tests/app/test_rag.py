@@ -6,7 +6,7 @@ import pytest
 
 from app.config import _prefijo
 from app.llm.client import ErrorLLM
-from app.orchestrator.orquestador import AVISO_SIN_REVISAR, SIN_FUENTE, responder
+from app.orchestrator.orquestador import AVISO_GENERAL, AVISO_SIN_REVISAR, responder
 from app.orchestrator.tools_registry import ContextoEmpresa
 from app.rag.ingest import ErrorNota, construir_indice, leer_nota, leer_notas
 from app.rag.retriever import Buscador, raices
@@ -136,10 +136,20 @@ def test_nota_revisada_no_lleva_aviso(buscador):
     assert r.fuentes == ["EBITDA (Prueba)"] and not r.notas
 
 
-def test_sin_fuente_no_responde_de_memoria(buscador):
-    llm = LLMFalso(herramienta("consulta_conceptual"))
+def test_sin_fuente_responde_en_general_con_aviso(buscador):
+    llm = LLMFalso(herramienta("consulta_conceptual"),
+                   texto("La regla del 72 estima en cuántos años se duplica una inversión."))
+    r = responder("¿Qué es la regla del 72?", CTX, llm, HOY, buscador)
+    assert r.origen == "llm" and r.texto.startswith("La regla del 72")    # cifra de la pregunta
+    assert r.notas == [AVISO_GENERAL] and not r.fuentes
+    assert "MENSAJE:" in llm.llamadas[1]["usuario"]
+
+
+def test_sin_fuente_no_da_cifras_de_memoria(buscador):
+    llm = LLMFalso(herramienta("consulta_conceptual"),
+                   texto("El dólar está en 4.100 pesos."), texto("Cerró en 4.100."))
     r = responder("¿Qué opina del dólar?", CTX, llm, HOY, buscador)
-    assert r.texto == SIN_FUENTE and r.origen == "sin_llm" and len(llm.llamadas) == 1
+    assert r.origen == "sin_llm" and "datos de memoria" in r.texto and not r.notas
 
 
 def test_cifra_inventada_en_conceptual_usa_el_texto_de_la_nota(buscador):

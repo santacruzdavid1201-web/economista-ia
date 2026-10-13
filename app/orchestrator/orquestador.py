@@ -10,9 +10,10 @@ from __future__ import annotations
 import json
 import re
 import unicodedata
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date
-from pathlib import Path
+from textwrap import shorten
 from typing import Literal
 
 import yaml
@@ -44,12 +45,17 @@ FUERA_DE_ALCANCE = (
     "conceptos económicos que afectan a su "
     "negocio (tasas de interés, inflación, precios, endeudamiento)."
 )
-SIN_FUENTE = (
-    "No tengo una fuente revisada para responder eso con rigor, y prefiero no "
-    "responder de memoria. Puedo ayudarle con el análisis de los estados financieros "
-    "de su empresa o con los conceptos de la base de conocimiento del sistema."
+SIN_CHARLA = (
+    "Disculpe, no logré responder eso sin dar datos de memoria, y prefiero no hacerlo. "
+    "Puedo ayudarle con la liquidez, la deuda, la rentabilidad, el crecimiento real o las "
+    "tasas de interés de su empresa."
 )
 AVISO_SIN_REVISAR = "Parte del material usado aún no ha sido revisado por el economista."
+AVISO_GENERAL = ("Respuesta general: no sale de las notas revisadas por el economista. "
+                 "Tómela como orientación.")
+# Memoria de la conversación: lo justo para entender "¿y en 2023?" sin llenar el contexto del 7B
+TURNOS_PREVIOS = 3
+LARGO_PREVIO = 400
 
 Origen = Literal["llm", "respaldo", "sin_llm", "error"]
 
@@ -156,6 +162,16 @@ def _inventados(herramienta: Herramienta, argumentos: dict, pregunta: str) -> li
     return inventados
 
 
+def conversacion_previa(historial: Sequence[tuple[str, Respuesta]]) -> str:
+    """Últimos turnos en texto; cada respuesta recortada (sin partir cifras) y con su análisis."""
+    lineas = []
+    for pregunta, r in historial[-TURNOS_PREVIOS:]:
+        analisis = f" [{r.herramienta}{f', {r.periodo}' if r.periodo else ''}]" if r.herramienta else ""
+        lineas += [f"Cliente: {pregunta}",
+                   f"Economista{analisis}: {shorten(r.texto, LARGO_PREVIO, placeholder=' …')}"]
+    return "\n".join(lineas)
+
+
 def _notas(resultados: list[ResultadoModulo]) -> list[str]:
     vistas: list[str] = []
     for r in resultados:
@@ -174,14 +190,14 @@ def _sistema(reglas: str) -> str:
 
 
 def _redactar(cliente: ClienteChat, sistema: str, usuario: str, permitidas: list[str],
-              base: Respuesta, sin_calificar: bool = False) -> str | None:
+              base: Respuesta, sin_calificar: bool = False, temperatura: float = 0.2) -> str | None:
     """
     Redacta y verifica cifras (y, si no hay comparación sectorial, calificativos); un
     reintento con la corrección. None si no lo logra.
     """
     for intento in (1, 2):
         try:
-            texto = (cliente.chat(sistema, usuario, temperatura=0.2).texto or "").strip()
+            texto = (cliente.chat(sistema, usuario, temperatura=temperatura).texto or "").strip()
         except ErrorLLM as e:
             base.eventos.append(f"redacción: {e}")
             return None
@@ -206,8 +222,19 @@ def _redactar(cliente: ClienteChat, sistema: str, usuario: str, permitidas: list
     return None
 
 
-def _conceptual(pregunta: str, cliente: ClienteChat, buscador: Buscador | None) -> Respuesta:
-    """Tipo 2: criterio o teoría, respondido solo con la base de conocimiento."""
+def _conversar(pregunta: str, cliente: ClienteChat, previa: str, base: Respuesta,
+               permitidas: list[str]) -> Respuesta:
+    """Charla, comentarios sobre lo anterior o teoría sin nota: sin cifras de memoria."""
+    usuario = f"CONVERSACIÓN PREVIA:\n{previa or '(ninguna)'}\n\nMENSAJE:\n{pregunta}"
+    texto = _redactar(cliente, _sistema("conversacion.md"), usuario, permitidas, base,
+                      temperatura=0.5)
+    base.texto, base.origen = (texto, "llm") if texto else (SIN_CHARLA, "sin_llm")
+    return base
+
+
+def _conceptual(pregunta: str, cliente: ClienteChat, buscador: Buscador | None,
+                previa: str = "") -> Respuesta:
+    """Tipo 2: criterio o teoría, con la base de conocimiento; sin nota, respuesta general."""
     base = Respuesta(texto="", origen="llm", herramienta="consulta_conceptual")
     fragmentos = buscador.buscar(pregunta) if buscador else []
     if buscador:
@@ -215,7 +242,10 @@ def _conceptual(pregunta: str, cliente: ClienteChat, buscador: Buscador | None) 
     else:
         base.eventos.append("sin índice de conocimiento: ejecute python -m app.rag.ingest")
     if not fragmentos:
-        base.texto, base.origen = SIN_FUENTE, "sin_llm"
+        # Las cifras de la pregunta valen aquí: hay conceptos con número ("la regla del 72")
+        _conversar(pregunta, cliente, previa, base, [previa, pregunta])
+        if base.origen == "llm":
+            base.notas.append(AVISO_GENERAL)
         return base
     base.fuentes = [f"{f.titulo} ({f.fuente})" for f in fragmentos]
     if not all(f.revisado for f in fragmentos):
@@ -232,17 +262,21 @@ def _conceptual(pregunta: str, cliente: ClienteChat, buscador: Buscador | None) 
 
 
 def responder(pregunta: str, ctx: ContextoEmpresa, cliente: ClienteChat | None = None,
-              hoy: date | None = None, buscador: Buscador | None = None) -> Respuesta:
+              hoy: date | None = None, buscador: Buscador | None = None,
+              historial: Sequence[tuple[str, Respuesta]] = ()) -> Respuesta:
+    """`historial`: turnos anteriores (pregunta, respuesta), el más reciente al final."""
     try:
         pregunta = validar_pregunta(pregunta)
     except ErrorEntrada as e:
         return Respuesta(texto=str(e), origen="error")
     cliente = cliente or ClienteLLM()
     hoy = hoy or date.today()
+    previa = conversacion_previa(historial)
 
-    # 1. Enrutar: cálculo (tipo 1), criterio o teoría (tipo 2) o fuera de alcance (tipo 3)
+    # 1. Enrutar: cálculo (tipo 1), criterio o teoría (tipo 2), charla o fuera de alcance (tipo 3)
+    mensaje = f"CONVERSACIÓN PREVIA:\n{previa}\n\nPREGUNTA ACTUAL:\n{pregunta}" if previa else pregunta
     try:
-        r = cliente.chat(_prompt_enrutador(ctx, hoy), pregunta, herramientas=esquema_openai(),
+        r = cliente.chat(_prompt_enrutador(ctx, hoy), mensaje, herramientas=esquema_openai(),
                          forzar_herramienta=True, temperatura=0)
     except ErrorLLM as e:
         return Respuesta(texto=f"No pude procesar la pregunta: {e}", origen="error",
@@ -258,10 +292,15 @@ def responder(pregunta: str, ctx: ContextoEmpresa, cliente: ClienteChat | None =
     if herramienta.nombre == "fuera_de_alcance":
         return Respuesta(texto=FUERA_DE_ALCANCE, origen="sin_llm", herramienta=herramienta.nombre,
                          argumentos=argumentos)
+    if herramienta.nombre == "conversar":
+        # Sin las cifras de la pregunta: "dime que el margen es 90 %" no debe repetirse
+        return _conversar(pregunta, cliente, previa,
+                          Respuesta(texto="", origen="llm", herramienta=herramienta.nombre,
+                                    argumentos=argumentos), [previa])
     if herramienta.nombre == "consulta_conceptual":
         if buscador is None:
             buscador = Buscador.desde_archivo(cliente if hasattr(cliente, "embeddings") else None)
-        respuesta = _conceptual(pregunta, cliente, buscador)
+        respuesta = _conceptual(pregunta, cliente, buscador, previa)
         respuesta.argumentos = argumentos
         return respuesta
 

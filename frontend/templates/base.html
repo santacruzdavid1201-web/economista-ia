@@ -38,5 +38,29 @@
     <div class="cuerpo"></div>
   </dialog>
 </div>
+
+{#- Fuera de #pagina: la navegación no lo reemplaza y la conversación sigue abierta -#}
+<details id="chat" class="chat" ontoggle="if (this.open) this.querySelector('textarea').focus()"
+         onkeydown="if (event.key === 'Escape') { this.open = false; this.querySelector('summary').focus(); }">
+  <summary class="chat-boton">
+    <span class="chat-abrir">Pregúntele al economista</span>
+    <span class="chat-cerrar"><span aria-hidden="true">×</span><span class="oculto">Cerrar el chat</span></span>
+  </summary>
+  <section class="chat-panel" aria-labelledby="titulo-chat">
+    <h2 id="titulo-chat" class="chat-cabeza">Su economista</h2>
+    <div id="conversacion" class="turnos" aria-live="polite"
+         hx-get="/chat" hx-trigger="empresa-cambiada from:body">
+      {% include "_conversacion.html" %}
+    </div>
+    <form class="pregunta" hx-post="/preguntar" hx-target="#conversacion"
+          hx-swap="beforeend show:bottom" hx-on::after-request="if (event.detail.successful) this.reset()">
+      <label for="campo-pregunta" class="oculto">Su mensaje</label>
+      <textarea id="campo-pregunta" name="pregunta" rows="2" maxlength="1000" required
+                placeholder="Escriba su mensaje"
+                onkeydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); this.form.requestSubmit(); }"></textarea>
+      <button type="submit" class="boton">Enviar</button>
+    </form>
+  </section>
+</details>
 </body>
 </html>

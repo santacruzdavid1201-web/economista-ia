@@ -6,6 +6,11 @@ Verificado: navegación sin recarga (View Transitions), respuesta con el modelo
 real, carga de SECOLINSA en dos pasos, escritorio y celular (390 px), 274 tests.
 Falta la prueba del economista (criterio 1).
 
+Cambio del 13/10/2026 (pedido del economista): el chat es uno solo para toda
+la interfaz, en una burbuja flotante, y conversa (ver `docs/decisiones.md`);
+cada módulo pasa a ser un tablero con gráficas, tablas y hallazgos calculados
+solo con Python. Hecho el chat; los tableros, en construcción.
+
 ## Objetivo
 
 Que el gerente de una pyme haga preguntas sobre su empresa en una interfaz
@@ -22,7 +27,12 @@ respuesta, solo cambia la parte nueva, con una transición suave.
   Transitions (fundido corto, desactivado con `prefers-reduced-motion`).
 - **Portada con módulos ilustrados**: Balance financiero y Entorno macro
   activos; Evaluación de proyectos y Econometría como "próximamente". Cada
-  módulo tiene su ilustración, su color y su conversación.
+  módulo tiene su ilustración, su color y su tablero.
+- **Chat global en una burbuja flotante** (`<details>` fuera de `#pagina`):
+  la navegación no lo reemplaza, una conversación por sesión con memoria de
+  los últimos 3 turnos; las preguntas de ejemplo de cada módulo lo abren. En
+  el celular ocupa toda la pantalla. Al cambiar de empresa se vacía con el
+  evento `empresa-cambiada`.
 - **Paleta menta y coral** sobre fondo gris azulado frío (no crema, para no
   caer en el lugar común crema + coral + serif).
 - **Sesiones en memoria** (MVP de un solo proceso): cookie con un token
@@ -86,9 +96,10 @@ frontend/static/               estilo.css, htmx.min.js (2.0.4), ilustraciones/*.
 tests/frontend/                tests con TestClient y un LLM falso
 ```
 
-Rutas: `GET /` portada; `GET /modulo/{clave}`; `POST /modulo/{clave}/preguntar`
-(devuelve la pregunta y un marcador que pide la respuesta); `GET
-/respuesta/{id}` (corre el orquestador; puede tardar un minuto);
+Rutas: `GET /` portada; `GET /modulo/{clave}`; `POST /preguntar` (devuelve
+la pregunta y un marcador que pide la respuesta); `GET /respuesta/{id}`
+(corre el orquestador con la conversación previa; puede tardar un minuto);
+`GET /chat` (la conversación, para refrescarla);
 `GET /empresa`, `POST /empresa/demo`, `POST /empresa/archivos`,
 `POST /empresa/cargar`; `GET /estado-modelo`.
 
