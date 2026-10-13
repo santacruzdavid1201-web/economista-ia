@@ -208,8 +208,9 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    en paralelo, sin compararlos con la inflación: cuando lo hacía, el 7B decía
    que "el crecimiento real superó la inflación". Nota nueva
    `conocimiento/crecimiento-real.md` con la fórmula exacta en símbolos y en
-   palabras (el 7B copia la versión en palabras), con `revisado: false`
-   hasta que el usuario la revise. El verificador ya no deja libres los
+   palabras (el 7B copia la versión en palabras); revisada por el usuario el
+   13/10/2026, que pidió precisar que la resta solo sirve con tasas bajas y
+   agregar la ecuación de Fisher. El verificador ya no deja libres los
    enteros 0-10 cuando llevan % o $ (así pasó un ejemplo inventado). Bloque
    H: 4/4 en dos corridas con reglas nuevas (sin "volumen"; nominal y real
    en 30; "1 más el crecimiento nominal" en 32).
@@ -237,9 +238,9 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    `panorama-macro` (inflación, tasas, TRM —SUAMECA id 1—, PIB y desempleo;
    averiguar los ids de los dos últimos). `sector-hotelero` (MMH + panel de
    Supersociedades + SQL) pasa al módulo 2, que usa la misma infraestructura.
-   Pendientes del usuario: revisar `conocimiento/crecimiento-real.md`
-   (`revisado: false`); cálculo a mano de sensibilidad-tasas del demo 2024;
-   cotejar tasa de política (12,25 %) e IBR (11,70 %) con la página del BanRep.
+   Pendiente del usuario: cálculo a mano de sensibilidad-tasas del demo 2024.
+   La tasa de política (12,25 %) y la IBR (11,70 %) las confirmó contra la
+   última reunión del BanRep el 13/10/2026.
 
 Grupos de comparación en `config/ciiu_sectores.yaml` (alojamiento / hoteles).
 El benchmark se describe siempre como "empresas reportantes a
