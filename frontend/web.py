@@ -46,6 +46,15 @@ from modules.base import formatear
 from modules.esquema_financiero import Empresa, EstadoFinanciero, HistorialFinanciero
 
 PLANTILLAS = Jinja2Templates(directory=Path(__file__).with_name("templates"))
+ESTATICOS = Path(__file__).with_name("static")
+
+
+def estatico(nombre: str) -> str:
+    """URL con la fecha del archivo: el navegador no reutiliza una hoja de estilos vieja."""
+    return f"/static/{nombre}?v={int((ESTATICOS / nombre).stat().st_mtime)}"
+
+
+PLANTILLAS.env.globals["estatico"] = estatico
 COOKIE = "sesion"
 MAX_SESIONES = 200
 MAX_MB = 5

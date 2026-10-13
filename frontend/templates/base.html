@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@700;800&display=swap">
-  <link rel="stylesheet" href="/static/estilo.css">
-  <script src="/static/htmx.min.js" defer></script>
+  <link rel="stylesheet" href="{{ estatico('estilo.css') }}">
+  <script src="{{ estatico('htmx.min.js') }}" defer></script>
 </head>
 <body>
 <div id="pagina" class="pagina tono-{% block tono %}menta{% endblock %}">
@@ -29,11 +29,24 @@
 <details id="chat" class="chat" ontoggle="if (this.open) this.querySelector('textarea').focus()"
          onkeydown="if (event.key === 'Escape') { this.open = false; this.querySelector('summary').focus(); }">
   <summary class="chat-boton">
-    <span class="chat-abrir">Pregúntele al economista</span>
-    <span class="chat-cerrar"><span aria-hidden="true">×</span><span class="oculto">Cerrar el chat</span></span>
+    <svg class="icono-abrir" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M12 3C6.9 3 3 6.6 3 11c0 2.3 1.1 4.4 2.9 5.9L5.3 21l4-2.2c.9.2 1.8.3 2.7.3 5.1 0 9-3.6 9-8s-3.9-8-9-8Z"/>
+      <circle cx="8" cy="11" r="1.3" fill="var(--petroleo)"/><circle cx="12" cy="11" r="1.3" fill="var(--petroleo)"/><circle cx="16" cy="11" r="1.3" fill="var(--petroleo)"/>
+    </svg>
+    <svg class="icono-cerrar" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+    </svg>
+    <span class="chat-etiqueta">Pregúntele al economista</span>
+    <span class="oculto chat-cerrar-texto">Cerrar el chat</span>
   </summary>
   <section class="chat-panel" aria-labelledby="titulo-chat">
-    <h2 id="titulo-chat" class="chat-cabeza">Su economista</h2>
+    <div class="chat-cabeza">
+      <span class="chat-avatar" aria-hidden="true"></span>
+      <div>
+        <h2 id="titulo-chat">Su economista</h2>
+        <p>Responde con los datos de su empresa</p>
+      </div>
+    </div>
     <div id="conversacion" class="turnos" aria-live="polite"
          hx-get="/chat" hx-trigger="empresa-cambiada from:body">
       {% include "_conversacion.html" %}

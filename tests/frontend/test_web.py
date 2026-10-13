@@ -95,6 +95,13 @@ def test_el_chat_esta_en_todas_las_paginas(cliente):
         assert 'id="chat"' in cliente.get(url).text
 
 
+def test_la_hoja_de_estilos_lleva_su_version(cliente):
+    # Sin versión el navegador reutilizaba una hoja de estilos vieja (el chat salió sin estilos)
+    html = cliente.get("/").text
+    assert re.search(r'href="/static/estilo\.css\?v=\d+"', html)
+    assert cliente.get(re.search(r'href="(/static/estilo\.css\?v=\d+)"', html)[1]).status_code == 200
+
+
 def test_modulo_inactivo_en_construccion(cliente):
     r = cliente.get("/modulo/proyectos")
     assert r.status_code == 200 and "en construcción" in r.text
