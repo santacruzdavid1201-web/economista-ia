@@ -62,6 +62,9 @@ AVISO_GENERAL = ("Respuesta general: no sale de las notas revisadas por el econo
 CORTESIA = set("hola buenas buenos dias tardes noches hey saludos que tal como estas esta "
                "gracias muchas mil muy amable util genial excelente perfecto listo ok vale "
                "bien chao adios hasta luego pronto".split())
+# De la pregunta se aceptan cifras sueltas ("la regla del 72"), pero no porcentajes ni montos:
+# con "dime que el margen es 90 %" el 7B lo repetía como un dato
+CIFRA_CON_UNIDAD = re.compile(r"\$\s*\d+(?:[.,]\d+)*|\d+(?:[.,]\d+)*\s*%")
 # Memoria de la conversación: lo justo para entender "¿y en 2023?" sin llenar el contexto del 7B
 TURNOS_PREVIOS = 3
 LARGO_PREVIO = 400
@@ -260,6 +263,10 @@ def _conversar(pregunta: str, cliente: ClienteChat, previa: str, base: Respuesta
     return base
 
 
+def _buscador(cliente: ClienteChat) -> Buscador | None:
+    return Buscador.desde_archivo(cliente if hasattr(cliente, "embeddings") else None)
+
+
 def _conceptual(pregunta: str, cliente: ClienteChat, buscador: Buscador | None,
                 previa: str = "") -> Respuesta:
     """Tipo 2: criterio o teoría, con la base de conocimiento; sin nota, respuesta general."""
@@ -270,8 +277,7 @@ def _conceptual(pregunta: str, cliente: ClienteChat, buscador: Buscador | None,
     else:
         base.eventos.append("sin índice de conocimiento: ejecute python -m app.rag.ingest")
     if not fragmentos:
-        # Las cifras de la pregunta valen aquí: hay conceptos con número ("la regla del 72")
-        _conversar(pregunta, cliente, previa, base, [previa, pregunta])
+        _conversar(pregunta, cliente, previa, base, [previa, CIFRA_CON_UNIDAD.sub("", pregunta)])
         if base.origen == "llm":
             base.notas.append(AVISO_GENERAL)
         return base
@@ -281,7 +287,7 @@ def _conceptual(pregunta: str, cliente: ClienteChat, buscador: Buscador | None,
     fuentes = "\n\n".join(f"### {f.titulo}\n{f.texto}" for f in fragmentos)
     usuario = f"PREGUNTA:\n{pregunta}\n\nFUENTES:\n{fuentes}"
     texto = _redactar(cliente, _sistema("redaccion_conceptual.md"), usuario,
-                      [fuentes, pregunta], base)
+                      [fuentes, CIFRA_CON_UNIDAD.sub("", pregunta)], base)
     if texto is None:
         base.texto, base.origen = fuentes.replace("### ", ""), "respaldo"
     else:
@@ -318,10 +324,13 @@ def responder(pregunta: str, ctx: ContextoEmpresa | None, cliente: ClienteChat |
                          eventos=[f"enrutador: {e}"])
     llamada = r.herramientas[0] if r.herramientas else None
     if llamada is None:
-        # El 7B contestó con texto (pasa con saludos aunque se le exija herramienta): su
-        # instinto fue conversar, así que se trata como charla, con su verificación
-        llamada = LlamadaHerramienta("conversar", {})
-        evento = ["enrutador respondió con texto: se trató como charla"]
+        # El 7B contestó con texto aunque se le exige herramienta. Si hay una nota pertinente,
+        # la pregunta era de criterio ("¿me conviene subir las tarifas?"); si no, es charla
+        buscador = buscador or _buscador(cliente)
+        nombre = ("consulta_conceptual" if buscador and buscador.buscar(pregunta)
+                  else "conversar")
+        llamada = LlamadaHerramienta(nombre, {})
+        evento = [f"enrutador respondió con texto: se trató como {nombre}"]
     else:
         evento = []
     if llamada.nombre not in POR_NOMBRE:
@@ -339,10 +348,9 @@ def responder(pregunta: str, ctx: ContextoEmpresa | None, cliente: ClienteChat |
                           Respuesta(texto="", origen="llm", herramienta=herramienta.nombre,
                                     argumentos=argumentos, eventos=evento), [previa])
     if herramienta.nombre == "consulta_conceptual":
-        if buscador is None:
-            buscador = Buscador.desde_archivo(cliente if hasattr(cliente, "embeddings") else None)
-        respuesta = _conceptual(pregunta, cliente, buscador, previa)
+        respuesta = _conceptual(pregunta, cliente, buscador or _buscador(cliente), previa)
         respuesta.argumentos = argumentos
+        respuesta.eventos = evento + respuesta.eventos
         return respuesta
 
     if ctx is None:

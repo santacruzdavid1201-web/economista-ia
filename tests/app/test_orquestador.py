@@ -130,7 +130,7 @@ def test_si_el_enrutador_contesta_con_texto_se_trata_como_charla(ctx):
     r = responder("Hola, ¿qué puedes hacer?", ctx, llm, HOY)
     assert r.herramienta == "conversar" and r.origen == "llm"
     assert r.texto == "¡Hola! ¿En qué le ayudo?"           # la redacción, no el texto del enrutador
-    assert "se trató como charla" in r.eventos[0]
+    assert "respondió con texto: se trató como conversar" in r.eventos[0]
 
 
 def test_cortesia_va_directo_a_la_charla():
