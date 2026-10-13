@@ -218,7 +218,7 @@ CORREGIR_CIFRAS_CHARLA = ("Tu respuesta anterior incluía cifras que no puedes d
 
 def _redactar(cliente: ClienteChat, sistema: str, usuario: str, permitidas: list[str],
               base: Respuesta, sin_calificar: bool = False, temperatura: float = 0.2,
-              corregir_cifras: str = CORREGIR_CIFRAS) -> str | None:
+              corregir_cifras: str = CORREGIR_CIFRAS, anios_libres: bool = False) -> str | None:
     """
     Redacta y verifica cifras (y, si no hay comparación sectorial, calificativos); un
     reintento con la corrección. None si no lo logra.
@@ -233,7 +233,7 @@ def _redactar(cliente: ClienteChat, sistema: str, usuario: str, permitidas: list
             base.eventos.append(f"intento {intento}: respuesta cortada por el tope de tokens")
             continue
         texto = (r.texto or "").strip()
-        sobrantes = cifras_no_respaldadas(texto, *permitidas)
+        sobrantes = cifras_no_respaldadas(texto, *permitidas, anios_libres=anios_libres)
         juicios = calificativos(texto) if sin_calificar else []
         if texto and not sobrantes and not juicios:
             return texto
@@ -256,9 +256,10 @@ def _redactar(cliente: ClienteChat, sistema: str, usuario: str, permitidas: list
 def _conversar(pregunta: str, cliente: ClienteChat, previa: str, base: Respuesta,
                permitidas: list[str]) -> Respuesta:
     """Charla, comentarios sobre lo anterior o teoría sin nota: sin cifras de memoria."""
-    usuario = f"CONVERSACIÓN PREVIA:\n{previa or '(ninguna)'}\n\nMENSAJE:\n{pregunta}"
+    # Sin conversación previa no se manda el bloque: el 7B comentaba "(ninguna)" en la respuesta
+    usuario = (f"CONVERSACIÓN PREVIA:\n{previa}\n\n" if previa else "") + f"MENSAJE:\n{pregunta}"
     texto = _redactar(cliente, _sistema("conversacion.md"), usuario, permitidas, base,
-                      temperatura=0.5, corregir_cifras=CORREGIR_CIFRAS_CHARLA)
+                      temperatura=0.5, corregir_cifras=CORREGIR_CIFRAS_CHARLA, anios_libres=True)
     base.texto, base.origen = (texto, "llm") if texto else (SIN_CHARLA, "sin_llm")
     return base
 

@@ -23,11 +23,16 @@ def numeros(texto: str) -> set[str]:
     return set(NUMERO.findall(texto))
 
 
-def cifras_no_respaldadas(respuesta: str, *fuentes: str) -> list[str]:
+# Años sueltos: en la charla "el Mundial de 2022" no es un dato económico
+ANIO = re.compile(r"(?:19|20)\d\d")
+
+
+def cifras_no_respaldadas(respuesta: str, *fuentes: str, anios_libres: bool = False) -> list[str]:
     """Cifras de la respuesta que no aparecen en ninguna de las fuentes."""
     permitidas = set().union(*(numeros(f) for f in fuentes))
     return sorted({n for peso, n, pct in CIFRA.findall(respuesta) if n not in permitidas
-                   and (n not in LIBRES or peso or pct)})
+                   and (n not in LIBRES or peso or pct)
+                   and not (anios_libres and ANIO.fullmatch(n) and not (peso or pct))})
 
 
 # Sin comparación sectorial no hay con qué calificar un resultado; el 7B lo hacía igual

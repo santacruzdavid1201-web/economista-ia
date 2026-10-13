@@ -229,7 +229,15 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    casos) el 12/10/2026: todos los bloques al 100 %, respaldo 3 %. El
    13/10/2026 se agregó el bloque J (conversación, casos 40-45; `despues_de`
    da a un caso la conversación de otro) y se ajustaron los casos 20, 27, 28
-   y 38: falta correrlo con el modelo real.
+   y 38. Set completo (47 casos) con el modelo real el 13/10/2026, tras la
+   actualización de LM Studio: cálculo y macro al 100 %, respaldo 3 %; de 5
+   fallas, 2 fueron caídas de LM Studio ("Channel Error", probable falta de
+   VRAM con contexto de 32.768) y 3 se corrigieron (19, 26, 42); la corrida
+   de los casos afectados pasó completa. Lecciones: LM Studio 1.1.8 no obliga
+   a elegir herramienta y el 7B contesta saludos con texto y puede desbordarse
+   (tope de tokens; si contesta con texto, nota pertinente → conceptual, si no
+   → charla; la cortesía se salta el enrutador); en la charla los años son
+   libres, pero no porcentajes ni montos de la pregunta.
    Rediseño de la interfaz antes del módulo 3 (decidido el 13/10/2026; el
    módulo 3 se corre unos días y nace con el patrón nuevo): (a) chat global
    y conversacional, hecho; (b) tablero de Balance, hecho el 13/10/2026

@@ -452,7 +452,8 @@ casos:
   - id: "43"
     bloque: J
     pregunta: ¿Quién ganó el último mundial de fútbol?
-    espera: {herramienta: conversar}
+    # Con los años bloqueados respondía "no logré responder sin datos de memoria"
+    espera: {herramienta: conversar, origen: llm}
     revisar: Responde en una o dos frases y ofrece volver a los temas de la empresa.
 
   - id: "44"
@@ -466,7 +467,8 @@ casos:
     bloque: J
     despues_de: "02"
     pregunta: Explícamelo más fácil
+    # La ruta conceptual también sirve: explica con la conversación previa (13/10/2026)
     espera:
-      herramienta: [conversar, analizar_liquidez]
+      herramienta: [conversar, analizar_liquidez, consulta_conceptual]
       origen: [llm, respaldo]
     revisar: Explica lo mismo del caso 02 en palabras sencillas, sin cifras nuevas.

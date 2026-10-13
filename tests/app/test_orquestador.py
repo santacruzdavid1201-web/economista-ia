@@ -165,7 +165,7 @@ def test_conversar_redacta_sin_herramientas(ctx):
     r = responder("Hola, ¿qué puedes hacer?", ctx, llm, HOY)
     assert r.origen == "llm" and r.herramienta == "conversar" and r.texto.startswith("¡Hola!")
     assert llm.llamadas[1]["herramientas"] is None
-    assert "CONVERSACIÓN PREVIA:\n(ninguna)" in llm.llamadas[1]["usuario"]
+    assert llm.llamadas[1]["usuario"] == "MENSAJE:\nHola, ¿qué puedes hacer?"
 
 
 def test_conversar_no_repite_cifras_de_la_pregunta(ctx):
@@ -395,6 +395,13 @@ def test_acepta_decimales_con_coma_o_punto(pregunta):
 # --------------------------------------------------------------------------- #
 # Calificativos sin comparación sectorial
 # --------------------------------------------------------------------------- #
+def test_en_la_charla_los_anios_son_libres_pero_no_los_porcentajes():
+    texto = "Argentina ganó el Mundial de 2022; la inflación fue 94,8 %."
+    assert cifras_no_respaldadas(texto) == ["2022", "94,8"]
+    assert cifras_no_respaldadas(texto, anios_libres=True) == ["94,8"]
+    assert cifras_no_respaldadas("Creció 2024 %", anios_libres=True) == ["2024"]
+
+
 def test_calificativos_sin_tildes_ni_mayusculas():
     assert calificativos("Un incremento SIGNIFICATIVO y un escenario preocupante") == [
         "significativ", "preocupante"]
