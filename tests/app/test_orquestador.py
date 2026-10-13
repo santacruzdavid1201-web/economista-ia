@@ -124,6 +124,14 @@ def test_fuera_de_alcance_no_llama_redaccion(ctx):
     assert r.texto == FUERA_DE_ALCANCE and len(llm.llamadas) == 1
 
 
+def test_si_el_enrutador_contesta_con_texto_se_trata_como_charla(ctx):
+    llm = LLMFalso(texto("¡Hola! ¿En qué puedo ayudarte?"), texto("¡Hola! ¿En qué le ayudo?"))
+    r = responder("Hola", ctx, llm, HOY)
+    assert r.herramienta == "conversar" and r.origen == "llm"
+    assert r.texto == "¡Hola! ¿En qué le ayudo?"           # la redacción, no el texto del enrutador
+    assert "se trató como charla" in r.eventos[0]
+
+
 def test_conversar_redacta_sin_herramientas(ctx):
     llm = LLMFalso(herramienta("conversar"), texto("¡Hola! ¿En qué le ayudo con su empresa?"))
     r = responder("Hola", ctx, llm, HOY)

@@ -4,7 +4,7 @@ import pytest
 import requests
 
 from app.config import Config, cargar_env, config
-from app.llm.client import ClienteLLM, ErrorLLM
+from app.llm.client import MAX_TOKENS_HERRAMIENTA, MAX_TOKENS_TEXTO, ClienteLLM, ErrorLLM
 
 CFG = Config(llm_url="http://servidor/v1", llm_modelo="modelo", llm_api_key=None,
              llm_timeout=5, max_caracteres_pregunta=100)
@@ -39,6 +39,7 @@ def test_texto_y_roles(monkeypatch):
     assert enviado["json"]["messages"] == [{"role": "system", "content": "instrucciones"},
                                            {"role": "user", "content": "pregunta"}]
     assert "Authorization" not in enviado["headers"]
+    assert enviado["json"]["max_tokens"] == MAX_TOKENS_TEXTO
 
 
 def test_llamada_a_herramienta(monkeypatch):
@@ -49,6 +50,8 @@ def test_llamada_a_herramienta(monkeypatch):
     assert r.herramientas[0].nombre == "analizar_liquidez"
     assert r.herramientas[0].argumentos == {"periodo": 2024}
     assert enviado["json"]["tool_choice"] == "required"
+    # Elegir herramienta es corto: el tope corta un desborde de texto en segundos
+    assert enviado["json"]["max_tokens"] == MAX_TOKENS_HERRAMIENTA
 
 
 def test_api_key_va_en_cabecera(monkeypatch):

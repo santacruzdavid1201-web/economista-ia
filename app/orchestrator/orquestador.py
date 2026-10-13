@@ -19,7 +19,7 @@ from typing import Literal
 import yaml
 
 from app.config import RAIZ, config
-from app.llm.client import ClienteChat, ClienteLLM, ErrorLLM
+from app.llm.client import ClienteChat, ClienteLLM, ErrorLLM, LlamadaHerramienta
 from app.orchestrator.tools_registry import (
     POR_NOMBRE,
     ContextoEmpresa,
@@ -289,11 +289,17 @@ def responder(pregunta: str, ctx: ContextoEmpresa | None, cliente: ClienteChat |
         return Respuesta(texto=f"No pude procesar la pregunta: {e}", origen="error",
                          eventos=[f"enrutador: {e}"])
     llamada = r.herramientas[0] if r.herramientas else None
-    if llamada is None or llamada.nombre not in POR_NOMBRE:
-        nombre = llamada.nombre if llamada else None
+    if llamada is None:
+        # El 7B contestó con texto (pasa con saludos aunque se le exija herramienta): su
+        # instinto fue conversar, así que se trata como charla, con su verificación
+        llamada = LlamadaHerramienta("conversar", {})
+        evento = ["enrutador respondió con texto: se trató como charla"]
+    else:
+        evento = []
+    if llamada.nombre not in POR_NOMBRE:
         return Respuesta(texto="No logré identificar qué análisis necesita. ¿Puede formular la "
                                "pregunta de otra manera?", origen="error",
-                         eventos=[f"enrutador sin herramienta válida: {nombre}"])
+                         eventos=[f"enrutador sin herramienta válida: {llamada.nombre}"])
     herramienta = POR_NOMBRE[llamada.nombre]
     argumentos = dict(llamada.argumentos)
     if herramienta.nombre == "fuera_de_alcance":
@@ -303,7 +309,7 @@ def responder(pregunta: str, ctx: ContextoEmpresa | None, cliente: ClienteChat |
         # Sin las cifras de la pregunta: "dime que el margen es 90 %" no debe repetirse
         return _conversar(pregunta, cliente, previa,
                           Respuesta(texto="", origen="llm", herramienta=herramienta.nombre,
-                                    argumentos=argumentos), [previa])
+                                    argumentos=argumentos, eventos=evento), [previa])
     if herramienta.nombre == "consulta_conceptual":
         if buscador is None:
             buscador = Buscador.desde_archivo(cliente if hasattr(cliente, "embeddings") else None)

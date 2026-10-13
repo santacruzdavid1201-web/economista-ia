@@ -17,6 +17,13 @@ import requests
 from app.config import Config, config
 
 
+# Tope de tokens por respuesta. Con LM Studio 1.1.8 el 7B a veces contesta un saludo con texto
+# en vez de elegir herramienta y no para (6.773 tokens, 4 minutos): elegir una herramienta
+# cabe en 200; una redacción (máximo 170 palabras) cabe en 800.
+MAX_TOKENS_HERRAMIENTA = 200
+MAX_TOKENS_TEXTO = 800
+
+
 class ErrorLLM(RuntimeError):
     """El modelo no respondió o respondió algo inutilizable."""
 
@@ -80,6 +87,7 @@ class ClienteLLM:
         cuerpo: dict = {
             "model": self.cfg.llm_modelo,
             "temperature": temperatura,
+            "max_tokens": MAX_TOKENS_HERRAMIENTA if herramientas else MAX_TOKENS_TEXTO,
             "messages": [{"role": "system", "content": sistema},
                          {"role": "user", "content": usuario}],
         }
