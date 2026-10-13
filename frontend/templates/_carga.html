@@ -1,0 +1,82 @@
+{#- Tarjeta de la empresa: cualquier cambio (incluido elegir archivos) se envía y vuelve leída.
+    La espera evita un envío por cada dígito del año en el campo de fecha.
+    Sin atributos required ni pattern: HTMX bloquearía el envío y no habría lectura en vivo. -#}
+{%- if oob %}{% include "_chip.html" %}{% endif -%}
+<form id="empresa" class="lamina-empresa formulario carga" hx-post="/empresa" hx-trigger="change delay:500ms"
+      hx-encoding="multipart/form-data" hx-target="this" hx-swap="outerHTML" hx-sync="this:queue all">
+  <h2 class="empresa-nombre">Su empresa</h2>
+  <div class="carga-datos">
+    <label for="razon_social">Razón social
+      <input id="razon_social" name="razon_social" maxlength="120" autocomplete="organization"
+             value="{{ c.razon_social }}">
+    </label>
+    <label for="ciiu">CIIU
+      <input id="ciiu" name="ciiu" inputmode="numeric" maxlength="4" placeholder="p. ej. 5511"
+             value="{{ c.ciiu }}">
+    </label>
+  </div>
+  <fieldset>
+    <legend>Las cifras de los archivos están en</legend>
+    {% for clave, u in c.unidades.items() %}
+      <label class="opcion"><input type="radio" id="unidad_{{ clave }}" name="unidad" value="{{ clave }}"
+        {% if c.unidad == clave %}checked{% endif %}> {{ u[0] }}</label>
+    {% endfor %}
+  </fieldset>
+
+  {% if c.errores %}
+    <ul class="errores" role="alert">{% for e in c.errores %}<li>{{ e }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  {% if c.archivos %}
+    <ul class="archivos">
+      {% for a in c.archivos %}
+        <li class="archivo">
+          <div class="archivo-cabeza">
+            <span class="archivo-nombre">{{ a.nombre }}</span>
+            <label class="archivo-fecha" for="fecha_{{ a.i }}">Corte
+              <input type="date" id="fecha_{{ a.i }}" name="fecha_{{ a.i }}" value="{{ a.fecha }}">
+            </label>
+            <button type="button" class="quitar" hx-post="/empresa/quitar/{{ a.i }}"
+                    hx-target="#empresa" hx-swap="outerHTML">Quitar<span class="oculto"> {{ a.nombre }}</span></button>
+          </div>
+          {% if a.error %}
+            <p class="archivo-error">{{ a.error }}</p>
+          {% else %}
+            {{ a.renglones | safe }}
+          {% endif %}
+          <details class="desplegable"{% if a.reclasif.values() | select | list %} open{% endif %}>
+            <summary>Porción de largo plazo (opcional)</summary>
+            <p class="ayuda">El PUC no separa el corto del largo plazo: indique qué parte de cada
+              cuenta es de largo plazo, en {{ c.unidades[c.unidad][0] | lower }}.</p>
+            {% for campo, par, etiqueta in c.reclasif %}
+              {% set v = a.reclasif.get(campo, 0) %}
+              <label for="{{ campo }}_{{ a.i }}">{{ etiqueta }}
+                <input type="number" id="{{ campo }}_{{ a.i }}" name="{{ campo }}_{{ a.i }}" min="0"
+                       step="any" value="{{ v | int if v == v | int else v }}">
+              </label>
+            {% endfor %}
+          </details>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <label class="subir" for="archivos">
+    <span class="subir-titulo">Agregar balances de prueba</span>
+    <span class="ayuda">.csv, .xlsx o .xls, uno por año, antes del cierre; máximo {{ c.max_mb }} MB cada uno</span>
+    <input id="archivos" class="oculto" type="file" name="archivos" accept=".csv,.xlsx,.xls" multiple>
+  </label>
+  <details class="desplegable">
+    <summary>¿Qué formato sirve?</summary>
+    <p class="ayuda">Columnas: código de cuenta y saldo final con signo (débito +, crédito −), o
+      saldo débito y saldo crédito. Se aceptan filas de título arriba, CSV con ";" o "," y números
+      como 1.234.567,89. La fecha de corte se propone con el nombre del archivo.</p>
+  </details>
+
+  <p class="carga-estado{% if c.listo %} listo{% endif %}" role="status">{{ c.estado }}</p>
+  {% if c.sin_referencia %}<p class="aviso">{{ c.sin_referencia }}</p>{% endif %}
+  {% if c.archivos or c.razon_social %}
+    <button type="button" class="boton secundario" hx-post="/empresa/borrar" hx-target="#empresa"
+            hx-swap="outerHTML" hx-confirm="¿Borrar la empresa, sus archivos y la conversación?">Empezar de nuevo</button>
+  {% endif %}
+</form>

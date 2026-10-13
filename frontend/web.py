@@ -9,49 +9,49 @@ pregunta y un marcador que pide GET /respuesta/{id}, porque el modelo local
 puede tardar un minuto.
 
 Sesiones en memoria (MVP de un solo proceso): una cookie con un token aleatorio
-apunta a la empresa cargada y a la conversación.
+apunta a la empresa cargada y a la conversación. La sesión empieza sin empresa:
+el usuario sube sus balances de prueba en la portada y cada archivo se lee al
+momento (activo, pasivo y patrimonio, o el error de ese archivo).
 """
 from __future__ import annotations
 
 import io
-import json
 import re
 import secrets
 import threading
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import date
-from functools import lru_cache
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from starlette.datastructures import UploadFile   # el formulario entrega esta, no la de FastAPI
 
-from app.demo import contexto_demo
 from app.llm.client import ClienteLLM
 from app.orchestrator.orquestador import Respuesta, responder
 from app.orchestrator.tools_registry import ContextoEmpresa
 from data_sources.empresa.puc import (
     RECLASIFICACIONES,
     ErrorCarga,
-    cargar_historial,
+    a_estado_financiero,
+    cargar_mapeo,
     leer_balance_prueba,
 )
 from data_sources.externos.referencia import cargar_referencia
 from frontend.cifras import libro, respuesta_html
 from frontend.modulos import MODULOS, POR_CLAVE
 from modules.base import formatear
-from modules.esquema_financiero import Empresa, HistorialFinanciero
+from modules.esquema_financiero import Empresa, EstadoFinanciero, HistorialFinanciero
 
 PLANTILLAS = Jinja2Templates(directory=Path(__file__).with_name("templates"))
 COOKIE = "sesion"
 MAX_SESIONES = 200
 MAX_MB = 5
+MAX_ARCHIVOS = 10
 EXTENSIONES = (".csv", ".xlsx", ".xls")
 UNIDADES = {"pesos": ("Pesos", 1), "miles": ("Miles de pesos", 1_000)}
-DEUDA_LP = ("obligaciones_financieras_cp", "obligaciones_financieras_lp")
 # Reclasificaciones con un nombre de campo estable para el formulario
 RECLASIF = [(f"r{j}", par, etiqueta) for j, (par, etiqueta) in enumerate(RECLASIFICACIONES.items())]
 # Nombre de cada análisis en palabras del gerente
@@ -83,23 +83,31 @@ class Turno:
 
 
 @dataclass
+class Archivo:
+    """Un balance de prueba subido; se relee cuando cambian la unidad, la fecha o un ajuste."""
+    nombre: str
+    datos: bytes
+    fecha: date
+    reclasif: dict[str, float] = field(default_factory=dict)    # campo de RECLASIF → monto
+    estado: EstadoFinanciero | None = None
+    error: str | None = None
+
+
+@dataclass
 class Sesion:
-    ctx: ContextoEmpresa
-    demo: bool = True
+    ctx: ContextoEmpresa | None = None       # None hasta tener razón social, CIIU y un balance
+    razon_social: str = ""
+    ciiu: str = ""
+    unidad: str = "pesos"
+    # ponytail: archivos en memoria (hasta MAX_ARCHIVOS × MAX_MB por sesión); pasarlos a disco
+    # o a la base cuando haya varios usuarios
+    archivos: list[Archivo] = field(default_factory=list)
     chat: list[Turno] = field(default_factory=list)
     pendientes: dict[str, Turno] = field(default_factory=dict)
-    archivos: list[tuple[str, bytes]] = field(default_factory=list)   # paso 1 de la carga
-    borrador: dict = field(default_factory=dict)
-    aviso: str | None = None                                          # se muestra una vez
 
 
 _SESIONES: OrderedDict[str, Sesion] = OrderedDict()
 _CANDADO = threading.Lock()
-
-
-@lru_cache(maxsize=1)
-def _demo() -> ContextoEmpresa:
-    return contexto_demo()
 
 
 def instalar(app: FastAPI) -> None:
@@ -124,7 +132,7 @@ def sesion(request: Request) -> Sesion:
     with _CANDADO:
         s = _SESIONES.get(sid)
         if s is None:
-            s = _SESIONES[sid] = Sesion(ctx=_demo())
+            s = _SESIONES[sid] = Sesion()
             while len(_SESIONES) > MAX_SESIONES:
                 _SESIONES.popitem(last=False)
         else:
@@ -181,25 +189,75 @@ def _turnos(s: Sesion) -> list[dict]:
     return [{"pregunta": t.pregunta, "r": _vista(t.respuesta)} for t in s.chat if t.respuesta]
 
 
+def _faltantes(s: Sesion) -> list[str]:
+    faltan = [] if s.razon_social else ["la razón social"]
+    if not (s.ciiu.isdigit() and len(s.ciiu) == 4):
+        faltan.append("el código CIIU de 4 dígitos")
+    return faltan
+
+
+def _actualizar(s: Sesion) -> None:
+    """Relee cada archivo y arma el historial con los que se leyeron bien."""
+    factor = UNIDADES[s.unidad][1]
+    mapeo = cargar_mapeo()
+    s.archivos.sort(key=lambda a: a.fecha)
+    fechas: set[date] = set()
+    for a in s.archivos:
+        a.estado, a.error = None, None
+        if a.fecha in fechas:
+            a.error = "Otro archivo tiene la misma fecha de corte: corrija una de las dos."
+            continue
+        ajustes = [(*par, a.reclasif[campo] * factor) for campo, par, _ in RECLASIF
+                   if a.reclasif.get(campo, 0) > 0]
+        try:
+            df = leer_balance_prueba(io.BytesIO(a.datos), a.nombre)
+            a.estado = a_estado_financiero(df.assign(saldo=df["saldo"] * factor), a.fecha,
+                                           mapeo, ajustes)
+            fechas.add(a.fecha)
+        except ErrorCarga as e:
+            a.error = str(e)
+    periodos = [a.estado for a in s.archivos if a.estado]
+    s.ctx = None
+    if periodos and not _faltantes(s):
+        historial = HistorialFinanciero(
+            empresa=Empresa(empresa_id="usuario", razon_social=s.razon_social, ciiu=s.ciiu),
+            periodos=periodos)
+        s.ctx = ContextoEmpresa(historial=historial, referencia=cargar_referencia(
+            s.ciiu, historial.ultimo.fecha_corte.year))
+
+
+def _carga(s: Sesion, errores: list[str] | None = None) -> dict:
+    """Lo que muestra la tarjeta de la empresa: datos, archivos leídos y qué falta."""
+    if s.ctx:
+        estado = (f"Listo: estados financieros de {_anios(s.ctx.historial)}. Ya puede "
+                  "preguntarle al economista.")
+    elif not s.archivos:
+        estado = "Suba al menos un balance de prueba."
+    elif not any(a.estado for a in s.archivos):
+        estado = "Ningún archivo se pudo leer: revise los errores."
+    else:
+        estado = f"Para analizar la empresa falta {' y '.join(_faltantes(s))}."
+    return {
+        "razon_social": s.razon_social, "ciiu": s.ciiu, "unidad": s.unidad, "unidades": UNIDADES,
+        "max_mb": MAX_MB, "errores": errores or [], "estado": estado, "listo": s.ctx is not None,
+        "sin_referencia": SIN_REFERENCIA if s.ctx and s.ctx.referencia is None else None,
+        "reclasif": RECLASIF,
+        "archivos": [{"i": i, "nombre": a.nombre, "fecha": a.fecha.isoformat(), "error": a.error,
+                      "reclasif": a.reclasif, "renglones": libro([
+                          ("Activo total", formatear(a.estado.balance.activo_total, "pesos"), None),
+                          ("Pasivo total", formatear(a.estado.balance.pasivo_total, "pesos"), None),
+                          ("Patrimonio", formatear(a.estado.balance.patrimonio_total, "pesos"), None),
+                      ]) if a.estado else None}
+                     for i, a in enumerate(s.archivos)],
+    }
+
+
 def _contexto(request: Request, s: Sesion, **extra) -> dict:
-    h = s.ctx.historial
-    return {"empresa": h.empresa.razon_social, "anios": _anios(h), "ciiu": h.empresa.ciiu,
-            "demo": s.demo, "modulos": MODULOS, "turnos": _turnos(s), **extra}
+    return {"empresa": s.razon_social, "modulos": MODULOS, "turnos": _turnos(s), **extra}
 
 
 def _pagina(request: Request, plantilla: str, contexto: dict, status: int = 200):
     return PLANTILLAS.TemplateResponse(request, plantilla, contexto, status_code=status)
-
-
-def _a_portada() -> Response:
-    """
-    Tras cambiar de empresa, HTMX trae la portada sin recargar todo; el chat, que está
-    fuera de #pagina, se vacía con el evento empresa-cambiada.
-    """
-    destino = {"path": "/", "target": "#pagina", "select": "#pagina",
-               "swap": "outerHTML transition:true"}
-    return Response(status_code=204, headers={"HX-Location": json.dumps(destino),
-                                              "HX-Trigger": "empresa-cambiada"})
 
 
 # --------------------------------------------------------------------------- #
@@ -207,13 +265,7 @@ def _a_portada() -> Response:
 # --------------------------------------------------------------------------- #
 @router.get("/", response_class=HTMLResponse)
 def portada(request: Request, s: Sesion = Depends(sesion)):
-    b = s.ctx.historial.ultimo.balance
-    renglones = libro([("Activo total", formatear(b.activo_total, "pesos"), None),
-                       ("Pasivo total", formatear(b.pasivo_total, "pesos"), None),
-                       ("Patrimonio", formatear(b.patrimonio_total, "pesos"), None)])
-    aviso, s.aviso = s.aviso, None
-    return _pagina(request, "portada.html",
-                   _contexto(request, s, renglones=renglones, aviso=aviso))
+    return _pagina(request, "portada.html", _contexto(request, s, c=_carga(s)))
 
 
 @router.get("/modulo/{clave}", response_class=HTMLResponse)
@@ -264,109 +316,68 @@ def estado_modelo(request: Request, cliente=Depends(cliente_llm)):
 
 
 # --------------------------------------------------------------------------- #
-# Empresa: hotel de demostración o balances propios en dos pasos
+# Empresa: balances de prueba que se leen al subirlos
 # --------------------------------------------------------------------------- #
-@router.get("/empresa", response_class=HTMLResponse)
-def empresa(request: Request, s: Sesion = Depends(sesion)):
-    return _pagina(request, "_empresa.html", {"unidades": UNIDADES, "v": s.borrador,
-                                              "errores": [], "max_mb": MAX_MB})
+def _tarjeta(request: Request, s: Sesion, errores: list[str] | None = None):
+    """La tarjeta de la empresa y, fuera de banda, el nombre en la barra superior."""
+    return _pagina(request, "_carga.html", {"c": _carga(s, errores), "empresa": s.razon_social,
+                                            "oob": True})
 
 
-@router.post("/empresa/demo")
-def usar_demo(s: Sesion = Depends(sesion)):
-    s.ctx, s.demo, s.aviso = _demo(), True, None
-    s.chat.clear()
-    return _a_portada()
-
-
-@router.post("/empresa/archivos", response_class=HTMLResponse)
-async def subir_archivos(request: Request, s: Sesion = Depends(sesion)):
-    """Paso 1: datos de la empresa y archivos. Devuelve el paso 2 o el mismo con errores."""
+@router.post("/empresa", response_class=HTMLResponse)
+async def empresa(request: Request, s: Sesion = Depends(sesion)):
+    """Cualquier cambio de la tarjeta: datos de la empresa, fechas, ajustes o archivos nuevos."""
     form = await request.form()
-    v = {"razon_social": str(form.get("razon_social", "")).strip(),
-         "ciiu": str(form.get("ciiu", "")).strip(),
-         "unidad": str(form.get("unidad", "pesos"))}
-    archivos = [a for a in form.getlist("archivos") if isinstance(a, UploadFile) and a.filename]
+    s.razon_social = str(form.get("razon_social", "")).strip()[:120]
+    s.ciiu = str(form.get("ciiu", "")).strip()
+    if (unidad := str(form.get("unidad", ""))) in UNIDADES:
+        s.unidad = unidad
     errores = []
-    if not v["razon_social"]:
-        errores.append("Escriba la razón social.")
-    elif len(v["razon_social"]) > 120:
-        errores.append("La razón social debe tener máximo 120 caracteres.")
-    if not (v["ciiu"].isdigit() and len(v["ciiu"]) == 4):
-        errores.append("El CIIU debe tener 4 dígitos.")
-    if v["unidad"] not in UNIDADES:
-        errores.append("Elija si las cifras están en pesos o en miles de pesos.")
-    if not archivos:
-        errores.append("Suba al menos un balance de prueba.")
-    leidos = []
-    for a in archivos:
-        datos = await a.read(MAX_MB * 1_048_576 + 1)
-        if Path(a.filename).suffix.lower() not in EXTENSIONES:
-            errores.append(f"{a.filename}: el archivo debe ser .csv, .xlsx o .xls.")
-        elif len(datos) > MAX_MB * 1_048_576:
-            errores.append(f"{a.filename}: cada archivo debe pesar menos de {MAX_MB} MB.")
-        else:
-            leidos.append((Path(a.filename).name, datos))
-    s.borrador = v
-    if errores:
-        return _pagina(request, "_empresa.html", {"unidades": UNIDADES, "v": v,
-                                                  "errores": errores, "max_mb": MAX_MB})
-    s.archivos = leidos
-    return _paso2(request, s, [])
-
-
-def _paso2(request: Request, s: Sesion, errores: list[str], valores: dict | None = None):
-    archivos = [{"i": i, "nombre": nombre,
-                 "fecha": (valores or {}).get(f"fecha_{i}") or corte_sugerido(nombre).isoformat()}
-                for i, (nombre, _) in enumerate(s.archivos)]
-    return _pagina(request, "_empresa_paso2.html", {
-        "archivos": archivos, "reclasif": RECLASIF, "deuda_lp": RECLASIF[0][0],
-        "unidad": UNIDADES[s.borrador.get("unidad", "pesos")][0], "errores": errores,
-        "valores": valores or {}})
-
-
-@router.post("/empresa/cargar")
-async def cargar(request: Request, s: Sesion = Depends(sesion)):
-    """Paso 2: fecha de corte y reclasificaciones por archivo; arma el historial."""
-    if not s.archivos:
-        return _pagina(request, "_empresa.html", {
-            "unidades": UNIDADES, "v": s.borrador, "max_mb": MAX_MB,
-            "errores": ["Vuelva a subir los archivos: la carga anterior expiró."]})
-    form = {k: str(v) for k, v in (await request.form()).items()}
-    errores, cortes, montos = [], {}, {}
-    for i, (nombre, _) in enumerate(s.archivos):
+    for i, a in enumerate(s.archivos):
         try:
-            cortes[i] = date.fromisoformat(form.get(f"fecha_{i}", ""))
+            a.fecha = date.fromisoformat(str(form.get(f"fecha_{i}", "")))
         except ValueError:
-            errores.append(f"{nombre}: escriba una fecha de corte válida.")
-        for campo, par, etiqueta in RECLASIF:
-            texto = form.get(f"{campo}_{i}", "").strip() or "0"
+            pass        # fecha vacía o a medio escribir: se conserva la anterior
+        for campo, _, etiqueta in RECLASIF:
+            texto = str(form.get(f"{campo}_{i}", "")).strip() or "0"
             try:
                 monto = float(texto)
-                if monto < 0:
+                if not monto >= 0:          # también descarta NaN
                     raise ValueError
-                montos[(i, par)] = monto
+                a.reclasif[campo] = monto
             except ValueError:
-                errores.append(f"{nombre}: «{etiqueta}» debe ser un número positivo o cero.")
-    if len(set(cortes.values())) != len(cortes):
-        errores.append("Cada archivo debe tener una fecha de corte distinta.")
-    if errores:
-        return _paso2(request, s, errores, form)
-    try:
-        factor = UNIDADES[s.borrador["unidad"]][1]
-        empresa_ = Empresa(empresa_id="usuario", razon_social=s.borrador["razon_social"],
-                           ciiu=s.borrador["ciiu"])
-        balances, reclasif = {}, {}
-        for i, (nombre, datos) in enumerate(s.archivos):
-            df = leer_balance_prueba(io.BytesIO(datos), nombre)
-            balances[cortes[i]] = df.assign(saldo=df["saldo"] * factor)
-            reclasif[cortes[i]] = [(*par, montos[(i, par)] * factor)
-                                   for _, par, _ in RECLASIF if montos[(i, par)] > 0]
-        historial = cargar_historial(empresa_, balances, reclasif)
-    except ErrorCarga as e:
-        return _paso2(request, s, [f"No se pudo cargar: {e}"], form)
-    referencia = cargar_referencia(empresa_.ciiu, historial.ultimo.fecha_corte.year)
-    s.ctx = ContextoEmpresa(historial=historial, referencia=referencia)
-    s.demo, s.aviso, s.archivos = False, (SIN_REFERENCIA if referencia is None else None), []
+                errores.append(f"{a.nombre}: «{etiqueta}» debe ser un número positivo o cero.")
+    for archivo in form.getlist("archivos"):
+        if not (isinstance(archivo, UploadFile) and archivo.filename):
+            continue
+        nombre = Path(archivo.filename).name
+        datos = await archivo.read(MAX_MB * 1_048_576 + 1)
+        if len(s.archivos) >= MAX_ARCHIVOS:
+            errores.append(f"Se pueden subir máximo {MAX_ARCHIVOS} archivos.")
+            break
+        if Path(nombre).suffix.lower() not in EXTENSIONES:
+            errores.append(f"{nombre}: el archivo debe ser .csv, .xlsx o .xls.")
+        elif len(datos) > MAX_MB * 1_048_576:
+            errores.append(f"{nombre}: cada archivo debe pesar menos de {MAX_MB} MB.")
+        else:
+            s.archivos.append(Archivo(nombre=nombre, datos=datos, fecha=corte_sugerido(nombre)))
+    _actualizar(s)
+    return _tarjeta(request, s, errores)
+
+
+@router.post("/empresa/quitar/{i}", response_class=HTMLResponse)
+def quitar(request: Request, i: int, s: Sesion = Depends(sesion)):
+    if 0 <= i < len(s.archivos):
+        del s.archivos[i]
+    _actualizar(s)
+    return _tarjeta(request, s)
+
+
+@router.post("/empresa/borrar", response_class=HTMLResponse)
+def borrar(request: Request, s: Sesion = Depends(sesion)):
+    """Empezar de nuevo: otra empresa, así que el chat (fuera de #pagina) también se vacía."""
+    s.ctx, s.razon_social, s.ciiu, s.unidad, s.archivos = None, "", "", "pesos", []
     s.chat.clear()
-    return _a_portada()
+    respuesta = _tarjeta(request, s)
+    respuesta.headers["HX-Trigger"] = "empresa-cambiada"
+    return respuesta

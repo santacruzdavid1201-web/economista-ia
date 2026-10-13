@@ -140,8 +140,11 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    sobre gris azulado, Outfit y Manrope, ilustraciones SVG propias en
    `frontend/static/ilustraciones/`. Cada cifra de la respuesta muestra su
    indicador y fórmula (`frontend/cifras.py`, que escapa el HTML del modelo).
-   Sesiones en memoria; carga de balances en dos pasos (archivos y luego
-   fechas y reclasificaciones), probada con SECOLINSA.
+   Sesiones en memoria. Desde el 13/10/2026 la sesión empieza sin empresa:
+   los balances se suben en la tarjeta "Su empresa" de la portada y cada
+   archivo se lee al momento (activo, pasivo y patrimonio, o su error); sin
+   empresa el chat conversa pero no calcula. El hotel ficticio queda solo
+   para el set de evaluación y `app/demo.py`.
    Tipos de pregunta (acordado el 6/10/2026, ampliado el 13/10/2026): (1)
    cálculo con herramientas de Python; (2) criterio o teoría con la base de
    conocimiento `conocimiento/*.md` (RAG híbrido: embeddings nomic de LM
@@ -177,6 +180,12 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
 4. Validar la referencia contra los indicadores que publica el SIIS, y
    revisar valores extremos (p. ej. hoteles con depreciación > ingresos).
 5. Plantilla Excel para empresas sin software contable.
+   Pendiente para el módulo 2 (pedido del usuario el 13/10/2026): definir la
+   capa de datos de econometría. Los estados financieros anuales dan muy
+   pocas observaciones para estimar (2 a 5 puntos); los modelos necesitan
+   series propias de mayor frecuencia (ventas, precios, ocupación,
+   promociones; p. ej. del software del hotel) más series externas, y una
+   forma de cargarlas y guardarlas (probable disparador de PostgreSQL).
 6. Módulos 4 → 3 → 2 (macro, proyectos, econometría). El 4 se adelantó a los
    pasos 4 y 5 (decidido el 11/10/2026). Mapa en `SPEC-mapa-macro.md`.
    Hecho: `series-externas` con el IPC (`data_sources/externos/series/`):

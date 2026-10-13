@@ -50,6 +50,10 @@ SIN_CHARLA = (
     "Puedo ayudarle con la liquidez, la deuda, la rentabilidad, el crecimiento real o las "
     "tasas de interés de su empresa."
 )
+SIN_EMPRESA = (
+    "Para responder eso necesito los estados financieros de su empresa. Súbalos en la "
+    "portada (balances de prueba, uno por año) y vuelva a preguntarme."
+)
 AVISO_SIN_REVISAR = "Parte del material usado aún no ha sido revisado por el economista."
 AVISO_GENERAL = ("Respuesta general: no sale de las notas revisadas por el economista. "
                  "Tómela como orientación.")
@@ -106,11 +110,11 @@ def validar_pregunta(pregunta: object, max_caracteres: int | None = None) -> str
 # --------------------------------------------------------------------------- #
 # Piezas del pipeline
 # --------------------------------------------------------------------------- #
-def _prompt_enrutador(ctx: ContextoEmpresa, hoy: date) -> str:
-    anios = [p.fecha_corte.year for p in ctx.historial.periodos]
+def _prompt_enrutador(ctx: ContextoEmpresa | None, hoy: date) -> str:
+    anios = [str(p.fecha_corte.year) for p in ctx.historial.periodos] if ctx else ["ninguno"]
     return (PROMPTS / "router.md").read_text(encoding="utf-8").format(
-        empresa=ctx.historial.empresa.razon_social, anio_actual=hoy.year,
-        anio_pasado=hoy.year - 1, anios_disponibles=", ".join(map(str, anios)),
+        empresa=ctx.historial.empresa.razon_social if ctx else "aún no ha subido estados financieros",
+        anio_actual=hoy.year, anio_pasado=hoy.year - 1, anios_disponibles=", ".join(anios),
         anio_reciente=anios[-1])
 
 
@@ -261,10 +265,13 @@ def _conceptual(pregunta: str, cliente: ClienteChat, buscador: Buscador | None,
     return base
 
 
-def responder(pregunta: str, ctx: ContextoEmpresa, cliente: ClienteChat | None = None,
+def responder(pregunta: str, ctx: ContextoEmpresa | None, cliente: ClienteChat | None = None,
               hoy: date | None = None, buscador: Buscador | None = None,
               historial: Sequence[tuple[str, Respuesta]] = ()) -> Respuesta:
-    """`historial`: turnos anteriores (pregunta, respuesta), el más reciente al final."""
+    """
+    `ctx`: None si el usuario aún no subió estados financieros (solo conversa y explica).
+    `historial`: turnos anteriores (pregunta, respuesta), el más reciente al final.
+    """
     try:
         pregunta = validar_pregunta(pregunta)
     except ErrorEntrada as e:
@@ -303,6 +310,10 @@ def responder(pregunta: str, ctx: ContextoEmpresa, cliente: ClienteChat | None =
         respuesta = _conceptual(pregunta, cliente, buscador, previa)
         respuesta.argumentos = argumentos
         return respuesta
+
+    if ctx is None:
+        return Respuesta(texto=SIN_EMPRESA, origen="sin_llm", herramienta=herramienta.nombre,
+                         argumentos=argumentos)
 
     # 2. Calcular (Python), sin los números que el enrutador inventó
     inventados = _inventados(herramienta, argumentos, pregunta)

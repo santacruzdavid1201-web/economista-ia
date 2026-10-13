@@ -63,8 +63,8 @@ input, textarea { accent-color: var(--petroleo); }
 .punto.falla { background: var(--coral); }
 .chip-empresa {
   display: inline-flex; flex-direction: column; align-items: flex-start; gap: 0.05rem;
-  border: 0; border-radius: 1rem; background: var(--lamina); color: var(--tinta);
-  padding: 0.45rem 1rem; font: inherit; cursor: pointer; text-align: left;
+  border-radius: 1rem; background: var(--lamina); color: var(--tinta); text-decoration: none;
+  padding: 0.45rem 1rem;
 }
 .chip-nombre { font-weight: 700; font-size: 0.9rem; color: var(--petroleo); }
 .chip-accion { font-size: 0.78rem; color: var(--gris); }
@@ -91,9 +91,37 @@ main { max-width: 74rem; margin: 0 auto; padding: 0 1.5rem 6rem; }   /* abajo: e
   content: ""; position: absolute; z-index: -1; left: -1.4rem; top: -1.4rem;
   width: 5.5rem; height: 5.5rem; border-radius: var(--forma); background: var(--coral);
 }
-.empresa-nombre { font: 700 1.25rem/1.25 var(--display); color: var(--petroleo); margin: 0 0 0.2rem; }
-.empresa-detalle { font-size: 0.9rem; color: var(--gris); }
-.portada-ilustracion { width: 100%; max-width: 36rem; justify-self: end; }
+.empresa-nombre { font: 700 1.25rem/1.25 var(--display); color: var(--petroleo); margin: 0 0 0.9rem; }
+
+/* Carga en vivo: cada archivo se lee al subirlo */
+.carga-datos { display: grid; grid-template-columns: minmax(0, 1fr) 6.5rem; gap: 0.75rem; }
+.archivos { list-style: none; margin: 0 0 0.9rem; padding: 0; }
+.archivo { border-top: 1px solid var(--linea); padding: 0.75rem 0 0.25rem; }
+.archivo-cabeza { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.9rem; margin-bottom: 0.4rem; }
+.archivo-nombre { flex: 1 1 10rem; min-width: 0; font-weight: 700; color: var(--petroleo); overflow-wrap: anywhere; }
+.formulario .archivo-fecha { display: inline-flex; align-items: center; gap: 0.45rem; margin: 0; font-weight: 500; }
+.quitar {
+  border: 0; background: none; padding: 0.3rem 0; cursor: pointer;
+  font: 600 0.85rem var(--texto); color: var(--gris); text-decoration: underline;
+}
+.quitar:hover { color: var(--coral-oscuro); }
+.archivo-error {
+  margin: 0.2rem 0 0.5rem; padding: 0.55rem 0.8rem; border-radius: 0.6rem;
+  background: var(--coral-claro); color: #8C2F29; font-size: 0.88rem;
+}
+.archivo .libro td { padding: 0.3rem 0.75rem 0.3rem 0; }
+.formulario .subir {
+  display: grid; justify-items: center; gap: 0.15rem; padding: 1.1rem; margin: 0 0 0.4rem;
+  border: 2px dashed var(--linea); border-radius: 0.9rem; text-align: center; cursor: pointer;
+}
+.subir:hover, .subir:focus-within { border-color: var(--acento); background: var(--acento-claro); }
+.subir:focus-within { outline: 3px solid var(--petroleo); outline-offset: 2px; }
+.subir-titulo { font: 700 1rem var(--display); color: var(--petroleo); }
+.subir .ayuda { font-weight: 500; }
+.carga-estado { font-weight: 600; color: var(--gris); margin: 0.9rem 0 0.75rem; }
+.carga-estado.listo { color: var(--petroleo); }
+.carga .desplegable:last-of-type { border-bottom: 0; }
+.portada-ilustracion { width: 100%; max-width: 36rem; justify-self: end; align-self: start; margin-top: 3rem; }
 
 .modulos > h2 { font-size: 1.9rem; font-weight: 700; margin: 4rem 0 1.75rem; }
 .rejilla { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.25rem; }
@@ -266,22 +294,7 @@ main { max-width: 74rem; margin: 0 auto; padding: 0 1.5rem 6rem; }   /* abajo: e
 .boton.secundario:hover { background: var(--menta-clara); }
 .htmx-request .boton, .boton.htmx-request { opacity: 0.6; pointer-events: none; }
 
-/* ----------------------------------------------------------------- diálogo */
-.dialogo {
-  width: min(36rem, 92vw); max-height: 88vh; padding: 0; border: 0;
-  border-radius: var(--radio); color: var(--tinta);
-}
-.dialogo::backdrop { background: rgba(31, 78, 95, 0.45); }
-.dialogo-cabeza { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem 0.5rem; }
-.dialogo-cabeza h2 { font-size: 1.45rem; font-weight: 700; }
-.cerrar {
-  width: 2.5rem; height: 2.5rem; border: 0; border-radius: 50%; background: transparent;
-  font-size: 1.6rem; line-height: 1; color: var(--gris); cursor: pointer;
-}
-.cerrar:hover { background: var(--fondo); }
-.cuerpo { padding: 0 1.5rem 1.5rem; }
-.empresa-opciones { display: grid; gap: 1.5rem; }
-.empresa-opciones > form + form { border-top: 1px solid var(--linea); padding-top: 1.5rem; }
+/* ------------------------------------------------------------- formularios */
 .formulario label { display: grid; gap: 0.3rem; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.9rem; }
 .formulario input:not([type="radio"]) {
   font: 500 0.95rem var(--texto); color: var(--tinta); padding: 0.55rem 0.7rem;
@@ -290,8 +303,6 @@ main { max-width: 74rem; margin: 0 auto; padding: 0 1.5rem 6rem; }   /* abajo: e
 .formulario fieldset { border: 0; padding: 0; margin: 0 0 0.9rem; }
 .formulario legend { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.3rem; }
 .formulario .opcion { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 500; margin: 0 1.25rem 0 0; }
-.formulario .archivo { border-top: 1px solid var(--linea); padding-top: 0.9rem; }
-.formulario .archivo legend { font: 700 1rem var(--display); color: var(--petroleo); }
 .ayuda { font-size: 0.85rem; color: var(--gris); }
 .errores, .aviso {
   margin: 0 0 1rem; padding: 0.7rem 1rem 0.7rem 2rem; border-radius: 0.6rem;
@@ -314,7 +325,7 @@ main { max-width: 74rem; margin: 0 auto; padding: 0 1.5rem 6rem; }   /* abajo: e
 /* --------------------------------------------------------------- celular */
 @media (max-width: 860px) {
   .portada { grid-template-columns: 1fr; gap: 1rem; padding-top: 0; }
-  .portada-ilustracion { order: -1; max-width: 24rem; justify-self: center; }
+  .portada-ilustracion { order: -1; max-width: 24rem; justify-self: center; margin-top: 0; }
   .rejilla { grid-template-columns: 1fr; }
   .modulo { grid-template-columns: 1fr; gap: 1.5rem; }
   .modulo-lado { position: static; }

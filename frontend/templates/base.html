@@ -18,25 +18,11 @@
     {% call enlace("/", "marca") %}Economista IA{% endcall %}
     <div class="barra-derecha">
       <span class="estado" hx-get="/estado-modelo" hx-trigger="load" hx-swap="innerHTML"></span>
-      <button type="button" class="chip-empresa" hx-get="/empresa" hx-target="#dialogo-empresa .cuerpo"
-              hx-on::after-request="document.getElementById('dialogo-empresa').showModal()"
-              aria-haspopup="dialog">
-        <span class="chip-nombre">{{ empresa }}</span>
-        <span class="chip-accion">Cambiar empresa</span>
-      </button>
+      {% include "_chip.html" %}
     </div>
   </header>
 
   <main id="contenido">{% block contenido %}{% endblock %}</main>
-
-  <dialog id="dialogo-empresa" class="dialogo" aria-labelledby="titulo-empresa">
-    <div class="dialogo-cabeza">
-      <h2 id="titulo-empresa">Empresa</h2>
-      <button type="button" class="cerrar" aria-label="Cerrar"
-              onclick="this.closest('dialog').close()">×</button>
-    </div>
-    <div class="cuerpo"></div>
-  </dialog>
 </div>
 
 {#- Fuera de #pagina: la navegación no lo reemplaza y la conversación sigue abierta -#}

@@ -1,0 +1,5 @@
+<a id="chip-empresa" href="/" class="chip-empresa" hx-get="/" hx-target="#pagina" hx-select="#pagina"
+   hx-swap="outerHTML transition:true show:window:top" hx-push-url="true"{% if oob %} hx-swap-oob="true"{% endif %}>
+  <span class="chip-nombre">{{ empresa or "Sin empresa" }}</span>
+  <span class="chip-accion">{{ "Estados financieros" if empresa else "Subir estados financieros" }}</span>
+</a>

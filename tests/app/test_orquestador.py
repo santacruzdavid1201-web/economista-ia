@@ -7,6 +7,7 @@ from app.llm.client import ErrorLLM, LlamadaHerramienta, RespuestaLLM
 from app.orchestrator.orquestador import (
     FUERA_DE_ALCANCE,
     SIN_CHARLA,
+    SIN_EMPRESA,
     ErrorEntrada,
     Respuesta,
     conversacion_previa,
@@ -160,6 +161,15 @@ def test_conversacion_previa_solo_los_ultimos_turnos():
     previa = conversacion_previa(turnos)
     assert "Pregunta 1" not in previa and "Pregunta 2" in previa and "Pregunta 4" in previa
     assert all(len(linea) <= 420 for linea in previa.splitlines())
+
+
+def test_sin_empresa_conversa_pero_no_calcula():
+    llm = LLMFalso(herramienta("analizar_liquidez"))
+    r = responder("¿Liquidez?", None, llm, HOY)
+    assert r.texto == SIN_EMPRESA and r.origen == "sin_llm" and len(llm.llamadas) == 1
+    assert "aún no ha subido estados financieros" in llm.llamadas[0]["sistema"]
+    llm = LLMFalso(herramienta("conversar"), texto("¡Hola!"))
+    assert responder("Hola", None, llm, HOY).texto == "¡Hola!"
 
 
 def test_anio_sin_datos(ctx):

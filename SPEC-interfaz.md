@@ -9,7 +9,9 @@ Falta la prueba del economista (criterio 1).
 Cambio del 13/10/2026 (pedido del economista): el chat es uno solo para toda
 la interfaz, en una burbuja flotante, y conversa (ver `docs/decisiones.md`);
 cada módulo pasa a ser un tablero con gráficas, tablas y hallazgos calculados
-solo con Python. Hecho el chat; los tableros, en construcción.
+solo con Python. Hecho el chat; los tableros, en construcción. Ese mismo día:
+la sesión empieza sin empresa y los balances se suben en la portada, donde
+cada archivo se lee al momento (reemplaza el diálogo de dos pasos).
 
 ## Objetivo
 
@@ -37,14 +39,19 @@ respuesta, solo cambia la parte nueva, con una transición suave.
   caer en el lugar común crema + coral + serif).
 - **Sesiones en memoria** (MVP de un solo proceso): cookie con un token
   aleatorio; la empresa cargada y las conversaciones viven en el servidor.
-  Al entrar por primera vez se usa el hotel de demostración.
+  La sesión empieza sin empresa: el hotel de demostración queda solo para el
+  set de evaluación y `app/demo.py`.
 - **Cifras rastreables** (de la interfaz anterior): cada cifra calculada de la
   respuesta muestra su indicador y fórmula al pasar el cursor o enfocarla.
   El texto del modelo se escapa antes de marcarlo; un convertidor mínimo de
   Markdown (párrafos, listas, negrita) arma el HTML.
-- **Carga de balances en dos pasos**: (1) razón social, CIIU, unidad y
-  archivos; (2) fecha de corte y reclasificaciones por archivo, con la fecha
-  propuesta a partir del nombre. Mismas validaciones que antes.
+- **Carga de balances en vivo** en la tarjeta "Su empresa" de la portada:
+  razón social, CIIU, unidad y archivos en un solo formulario; cualquier
+  cambio se envía (con 500 ms de espera) y cada archivo vuelve leído, con su
+  fecha de corte (propuesta a partir del nombre), activo, pasivo y patrimonio,
+  o el error de ese archivo. Los archivos se suman de a uno, se ordenan por
+  fecha y se pueden quitar; la porción de largo plazo va en un desplegable
+  por archivo. Mismas validaciones que antes.
 
 ## Diseño
 
@@ -99,7 +106,8 @@ tests/frontend/                tests con TestClient y un LLM falso
 Rutas: `GET /` portada; `GET /modulo/{clave}`; `POST /preguntar` (devuelve
 la pregunta y un marcador que pide la respuesta); `GET /respuesta/{id}`
 (corre el orquestador con la conversación previa; puede tardar un minuto);
-`GET /chat` (la conversación, para refrescarla);
+`GET /chat` (la conversación, para refrescarla); `POST /empresa` (cualquier
+cambio de la tarjeta), `POST /empresa/quitar/{i}`, `POST /empresa/borrar`;
 `GET /empresa`, `POST /empresa/demo`, `POST /empresa/archivos`,
 `POST /empresa/cargar`; `GET /estado-modelo`.
 
@@ -119,8 +127,10 @@ python -m uvicorn app.main:app --port 8000      # http://localhost:8000
   falso) trae las cifras marcadas, los avisos y los supuestos.
 - El HTML del modelo nunca se inserta; el Markdown mínimo arma párrafos,
   listas y negritas.
-- Empresa: demo por defecto; carga en dos pasos con un CSV de prueba;
-  errores de validación con mensaje útil.
+- Empresa: sin empresa al empezar; cada archivo se lee al subirlo (totales,
+  orden por fecha, error por archivo sin bloquear los demás, unidad en miles,
+  porción de largo plazo, quitar, empezar de nuevo); sin empresa el chat
+  conversa pero no calcula.
 
 ## Límites
 

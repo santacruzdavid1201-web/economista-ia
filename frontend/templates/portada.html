@@ -4,15 +4,10 @@
 <section class="portada">
   <div class="portada-texto">
     <h1>Su economista de cabecera</h1>
-    <p class="entrada">Pregunte por su empresa con sus palabras. Las cifras las calcula el sistema
-      con sus estados financieros y datos oficiales; el modelo de lenguaje solo redacta.</p>
-    <div class="lamina-empresa">
-      <p class="empresa-nombre">{{ empresa }}</p>
-      <p class="empresa-detalle">Estados financieros de {{ anios }}. Actividad CIIU {{ ciiu }}.
-        {%- if demo %} Empresa ficticia de demostración.{% endif %}</p>
-      {{ renglones | safe }}
-      {% if aviso %}<p class="aviso">{{ aviso }}</p>{% endif %}
-    </div>
+    <p class="entrada">Suba los balances de prueba de su empresa y pregunte con sus palabras. Las
+      cifras las calcula el sistema con sus estados financieros y datos oficiales; el modelo de
+      lenguaje solo redacta.</p>
+    {% include "_carga.html" %}
   </div>
   <img class="portada-ilustracion" src="/static/ilustraciones/portada.svg" alt="" width="560" height="460">
 </section>
