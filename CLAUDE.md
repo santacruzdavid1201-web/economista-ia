@@ -28,10 +28,10 @@ y redacta el resultado. Todo número sale de funciones de Python probadas.
 
 ## Módulos del MVP
 
-1. Balance financiero empresarial ← en construcción
+1. Balance financiero empresarial (funcionando)
 2. Econometría aplicada (pronóstico, demanda/precios, evaluación de impacto
    con Double ML / Causal Forest)
-3. Evaluación de proyectos (VPN, TIR, WACC, sensibilidad, Monte Carlo)
+3. Evaluación de proyectos (VPN, TIR, WACC, sensibilidad, Monte Carlo) ← en construcción
 4. Entorno macro y sectorial
 5. Después: carteras de inversión (Black-Litterman)
 
@@ -266,9 +266,34 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    consultados el …" (la serie más vieja). El chat lee las mismas copias. El
    IPC de las ciudades no entra en el actualizador: la vigencia lo renueva al
    pedirlo. Probado con la interfaz real: 6 series del 15/10/2026.
-   Siguiente: módulo 3 (evaluación de proyectos: VPN, TIR, WACC,
-   sensibilidad), con su tablero desde el inicio y el flujo de agent-skills
-   (spec → plan → tests primero → revisión).
+   Módulo 3 (desde el 15/10/2026), con el flujo de agent-skills (spec → plan
+   en `tasks/` → tests primero → revisión del diff → commit por tarea). Mapa
+   aprobado en `SPEC-mapa-proyectos.md`: matematica-financiera →
+   flujo-proyecto → evaluacion-proyecto → costo-capital →
+   sensibilidad-proyecto → montecarlo-proyecto. Decisiones: el proyecto entra
+   por formulario del tablero; flujos a precios de hoy con tasa real (Fisher
+   con la expectativa de inflación de la encuesta del BanRep); costo del
+   patrimonio por CAPM en pesos (TES 10 años + beta de Damodaran) o la tasa de
+   oportunidad del dueño. Hecho `matematica-financiera`
+   (`modules/proyectos/matematica_financiera.py`, conciliado a mano por el
+   usuario el 15/10/2026): tasas equivalentes en 11 tipos, VPN, TIR (única o
+   `None` con aviso si hay varias o ninguna; malla y bisección, sin scipy),
+   TIRM, recuperación descontada, índice de rentabilidad, VAE y amortización
+   (cuota fija y abono constante). En el chat, `simular_credito` y
+   `convertir_tasa`, sin empresa: el modelo solo da los números de la
+   pregunta; el tipo de tasa (pegado al número), la unidad del plazo, la
+   periodicidad, el sistema y el destino de la conversión los lee Python
+   (`app/orchestrator/lectura.py`); "200 millones" vale como 200 o 200000000;
+   "anual" sin más es EA con supuesto. La pregunta llega a la herramienta en
+   sus argumentos. Bloque L del set (casos 51-58): 8/8 con el modelo real.
+   Lecciones: la tasa del usuario va en los hallazgos como la escribió ("24 %",
+   no "24,00 %"), porque el 7B la repite así; los análisis que no son de la
+   empresa (crédito, tasas, panorama) se redactan sin su nombre (lo mezcló en
+   una conversión). Tablero de Proyectos activo: simulador de crédito y
+   conversor de tasas (HTMX que recalcula solo el resultado). Nota
+   `conocimiento/tasas-equivalentes.md` revisada por el usuario.
+   Siguiente: `flujo-proyecto` (spec primero). Después, la comparación con la
+   tasa de usura si hay fuente automática.
    Pendiente menor: bajar el contexto del modelo en LM Studio a 8.192 si
    vuelve a caerse.
    Sensibilidad-tasas conciliada con el cálculo a mano del usuario (demo 2024,

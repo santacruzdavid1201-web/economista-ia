@@ -40,5 +40,8 @@ tags: [economista-ia, bitacora]
 - `sector-hotelero` pasó al módulo 2 y el módulo 4 se cerró con el panorama macro: el análisis sectorial es un panel, como la econometría, y hacerlo ahora obligaba a montar PostgreSQL antes de tener un motivo real.
 
 - Las series macro se actualizan solas: la interfaz las descarga al arrancar y cada 6 horas, y la vigencia de las copias bajó de 7 días a 1. La tasa de política cambia tras cada reunión del BanRep y la TRM a diario: con una semana de vigencia, la sensibilidad a tasas podía usar una tasa vieja justo cuando más importa. Las copias del día no se versionan; las de `data/series/` quedan como respaldo sin red.
+- El módulo 3 arrancó con un mapa de seis piezas (matemática financiera, flujo, evaluación, costo de capital, sensibilidad y Monte Carlo) y tres decisiones: el proyecto entra por formulario, porque pedirle al 7B que extraiga años de flujos de una frase es invitarlo a inventar; flujos a precios de hoy con tasa real, porque el error típico de una pyme es descontar flujos de hoy con una tasa nominal; y costo del patrimonio por CAPM en pesos, porque una pyme no tiene beta propia y el TES ya incluye el riesgo país.
+- En el crédito y la conversión de tasas, el modelo solo da los números de la pregunta y Python lee su sentido (tipo de tasa, unidad del plazo, periodicidad, sistema): 24 % NMV es 26,82 % EA, y esa distinción no se le deja al 7B.
+- La TIR es única o no hay: si el flujo cambia de signo varias veces y da dos tasas, se devuelve `None` con las dos nombradas y se remite al VPN y a la TIRM; un solo número sería engañoso.
 ---
 Vuelve a [[resumen]]

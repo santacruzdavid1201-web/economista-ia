@@ -1,7 +1,7 @@
 # Spec: matematica-financiera
 
-Módulo del [mapa de proyectos](SPEC-mapa-proyectos.md). Estado: aprobado el
-15/10/2026.
+Módulo del [mapa de proyectos](SPEC-mapa-proyectos.md). Estado: aprobado,
+construido y conciliado a mano por el usuario el 15/10/2026.
 
 ## Objetivo
 

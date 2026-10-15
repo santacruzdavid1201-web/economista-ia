@@ -41,7 +41,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
 
 ### Punto de control: cimientos
 - [x] Suite completa en verde.
-- [ ] Casos a mano listos para que el usuario los concilie (no bloquea).
+- [x] Casos a mano conciliados por el usuario (15/10/2026).
 
 ## Fase 2: chat
 
@@ -117,6 +117,6 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
   - Tamaño: S
 
 ### Punto de control: completo
-- [ ] Criterios de éxito 1-5 de la especificación.
-- [ ] CLAUDE.md, `docs/decisiones.md` y `docs/modulos/evaluacion-proyectos.md`
+- [x] Criterios de éxito 1-5 de la especificación.
+- [x] CLAUDE.md, `docs/decisiones.md` y `docs/modulos/evaluacion-proyectos.md`
       (estado: en construcción).
