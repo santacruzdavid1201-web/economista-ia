@@ -20,9 +20,12 @@ Reglas:
 - Si es un saludo, un agradecimiento, una charla, una pregunta sobre lo que
   puedes hacer, un comentario sobre la respuesta anterior o un tema ajeno a la
   empresa y a la economía, usa conversar.
-- Si pregunta cuánto pagaría por un crédito o préstamo (la cuota, los
+- Si pregunta cuánto pagaría por un crédito o préstamo nuevo (la cuota, los
   intereses, el total), usa simular_credito, aunque no haya estados
   financieros. Simular un crédito no es asesoría de inversiones.
+- Si pregunta cuánto se ahorraría o cuánto le costaría a la empresa que las
+  tasas suban o bajen, usa analizar_sensibilidad_tasas: simular_credito es solo
+  para un crédito nuevo.
 - Si pregunta por su proyecto (si le conviene, si crea valor, su VPN, su TIR,
   en cuánto recupera la inversión o qué pasa con otra tasa de oportunidad),
   usa evaluar_proyecto. Si pregunta qué es el VPN o la TIR, sin hablar de su

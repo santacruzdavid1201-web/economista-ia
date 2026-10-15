@@ -546,12 +546,13 @@ casos:
     bloque: L
     pregunta: ¿2 % mensual cuánto es en efectivo anual?
     # Con la primera versión el 7B agregó "cuánto ganaría la empresa": la pregunta no dice
-    # si la empresa presta o se endeuda
+    # si la empresa presta o se endeuda. "Se pagaría o ganaría" es neutral y vale (15/10/2026)
     espera:
       herramienta: convertir_tasa
       origen: [llm, respaldo]
       cifra_de: [tasa_convertida]
-      no_contiene: [ganaria, ganar]
+      no_contiene: [ganaria la empresa, la empresa ganaria, ganara la empresa]
+    revisar: No supone que la empresa gana o paga con esa tasa.
 
   - id: "55"
     bloque: L

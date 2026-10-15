@@ -56,6 +56,8 @@ SIN_EMPRESA = (
     "Para responder eso necesito los estados financieros de su empresa. Súbalos en la "
     "portada (balances de prueba, uno por año) y vuelva a preguntarme."
 )
+PIDEN_CIFRAS = {"simular_credito", "convertir_tasa"}
+PIDE_CALCULO = re.compile(r"\bcu[aá]nt[oa]s?\b", re.IGNORECASE)
 AVISO_SIN_REVISAR = "Parte del material usado aún no ha sido revisado por el economista."
 AVISO_GENERAL = ("Respuesta general: no sale de las notas revisadas por el economista. "
                  "Tómela como orientación.")
@@ -348,6 +350,16 @@ def responder(pregunta: str, ctx: ContextoEmpresa | None, cliente: ClienteChat |
                          eventos=[f"enrutador sin herramienta válida: {llamada.nombre}"])
     herramienta = POR_NOMBRE[llamada.nombre]
     argumentos = dict(llamada.argumentos)
+    # El simulador y el conversor calculan con las cifras de la pregunta; sin ninguna, y si no
+    # pregunta "¿cuánto…?", era de criterio: el 7B mandó "¿qué es mejor, cuota fija o abono
+    # constante?" al simulador
+    if (herramienta.nombre in PIDEN_CIFRAS and not numeros(pregunta)
+            and not PIDE_CALCULO.search(pregunta)):
+        buscador = buscador or _buscador(cliente)
+        if buscador and buscador.buscar(pregunta):
+            evento.append(f"{herramienta.nombre} sin cifras en la pregunta: se trató como "
+                          "consulta_conceptual")
+            herramienta = POR_NOMBRE["consulta_conceptual"]
     if herramienta.nombre == "fuera_de_alcance":
         return Respuesta(texto=FUERA_DE_ALCANCE, origen="sin_llm", herramienta=herramienta.nombre,
                          argumentos=argumentos)

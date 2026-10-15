@@ -571,3 +571,41 @@ def test_recomendar_o_calificar_un_proyecto_es_un_calificativo():
     # Con "¿me conviene el proyecto?" el 7B contestó "el proyecto no conviene"
     assert calificativos("El proyecto no conviene y no es rentable.") == ["conviene", "rentable"]
     assert calificativos("La rentabilidad del patrimonio es 12 %.") == []
+
+
+# --------------------------------------------------------------------------- #
+# Red de seguridad: el simulador y el conversor necesitan cifras de la pregunta
+# --------------------------------------------------------------------------- #
+from app.rag.retriever import Fragmento  # noqa: E402
+
+
+class BuscadorUnaNota:
+    """Siempre encuentra la nota de tasas equivalentes."""
+    eventos: list = []
+
+    def buscar(self, pregunta, k=2):
+        return [Fragmento(titulo="Tasas equivalentes", fuente="Prueba", revisado=True,
+                          texto="Con cuota fija las cuotas son iguales.", puntaje=0.9)]
+
+
+def test_credito_sin_cifras_en_la_pregunta_va_a_la_nota():
+    # El 7B mandó "¿qué es mejor, cuota fija o abono constante?" al simulador de crédito
+    llm = LLMFalso(herramienta("simular_credito"), texto("Con cuota fija las cuotas son iguales."))
+    r = responder("¿Qué es mejor, un crédito con cuota fija o con abono constante?", None, llm,
+                  HOY, buscador=BuscadorUnaNota())
+    assert r.herramienta == "consulta_conceptual" and r.origen == "llm"
+    assert any("sin cifras en la pregunta" in e for e in r.eventos)
+
+
+def test_cuanto_pagaria_sin_cifras_pide_los_datos_aunque_haya_nota():
+    # "¿Cuánto…?" pide un cálculo: mejor pedir los datos que explicar la teoría
+    r = responder("¿Cuánto pagaría por un crédito?", None,
+                  LLMFalso(herramienta("simular_credito")), HOY, buscador=BuscadorUnaNota())
+    assert r.herramienta == "simular_credito" and "¿De cuánto es el crédito?" in r.texto
+
+
+def test_credito_con_cifras_no_se_desvia():
+    llm = LLMFalso(herramienta("simular_credito", monto=200, tasa=18, plazo=5),
+                   texto("La cuota fija sería de $ 4.934.680."))
+    r = responder(CREDITO, None, llm, HOY, buscador=BuscadorUnaNota())
+    assert r.herramienta == "simular_credito"

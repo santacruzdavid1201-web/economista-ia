@@ -93,7 +93,7 @@ def test_conversor_de_tasas_con_el_ejemplo():
     assert len(filas) == 11 and filas["EA"]["valor"] == "26,82 %"
     assert filas["MV"]["origen"] and not filas["EA"]["origen"]
     assert filas["NMV"]["valor"] == "24,00 %" and "nominal = periódica × 12" in filas["NMV"]["formula"]
-    assert c["hallazgos"] == ["Una tasa de 2 % mensual equivale a 26,82 % efectiva anual."]
+    assert c["hallazgos"][0] == "Una tasa de 2 % mensual equivale a 26,82 % efectiva anual."
 
 
 @pytest.mark.parametrize("campos, mensaje", [

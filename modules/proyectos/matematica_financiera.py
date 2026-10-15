@@ -246,6 +246,14 @@ def _pesos(valor: float) -> str:
     return formatear(valor, "pesos")
 
 
+def _en_millones(monto: float) -> str:
+    """" (150 millones)" si el monto son millones exactos: el 7B repite el monto como lo escribió
+    el usuario, y con "$ 150.000.000" solo, la cifra no estaba en el desplegable."""
+    if monto < 1e6 or monto % 1e6:
+        return ""
+    return f" ({int(monto // 1e6):,} millones)".replace(",", ".")
+
+
 def como_la_escribio(tasa: float) -> str:
     """La tasa del usuario sin ceros de más ("24 %", "1,5 %"): el 7B la repite así, y con
     "24,00 %" la cifra de la respuesta no estaría en el desplegable."""
@@ -280,7 +288,7 @@ def simular_credito(monto: float, tasa: float, tipo: str, cuotas: int,
     tasa_texto = f"{efectiva} efectiva anual" + (
         "" if periodicidad == "anual" else f" ({formatear(i, 'tasa')} {periodicidad})")
     plazo = (f"{cuotas} cuotas {periodicidad}es" if cuotas > 1 else f"1 cuota {periodicidad}")
-    base = f"Con una tasa de {tasa_texto}, un crédito de {_pesos(monto)} a {plazo}"
+    base = f"Con una tasa de {tasa_texto}, un crédito de {_pesos(monto)}{_en_millones(monto)} a {plazo}"
     indicadores = [
         Indicador(clave="tasa_efectiva_anual", nombre="Tasa efectiva anual", valor=ea,
                   unidad="tasa", formula=f"(1 + i)^{m} − 1, con i la tasa {periodicidad}"),
@@ -352,6 +360,9 @@ def convertir_tasa(tasa: float, desde: str, hacia: str,
     if anticipada1 != anticipada2:
         hallazgos.append("En la anticipada los intereses se pagan al inicio del periodo; por eso "
                          "equivale a una tasa vencida mayor.")
+    # Neutral: el 7B supuso que la empresa "ganaría" con la tasa, y la pregunta no lo dice
+    hallazgos.append("Es la misma tasa dicha de otra forma: con cualquiera de las dos se paga (o se "
+                     "recibe) lo mismo en el año.")
     return ResultadoModulo(
         modulo="proyectos", analisis="conversion_tasa",
         indicadores=[Indicador(clave="tasa_convertida", nombre=f"Tasa {nombre2}", valor=valor,

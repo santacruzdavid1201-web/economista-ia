@@ -172,7 +172,7 @@ def test_simular_credito_cuota_fija():
     assert r.valor("tasa_periodica") == pytest.approx(MENSUAL_18_EA)
     assert r.hallazgos == [
         "Con una tasa de 18 % efectiva anual (1,39 % mensual), un crédito de "
-        "$ 200.000.000 a 60 cuotas mensuales tiene una cuota fija de $ 4.934.680.",
+        "$ 200.000.000 (200 millones) a 60 cuotas mensuales tiene una cuota fija de $ 4.934.680.",
         "En total pagaría $ 96.080.819 de intereses, el 48,0 % del monto prestado."]
     assert any("seguros" in s for s in r.supuestos)
 
@@ -210,7 +210,11 @@ def test_convertir_tasa_mensual_a_efectiva():
     r = convertir_tasa(0.02, "MV", "EA")
     assert r.modulo == "proyectos" and r.analisis == "conversion_tasa"
     assert r.valor("tasa_convertida") == pytest.approx(0.2682417945625455)
-    assert r.hallazgos == ["Una tasa de 2 % mensual equivale a 26,82 % efectiva anual."]
+    assert r.hallazgos == [
+        "Una tasa de 2 % mensual equivale a 26,82 % efectiva anual.",
+        # Neutral: el 7B supuso que la empresa "ganaría" con la tasa
+        "Es la misma tasa dicha de otra forma: con cualquiera de las dos se paga (o se recibe) lo "
+        "mismo en el año."]
     assert "(1 + i)^(12/1) − 1" in r.indicadores[0].formula
 
 
@@ -249,3 +253,10 @@ def test_cuotas_del_plazo(plazo, unidad, periodicidad, esperado):
 def test_cuotas_del_plazo_invalido(plazo, unidad, periodicidad, mensaje):
     with pytest.raises(ErrorCredito, match=mensaje):
         cuotas_del_plazo(plazo, unidad, periodicidad)
+
+
+def test_el_monto_tambien_va_con_palabras_si_son_millones_exactos():
+    # El 7B escribió "150 millones" y el desplegable decía "$ 150.000.000"
+    assert "$ 150.000.000 (150 millones)" in simular_credito(150_000_000, 0.24, "NMV", 36).hallazgos[1]
+    assert "$ 1.500.000.000 (1.500 millones)" in simular_credito(1_500_000_000, 0.18, "EA", 60).hallazgos[0]
+    assert "millones)" not in simular_credito(2_500_000, 0.18, "EA", 12).hallazgos[0]
