@@ -31,7 +31,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
 
 ## Fase 2: cálculo
 
-- [ ] **3. Senda de inflación**
+- [x] **3. Senda de inflación**
   - Aceptación: `senda_inflacion(hoy, horizonte, pronostico, meta, fija=None)`
     → (π por año, supuestos, fuentes); en octubre de 2026 con el informe de
     julio: año 1 = 4,3 %, siguientes = 3 %; con `fija` todos iguales; sin
