@@ -55,7 +55,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
 
 ### Punto de control: cálculo
 - [x] Suite completa en verde.
-- [ ] Caso a mano listo para que el usuario lo concilie (no bloquea).
+- [x] Caso a mano listo para que el usuario lo concilie (no bloquea).
 
 ## Fase 3: tablero
 
@@ -86,5 +86,5 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
   - Tamaño: M
 
 ### Punto de control: completo
-- [ ] Criterios de éxito 1-4 de la especificación.
-- [ ] CLAUDE.md, `docs/decisiones.md` y `docs/modulos/evaluacion-proyectos.md`.
+- [x] Criterios de éxito 2-4 de la especificación (el 1 espera la conciliación del usuario).
+- [x] CLAUDE.md, `docs/decisiones.md` y `docs/modulos/evaluacion-proyectos.md`.

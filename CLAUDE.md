@@ -292,8 +292,28 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    una conversión). Tablero de Proyectos activo: simulador de crédito y
    conversor de tasas (HTMX que recalcula solo el resultado). Nota
    `conocimiento/tasas-equivalentes.md` revisada por el usuario.
-   Siguiente: `flujo-proyecto` (spec primero). Después, la comparación con la
-   tasa de usura si hay fuente automática.
+   Hecho `flujo-proyecto` (15/10/2026, `modules/proyectos/flujo.py`): flujo
+   de caja libre sin la financiación, incremental, a precios de hoy por fuera
+   y en pesos corrientes por dentro (la inflación le quita valor al ahorro de
+   impuestos de la depreciación y el capital de trabajo crece con los
+   precios); pérdidas que ahorran impuestos (supuesto), valor en libros al
+   salvamento y salvamento de mercado que tributa (aproximación). Inflación:
+   senda del BanRep = pronóstico del IPC total del último Informe de Política
+   Monetaria (`data_sources/externos/pronostico_banrep.py`) y meta de 3 %
+   (SUAMECA 853, `meta_inflacion`) después; el año t del proyecto es el año
+   calendario actual + t. El repositorio del BanRep bloquea las descargas
+   automáticas (anti-bots): el Excel "principales variables del pronóstico"
+   se descarga en el navegador cada trimestre y se carga con `python -m
+   data_sources.externos.pronostico_banrep <archivo.xlsx>` (copia versionada
+   en `data/series/pronostico_inflacion.json`; aviso a los 4 meses). Cargado
+   el de julio de 2026 (6,9 % en 2026, 4,3 % en 2027); el de octubre sale a
+   fin de mes. Tablero de Proyectos en pestañas (pedido del usuario): "Su
+   proyecto" (formulario agrupado y tabla del flujo con la columna de
+   etiquetas fija; la sesión recuerda el último proyecto válido) y "Crédito
+   y tasas". Sin herramienta de chat todavía: llega con la evaluación.
+   Siguiente: `evaluacion-proyecto` (VPN, TIR, TIRM, recuperación con la tasa
+   de oportunidad del usuario, en la pestaña "Su proyecto" y en el chat).
+   Después, la comparación con la tasa de usura si hay fuente automática.
    Pendiente menor: bajar el contexto del modelo en LM Studio a 8.192 si
    vuelve a caerse.
    Sensibilidad-tasas conciliada con el cálculo a mano del usuario (demo 2024,

@@ -1,7 +1,7 @@
 # Spec: flujo-proyecto
 
-Módulo del [mapa de proyectos](SPEC-mapa-proyectos.md). Estado: propuesta del
-15/10/2026, aprobada por el usuario el mismo día.
+Módulo del [mapa de proyectos](SPEC-mapa-proyectos.md). Estado: aprobada y
+construida el 15/10/2026 (falta la conciliación a mano del usuario).
 
 ## Objetivo
 
