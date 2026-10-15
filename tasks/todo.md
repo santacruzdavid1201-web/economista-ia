@@ -5,7 +5,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
 
 ## Fase 1: datos de inflación
 
-- [ ] **1. Meta de inflación en el catálogo**
+- [x] **1. Meta de inflación en el catálogo**
   - Aceptación: `serie("meta_inflacion")` devuelve la serie 853 de SUAMECA
     (3 %); `actualizar()` la incluye; copia de respaldo en `data/series/`.
   - Verificar: `python -m pytest tests/data_sources -v`

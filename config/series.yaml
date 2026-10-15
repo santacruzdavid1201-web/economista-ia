@@ -54,3 +54,10 @@ desempleo:
   nombre: tasa de desempleo              # mensual, DANE, sin ajuste estacional
   ids:
     nacional: 15312
+
+# Proyectos (15/10/2026): ancla de largo plazo de la senda de inflación del
+# flujo de caja (después del horizonte del Informe de Política Monetaria).
+meta_inflacion:
+  nombre: meta de inflación              # porcentaje anual, Banco de la República
+  ids:
+    nacional: 853

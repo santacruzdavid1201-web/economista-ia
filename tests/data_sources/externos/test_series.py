@@ -232,14 +232,14 @@ def test_sin_copia_del_dia_y_sin_red_usa_el_respaldo(tmp_path, descargas, monkey
 def test_actualizar_descarga_todas_las_nacionales_aunque_esten_vigentes(tmp_path, descargas):
     serie("tasa_politica", hoy=HOY, directorio=tmp_path)
     assert catalogo.actualizar(hoy=HOY, directorio=tmp_path) == []
-    assert descargas == [59, 15000, 59, 243, 1, 15271, 15312]
+    assert descargas == [59, 15000, 59, 243, 1, 15271, 15312, 853]
 
 
 def test_actualizar_sin_red_dice_que_no_pudo(tmp_path, descargas, monkeypatch):
     serie("tasa_politica", hoy=HOY, directorio=tmp_path)
     sin_red(monkeypatch)
     problemas = catalogo.actualizar(hoy=HOY, directorio=tmp_path)
-    assert len(problemas) == 6 and all(p.startswith("No se pudo") for p in problemas)
+    assert len(problemas) == 7 and all(p.startswith("No se pudo") for p in problemas)
 
 
 def test_la_copia_no_guarda_supuestos(tmp_path, descargas):
@@ -267,7 +267,8 @@ def test_tildes_y_mayusculas_no_importan():
     assert catalogo._buscar("ipc", " cúcuta ") == ("Cúcuta", 15020)
 
 
-@pytest.mark.parametrize("variable, id_serie", [("tasa_politica", 59), ("ibr_3m", 243)])
+@pytest.mark.parametrize("variable, id_serie", [("tasa_politica", 59), ("ibr_3m", 243),
+                                               ("meta_inflacion", 853)])
 def test_tasas_son_nacionales_sin_supuesto(tmp_path, descargas, variable, id_serie):
     s = serie(variable, hoy=HOY, directorio=tmp_path)
     assert descargas == [id_serie]
