@@ -56,6 +56,12 @@ def evaluar(flujo: Flujo, tasa: float) -> ResultadoModulo:
                "alternativa." if la_tir > tasa else
                f"menor que la tasa de oportunidad de {escrita}: el proyecto rinde, pero menos que "
                "la alternativa."))
+    # El 7B leyó un índice de 0,97 como "sugiere rendimiento": menos de uno es devolver menos
+    if (indice := indice_rentabilidad(tasa, flujos)) is not None:
+        hallazgos.append(f"Devuelve {formatear(indice, 'veces').removesuffix(' veces')} pesos de "
+                         "hoy por cada peso invertido (índice de rentabilidad): "
+                         + ("más de uno, por eso crea valor." if indice >= 1 else
+                            "menos de uno, por eso no crea valor."))
     hallazgos.append(
         f"Recupera la inversión, con su costo de oportunidad, en "
         f"{formatear(recuperacion, 'anios')} de {n}." if recuperacion is not None else

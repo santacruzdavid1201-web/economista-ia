@@ -172,3 +172,10 @@ def test_cifra_inventada_en_conceptual_usa_el_texto_de_la_nota(buscador):
     r = responder("¿Cómo me afecta la tasa de interés de mi deuda?", CTX, llm, HOY, buscador)
     assert r.origen == "respaldo"
     assert "Si sube la tasa, la deuda cuesta más." in r.texto
+
+
+def test_los_verbos_auxiliares_no_cuentan_como_tema():
+    # "¿qué puedes hacer?" coincidía con la nota de evaluación de proyectos ("puede haber
+    # varias TIR", "antes de hacer un proyecto") y la charla se volvía consulta conceptual
+    assert raices("Hola, ¿qué puedes hacer?") == {"hola"}
+    assert raices("¿Qué tengo que hacer para mejorar la liquidez?") == {"mejor", "liqui"}

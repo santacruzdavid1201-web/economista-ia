@@ -78,3 +78,11 @@ def test_tir_negativa_dice_que_no_devuelve_la_inversion():
     assert r.valor("tir") < 0
     assert any(h.startswith("La TIR es -") and "no devuelve ni siquiera la inversión" in h
                for h in r.hallazgos)
+
+
+def test_el_indice_de_rentabilidad_en_palabras():
+    # El 7B leyó 0,97 como "sugiere rendimiento": menos de uno es devolver menos de lo invertido
+    assert ("Devuelve 0,96 pesos de hoy por cada peso invertido (índice de rentabilidad): menos de "
+            "uno, por eso no crea valor.") in evaluacion(0.15, [0.03] * 5).hallazgos
+    assert ("Devuelve 1,03 pesos de hoy por cada peso invertido (índice de rentabilidad): más de "
+            "uno, por eso crea valor.") in evaluacion(0.10).hallazgos

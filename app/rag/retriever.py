@@ -24,7 +24,12 @@ UMBRAL_SOLO_PALABRAS = 0.5
 STOPWORDS = set("""a al algo como con cual cuales cuando de del el ella ellos en entre es esa
 ese eso esta este esto estos fue ha hay la las le les lo los me mi mis muy no nos o para pero
 por que qué quien se sea ser si sin sobre su sus te tengo tiene tu tus un una uno y ya yo
-cómo cuál cuándo dónde por qué mí también usted ustedes nuestro nuestra mucho poco""".split())
+cómo cuál cuándo dónde por qué mí también usted ustedes nuestro nuestra mucho poco
+puede puedes puedo pueden podemos podria podrian poder hacer hace haces hago hacen hacemos
+haria tener tienen tienes tenemos estar estoy estan estas dar da decir dice saber sabe
+ver va van voy ir quiero quiere""".split())
+# Verbos auxiliares (15/10/2026): "¿qué puedes hacer?" coincidía con cualquier nota que
+# dijera "puede" y "hacer", y una charla se volvía consulta conceptual
 
 
 @dataclass

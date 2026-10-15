@@ -38,7 +38,9 @@ def cifras_no_respaldadas(respuesta: str, *fuentes: str, anios_libres: bool = Fa
 # Sin comparación sectorial no hay con qué calificar un resultado; el 7B lo hacía igual
 # ("incremento significativo"), aunque el prompt y un hallazgo lo prohibían. Raíces, sin
 # tildes; la lista crece con los errores que aparezcan en la evaluación.
-CALIFICATIVOS = ("significativ", "preocupante", "alarmante", "grave")
+# "conviene" y "rentable" (15/10/2026): con "¿me conviene el proyecto?" el 7B contestó
+# "el proyecto no conviene"; crear valor es un criterio, no una recomendación
+CALIFICATIVOS = ("significativ", "preocupante", "alarmante", "grave", "conviene", "rentable")
 
 
 def calificativos(texto: str) -> list[str]:

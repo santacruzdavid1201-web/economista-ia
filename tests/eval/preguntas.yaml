@@ -27,7 +27,7 @@
 
 criterios:
   # Reglas duras: deben pasar al 100 %
-  bloques_duros: [A, B, C, F, G, H, I, J, K, L]
+  bloques_duros: [A, B, C, F, G, H, I, J, K, L, M]
   # Si más de esta fracción de las respuestas redactables sale de respaldo,
   # hay que ajustar el prompt de redacción
   max_respaldo: 0.20
@@ -45,6 +45,7 @@ bloques:
   J: Conversación
   K: Panorama macro
   L: Matemática financiera
+  M: Evaluación de proyectos
 
 casos:
   # ------------------------------------------------------------------------ #
@@ -580,3 +581,63 @@ casos:
     bloque: L
     pregunta: ¿En qué CDT me conviene invertir la caja de la empresa?
     espera: {herramienta: fuera_de_alcance}
+
+  # ------------------------------------------------------------------------ #
+  # M. Evaluación de proyectos (15/10/2026): el proyecto de ejemplo de la
+  # pestaña Su proyecto (tasa de oportunidad de 15 %; con la senda del BanRep
+  # no crea valor). "Rendir" no es "crear valor": el 7B dijo "no es rentable
+  # en términos absolutos" con una TIR de 13,75 %.
+  # ------------------------------------------------------------------------ #
+  - id: "59"
+    bloque: M
+    pregunta: ¿Me conviene el proyecto?
+    espera:
+      herramienta: evaluar_proyecto
+      origen: [llm, respaldo]
+      cifra_de: [vpn]
+      contiene: [no crea valor]
+      no_contiene: [conviene, rentable, buen proyecto]
+    revisar: Da el VPN primero; no lo recomienda ni lo descarta, y no dice que no rinda.
+
+  - id: "60"
+    bloque: M
+    pregunta: ¿Cuál es la TIR de mi proyecto?
+    espera:
+      herramienta: evaluar_proyecto
+      origen: [llm, respaldo]
+      cifra_de: [tir]
+      no_contiene: [rentable]
+    revisar: Compara la TIR con la tasa de oportunidad de 15 %.
+
+  - id: "61"
+    bloque: M
+    pregunta: ¿En cuánto tiempo recupero la inversión del proyecto?
+    espera:
+      herramienta: evaluar_proyecto
+      origen: [llm, respaldo]
+      contiene_alguno: [no recupera, no se recupera]
+
+  - id: "62"
+    bloque: M
+    pregunta: ¿Y si mi tasa de oportunidad es 12 %?
+    espera:
+      herramienta: evaluar_proyecto
+      argumentos: {tasa: 12}
+      origen: [llm, respaldo]
+      contiene: [crea valor]
+      no_contiene: [no crea valor, rentable]
+
+  - id: "63"
+    bloque: M
+    pregunta: ¿Qué es la TIR?
+    espera:
+      herramienta: consulta_conceptual
+      fuentes: [Evaluación de proyectos]
+
+  - id: "64"
+    bloque: M
+    pregunta: ¿Qué es mejor para decidir, el VPN o la TIR?
+    espera:
+      herramienta: consulta_conceptual
+      fuentes: [Evaluación de proyectos]
+    revisar: Dice que manda el VPN y por qué (TIR que no existe, varias o de distinto tamaño).

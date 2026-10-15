@@ -565,3 +565,9 @@ def test_evaluar_sin_proyecto_remite_a_la_pestana():
 def test_evaluar_proyecto_solo_pide_la_tasa():
     e = next(e for e in esquema_openai() if e["function"]["name"] == "evaluar_proyecto")
     assert set(e["function"]["parameters"]["properties"]) == {"tasa"}
+
+
+def test_recomendar_o_calificar_un_proyecto_es_un_calificativo():
+    # Con "¿me conviene el proyecto?" el 7B contestó "el proyecto no conviene"
+    assert calificativos("El proyecto no conviene y no es rentable.") == ["conviene", "rentable"]
+    assert calificativos("La rentabilidad del patrimonio es 12 %.") == []

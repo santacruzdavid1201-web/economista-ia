@@ -65,7 +65,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
     `config/glosario.yaml`, `tests/app/test_orquestador.py`
   - Tamaño: M
 
-- [ ] **5. Nota de conocimiento y bloque M**
+- [x] **5. Nota de conocimiento y bloque M**
   - Aceptación: `conocimiento/evaluacion-de-proyectos.md` (`revisado:
     false`), índice reconstruido; bloque M en `tests/eval/preguntas.yaml`
     (¿me conviene?, ¿cuál es la TIR?, ¿en cuánto recupero?, ¿y si mi tasa es
