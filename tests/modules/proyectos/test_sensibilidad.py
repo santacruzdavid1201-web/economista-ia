@@ -76,24 +76,28 @@ def test_escenario_que_deja_de_crear_valor():
     r = escenario(crear_proyecto(**EJEMPLO), SIN_INFLACION, 0.10, "ingresos", -0.10)
     assert r.valor("vpn") == pytest.approx(3_109_400.13, abs=0.01)
     assert r.valor("vpn_escenario") == pytest.approx(-7_012_001, abs=1)
-    assert r.hallazgos[0] == ("Si los ingresos caen 10 %, el proyecto deja de crear valor: "
-                              "dejaría $ 7.012.001 menos que la alternativa (con los datos "
-                              "actuales, $ 3.109.400 más).")
+    # Primero el estado actual: con "sigue sin crear valor" el 7B escribió "dejaría de crear valor"
+    assert r.hallazgos == [
+        "Con los datos actuales, el proyecto crea valor: deja $ 3.109.400 más que la alternativa.",
+        "Si los ingresos caen 10 %, dejaría de crear valor: dejaría $ 7.012.001 menos que la "
+        "alternativa."]
 
 
 @pytest.mark.parametrize("variable, cambio, estado", [
-    ("costos_fijos", 0.10, "sigue creando valor"),
-    ("ingresos", 0.10, "sigue creando valor"),
+    ("costos_fijos", 0.10, "seguiría creando valor"),
+    ("ingresos", 0.10, "seguiría creando valor"),
 ])
 def test_escenario_que_sigue_creando_valor(variable, cambio, estado):
     r = escenario(crear_proyecto(**EJEMPLO), SIN_INFLACION, 0.10, variable, cambio)
-    assert f"el proyecto {estado}" in r.hallazgos[0]
+    assert f", {estado}:" in r.hallazgos[1]
 
 
 def test_escenario_desde_un_vpn_negativo():
     p = crear_proyecto(**EJEMPLO)
-    assert "pasa a crear valor" in escenario(p, SIN_INFLACION, 0.15, "ingresos", 0.20).hallazgos[0]
-    assert "sigue sin crear valor" in escenario(p, SIN_INFLACION, 0.15, "ingresos", -0.10).hallazgos[0]
+    negativo = escenario(p, SIN_INFLACION, 0.15, "ingresos", -0.10).hallazgos
+    assert negativo[0].startswith("Con los datos actuales, el proyecto no crea valor: deja $ ")
+    assert "seguiría sin crear valor" in negativo[1]
+    assert "pasaría a crear valor" in escenario(p, SIN_INFLACION, 0.15, "ingresos", 0.20).hallazgos[1]
 
 
 def test_valor_critico_de_un_dato_en_palabras():

@@ -13,7 +13,7 @@ Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del 
   proyecto de la sesión; sin tasa → mensaje.
   Archivos: `frontend/tableros.py`, `frontend/templates/_pestana_sensibilidad.html`,
   `frontend/static/estilo.css`, tests del frontend.
-- [ ] **4. Chat, glosario, nota y bloque N** (después del set completo).
+- [x] **4. Chat, glosario, nota y bloque N** (después del set completo).
   Archivos: `app/orchestrator/tools_registry.py`, `config/prompts/router.md`,
   `config/glosario.yaml`, `conocimiento/evaluacion-de-proyectos.md`,
   `tests/eval/preguntas.yaml`, tests.

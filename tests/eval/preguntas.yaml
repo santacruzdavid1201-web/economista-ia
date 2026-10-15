@@ -27,7 +27,7 @@
 
 criterios:
   # Reglas duras: deben pasar al 100 %
-  bloques_duros: [A, B, C, F, G, H, I, J, K, L, M]
+  bloques_duros: [A, B, C, F, G, H, I, J, K, L, M, N]
   # Si más de esta fracción de las respuestas redactables sale de respaldo,
   # hay que ajustar el prompt de redacción
   max_respaldo: 0.20
@@ -46,6 +46,7 @@ bloques:
   K: Panorama macro
   L: Matemática financiera
   M: Evaluación de proyectos
+  N: Sensibilidad del proyecto
 
 casos:
   # ------------------------------------------------------------------------ #
@@ -596,7 +597,8 @@ casos:
       herramienta: evaluar_proyecto
       origen: [llm, respaldo]
       cifra_de: [vpn]
-      contiene: [no crea valor]
+      # "no creando valor neto" también vale (15/10/2026)
+      contiene_alguno: [no crea valor, no creando valor, no genera valor, no crearia valor]
       no_contiene: [conviene, rentable, buen proyecto]
     revisar: Da el VPN primero; no lo recomienda ni lo descarta, y no dice que no rinda.
 
@@ -642,3 +644,49 @@ casos:
       herramienta: consulta_conceptual
       fuentes: [Evaluación de proyectos]
     revisar: Dice que manda el VPN y por qué (TIR que no existe, varias o de distinto tamaño).
+
+  # ------------------------------------------------------------------------ #
+  # N. Sensibilidad del proyecto (15/10/2026): el proyecto de ejemplo (con 15 %
+  # no crea valor). La variable y la dirección las lee Python; nunca se dice
+  # "riesgoso" ni "seguro".
+  # ------------------------------------------------------------------------ #
+  - id: "65"
+    bloque: N
+    pregunta: ¿Y si vendo 10 % menos?
+    espera:
+      herramienta: analizar_sensibilidad_proyecto
+      origen: [llm, respaldo]
+      cifra_de: [vpn_escenario]
+      contiene_alguno: [sin crear valor, no crea valor, no crearia valor]
+      no_contiene: [riesgoso, arriesgado]
+
+  - id: "66"
+    bloque: N
+    pregunta: ¿Hasta cuánto pueden caer las ventas?
+    espera:
+      herramienta: analizar_sensibilidad_proyecto
+      origen: [llm, respaldo]
+    revisar: Como hoy no crea valor, dice cuánto tendrían que subir los ingresos para crearlo.
+
+  - id: "67"
+    bloque: N
+    pregunta: ¿Qué variable pesa más en mi proyecto?
+    espera:
+      herramienta: analizar_sensibilidad_proyecto
+      origen: [llm, respaldo]
+      contiene: [ingresos]
+
+  - id: "68"
+    bloque: N
+    pregunta: ¿Y si los costos fijos suben 20 %?
+    espera:
+      herramienta: analizar_sensibilidad_proyecto
+      origen: [llm, respaldo]
+      cifra_de: [vpn_escenario]
+
+  - id: "69"
+    bloque: N
+    pregunta: ¿Qué es un análisis de sensibilidad?
+    espera:
+      herramienta: consulta_conceptual
+      fuentes: [Evaluación de proyectos]

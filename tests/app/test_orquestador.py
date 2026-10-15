@@ -620,7 +620,7 @@ def test_escenario_de_la_pregunta():
     r = responder("¿Y si vendo 10 % menos?", None, llm, HOY, proyecto=PROYECTO_3)
     assert r.herramienta == "analizar_sensibilidad_proyecto"
     assert r.resultados[0].analisis == "escenario"
-    assert r.resultados[0].hallazgos[0].startswith("Si los ingresos caen 10 %")
+    assert r.resultados[0].hallazgos[1].startswith("Si los ingresos caen 10 %")
 
 
 def test_sin_cifra_responde_el_resumen():
@@ -639,7 +639,7 @@ def test_hasta_cuanto_pueden_caer_las_ventas_empieza_por_su_valor_critico():
 def test_costos_sin_mas_se_toman_como_variables_con_supuesto():
     llm = LLMFalso(herramienta("analizar_sensibilidad_proyecto", cambio=10), texto("Bajaría."))
     r = responder("¿Y si los costos suben 10 %?", None, llm, HOY, proyecto=PROYECTO_3)
-    assert r.resultados[0].hallazgos[0].startswith("Si los costos variables suben")
+    assert r.resultados[0].hallazgos[1].startswith("Si los costos variables suben")
     assert any("«costos» sin más" in n for n in r.notas)
 
 

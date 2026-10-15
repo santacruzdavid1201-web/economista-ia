@@ -152,3 +152,6 @@ recuperacion: >-
 indice_rentabilidad: >-
   Índice de rentabilidad: cuántos pesos de hoy devuelve el proyecto por cada
   peso invertido. Mayor que uno, crea valor; menor que uno, no.
+vpn_escenario: >-
+  El valor presente neto del proyecto si el dato cambia como dice la pregunta,
+  con todo lo demás igual.

@@ -168,12 +168,15 @@ def escenario(proyecto: Proyecto, senda: Senda, tasa: float, variable: str,
     base = vpn_con(proyecto, senda, tasa, "tasa", 1)
     nuevo = vpn_con(proyecto, senda, tasa, variable, 1 + cambio)
     actual = tasa if variable == "tasa" else getattr(proyecto, variable)
+    # Primero el estado actual, en su propia frase: con "el proyecto sigue sin crear valor" el 7B
+    # concluyó que "dejaría de crear valor", como si hoy lo creara
     if base >= 0:
-        estado = "sigue creando valor" if nuevo >= 0 else "deja de crear valor"
+        actual_texto = f"crea valor: deja {formatear(base, 'pesos')} más"
+        estado = "seguiría creando valor" if nuevo >= 0 else "dejaría de crear valor"
     else:
-        estado = "pasa a crear valor" if nuevo >= 0 else "sigue sin crear valor"
+        actual_texto = f"no crea valor: deja {formatear(-base, 'pesos')} menos"
+        estado = "pasaría a crear valor" if nuevo >= 0 else "seguiría sin crear valor"
     cambio_texto = movimiento(v, cambio, actual * (1 + cambio), exacto=True)
-    hoy = f"{formatear(abs(base), 'pesos')} {'más' if base >= 0 else 'menos'}"
     return ResultadoModulo(
         modulo="proyectos", analisis="escenario",
         indicadores=[
@@ -181,6 +184,6 @@ def escenario(proyecto: Proyecto, senda: Senda, tasa: float, variable: str,
                       formula="VPN con los datos del proyecto, sin cambios"),
             Indicador(clave="vpn_escenario", nombre=f"VPN si {cambio_texto}", valor=nuevo,
                       unidad="pesos", formula="VPN con ese cambio y todo lo demás igual")],
-        hallazgos=[f"Si {cambio_texto}, el proyecto {estado}: {deja(nuevo)} (con los datos "
-                   f"actuales, {hoy})."],
+        hallazgos=[f"Con los datos actuales, el proyecto {actual_texto} que la alternativa.",
+                   f"Si {cambio_texto}, {estado}: {deja(nuevo)}."],
         supuestos=[SUPUESTO])

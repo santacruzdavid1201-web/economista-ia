@@ -1,6 +1,6 @@
 ---
 titulo: "Evaluación de proyectos: VPN, TIR y tasa de oportunidad"
-temas: [VPN, valor presente neto, TIR, tasa interna de retorno, TIRM, recuperación, payback, índice de rentabilidad, tasa de oportunidad, crear valor, evaluar un proyecto, inversión, remodelación, ampliación]
+temas: [VPN, valor presente neto, TIR, tasa interna de retorno, TIRM, recuperación, payback, índice de rentabilidad, tasa de oportunidad, crear valor, evaluar un proyecto, inversión, remodelación, ampliación, sensibilidad, valor crítico, punto de quiebre, tornado, riesgo del proyecto]
 fuente: Elaboración propia
 revisado: false
 ---
@@ -56,6 +56,17 @@ más común, y castiga el proyecto. Segundo, dentro del flujo: los impuestos se
 pagan en pesos corrientes, la deducción por depreciación es fija en pesos de
 la compra y el capital de trabajo crece con los precios, así que la inflación
 le quita valor al proyecto aunque el negocio real sea el mismo.
+
+El análisis de sensibilidad mide qué tan frágil es el resultado: se mueve
+un dato a la vez (los ingresos, los costos, la inversión, la tasa de
+oportunidad), con todo lo demás igual, y se ve cuánto cambia el VPN. El
+gráfico de tornado ordena los datos del que más mueve el VPN al que menos. El
+valor crítico de cada dato es el punto en que el VPN llega a cero: si los
+ingresos pueden caer solo 3 % antes de que el proyecto deje de crear valor,
+el margen es estrecho, aunque el VPN sea positivo. La tasa de oportunidad
+crítica es justamente la TIR. Mover un dato a la vez no dice qué pasa si
+varios salen mal al mismo tiempo; para eso sirve una simulación con rangos
+para cada dato.
 
 Crear valor es un criterio de decisión, no una recomendación: antes de hacer
 un proyecto también hay que mirar su riesgo y si la empresa tiene la caja

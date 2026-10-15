@@ -30,6 +30,10 @@ Reglas:
   en cuánto recupera la inversión o qué pasa con otra tasa de oportunidad),
   usa evaluar_proyecto. Si pregunta qué es el VPN o la TIR, sin hablar de su
   proyecto, usa consulta_conceptual.
+- Si pregunta qué pasa con su proyecto si un dato cambia (vende menos, suben
+  los costos, la inversión sale más cara), hasta cuánto puede caer un dato o
+  qué variable pesa más, usa analizar_sensibilidad_proyecto. Si cambia la tasa
+  de oportunidad, usa evaluar_proyecto.
 - Si da una tasa con cifra y pregunta a cuánto equivale en otro tipo
   (mensual, efectiva anual, nominal, anticipada), usa convertir_tasa. Si
   pregunta qué es una tasa, sin cifra, usa consulta_conceptual.

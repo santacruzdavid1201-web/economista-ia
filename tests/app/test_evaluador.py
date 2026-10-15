@@ -36,7 +36,7 @@ def un_caso(c, ctx, *respuestas):
 # --------------------------------------------------------------------------- #
 def test_set_real_es_valido():
     s = cargar_set(PREGUNTAS)
-    assert len(s.casos) == 66                       # 9 y 10 son pares
+    assert len(s.casos) == 71                       # 9 y 10 son pares
     assert {c.bloque for c in s.casos} == set(s.bloques)
     assert set(s.bloques_duros) <= set(s.bloques)
     largo = next(c for c in s.casos if c.id == "25")
