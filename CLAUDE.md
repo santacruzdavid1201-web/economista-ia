@@ -311,9 +311,43 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    proyecto" (formulario agrupado y tabla del flujo con la columna de
    etiquetas fija; la sesión recuerda el último proyecto válido) y "Crédito
    y tasas". Sin herramienta de chat todavía: llega con la evaluación.
-   Siguiente: `evaluacion-proyecto` (VPN, TIR, TIRM, recuperación con la tasa
-   de oportunidad del usuario, en la pestaña "Su proyecto" y en el chat).
-   Después, la comparación con la tasa de usura si hay fuente automática.
+   Hecho `evaluacion-proyecto` (15/10/2026, `modules/proyectos/evaluacion.py`):
+   con la tasa de oportunidad del usuario (nominal EA; el formulario abre con
+   un ejemplo de 15 % marcado "valores de ejemplo"), VPN primero (flujos
+   corrientes a tasa nominal = flujos de hoy a tasa real), TIR nominal, TIRM,
+   recuperación descontada e índice de rentabilidad. Hallazgos en palabras y
+   con cifras en positivo ("no crea valor: deja $ X menos"); "rinde, pero
+   menos que la alternativa" (el 7B dijo "no es rentable en términos
+   absolutos" con TIR de 13,75 %); el índice en palabras. "Conviene" y
+   "rentable" pasaron a CALIFICATIVOS (el 7B escribió "el proyecto no
+   conviene"). La lectura del formulario se volvió compartida
+   (`app/orchestrator/proyecto.py`) y el proyecto llega al chat como la
+   pregunta (`responder(..., proyecto=...)`; la web pasa el de la sesión, el
+   set y la demo el de ejemplo). Pestaña "Su proyecto": la evaluación arriba
+   del formulario (se actualiza fuera de banda con cada cambio). Bloque M
+   (59-64). Hecho `sensibilidad-proyecto` (15/10/2026,
+   `modules/proyectos/sensibilidad.py`): una variable a la vez, ±10/±20 % en
+   ingresos, costos variables, costos fijos, inversión y tasa; tornado y
+   valor crítico por bisección (la tasa crítica es la TIR; tasas y costos
+   variables en nivel). Pestaña "Sensibilidad" (tercera) y herramienta
+   `analizar_sensibilidad_proyecto` (la variable y la dirección las lee
+   Python; "costos" sin más = variables con supuesto). Error de sentido
+   corregido: con "sigue sin crear valor" el 7B escribió "dejaría de crear
+   valor"; el escenario dice primero el estado actual. Bloque N (65-69).
+   Set completo (71 casos) el 15/10/2026: todos los bloques al 100 % salvo
+   caídas de LM Studio ("Model is unloaded", 500), respaldo 9 %. Correcciones
+   de enrutamiento: regla para "¿cuánto me ahorro si bajan las tasas?" y una
+   red de seguridad en Python (simulador o conversor sin cifras ni
+   "¿cuánto?" → nota pertinente); el buscador ignora verbos auxiliares
+   ("¿qué puedes hacer?" coincidía con la nota nueva). Montos del crédito
+   también con palabras ("$ 150.000.000 (150 millones)").
+   Siguiente: `costo-capital` (WACC: Kd del balance, Ke por CAPM en pesos con
+   TES y beta de Damodaran; verificar las fuentes antes de la spec). El
+   Monte Carlo queda para después del módulo 2 (decidido el 15/10/2026).
+   Pendientes del usuario: conciliar los casos a mano de evaluación y
+   sensibilidad, revisar `conocimiento/evaluacion-de-proyectos.md`, cargar el
+   Informe de Política Monetaria de octubre y bajar el contexto del modelo en
+   LM Studio a 8.192 (se cayó tres veces en el set completo).
    Pendiente menor: bajar el contexto del modelo en LM Studio a 8.192 si
    vuelve a caerse.
    Sensibilidad-tasas conciliada con el cálculo a mano del usuario (demo 2024,

@@ -19,4 +19,4 @@ Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del 
   `tests/eval/preguntas.yaml`, tests.
 
 ### Punto de control: completo
-- [ ] Criterios de éxito de la especificación; documentación de cierre.
+- [x] Criterios de éxito de la especificación (el 1 espera la conciliación); documentación de cierre.
