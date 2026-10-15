@@ -32,11 +32,10 @@ from modules.macro.crecimiento_real import crecimiento_real, meses_del_periodo
 from modules.macro.panorama import panorama_macro
 from modules.macro.sensibilidad_tasas import MAX_PUNTOS, ErrorPuntos, sensibilidad_tasas
 from modules.proyectos.matematica_financiera import (
-    PERIODICIDADES,
-    TIPOS,
     ErrorCredito,
     ErrorTasa,
     convertir_tasa,
+    cuotas_del_plazo,
     simular_credito,
 )
 
@@ -134,9 +133,6 @@ def _sensibilidad_tasas(ctx: ContextoEmpresa, i: int, argumentos: dict) -> list[
         raise ErrorHerramienta(str(e)) from e
 
 
-MAX_CUOTAS = 600                    # 50 años de cuotas mensuales
-
-
 def _decimal(valor: float) -> str:
     return f"{valor:g}".replace(".", ",")
 
@@ -176,18 +172,9 @@ def _credito(ctx: ContextoEmpresa | None, i: int | None, argumentos: dict) -> li
         raise ErrorHerramienta("¿A qué plazo? Escríbalo en meses o años, por ejemplo: 60 meses "
                                "o 5 años.")
     cada = periodicidad(pregunta)
-    por_anio = TIPOS[PERIODICIDADES[cada]][1]
-    cuotas = plazo if unidad == "cuotas" else plazo * por_anio if unidad == "años" \
-        else plazo * por_anio / 12
-    if cuotas != int(cuotas):
-        raise ErrorHerramienta(f"Un plazo de {_decimal(plazo)} {unidad} no da un número entero de "
-                               f"cuotas {cada}es.")
-    if cuotas > MAX_CUOTAS:
-        raise ErrorHerramienta(f"El plazo es demasiado largo para simularlo (más de {MAX_CUOTAS} "
-                               "cuotas).")
     try:
-        return [simular_credito(monto, tasa / 100, tipo, int(cuotas), cada, sistema(pregunta),
-                                supuestos)]
+        return [simular_credito(monto, tasa / 100, tipo, cuotas_del_plazo(plazo, unidad, cada),
+                                cada, sistema(pregunta), supuestos)]
     except (ErrorTasa, ErrorCredito) as e:
         raise ErrorHerramienta(str(e)) from e
 

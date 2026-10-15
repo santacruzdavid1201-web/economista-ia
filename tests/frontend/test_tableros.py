@@ -1,6 +1,8 @@
 """Tablero del balance: cifras calculadas con Python a partir del hotel de demostración."""
 from datetime import date
 
+import pytest
+
 from app.demo import contexto_demo
 from app.orchestrator.tools_registry import ContextoEmpresa
 from frontend import tableros
@@ -54,3 +56,31 @@ def test_linea_de_tendencia():
     linea = tableros._linea([(date(2026, m, 1), v) for m, v in ((1, 10), (2, 20), (3, 15))])
     assert linea["puntos"] == "0.0,40.0 100.0,4.0 200.0,22.0"     # el máximo arriba (y pequeña)
     assert tableros._linea([(date(2026, 1, 1), 5)]) is None
+
+def test_simulador_de_credito_con_el_ejemplo():
+    c = tableros.credito()
+    assert c["errores"] == [] and c["v"]["monto"] == "200 millones"
+    tarjetas = {t["titulo"]: t["valor"] for t in c["tarjetas"]}
+    assert tarjetas["Cuota mensual"] == "$\u00a04.934.680"
+    assert tarjetas["Intereses del crédito"] == "$\u00a096.080.819"
+    assert [a["anio"] for a in c["anual"]] == [1, 2, 3, 4, 5] and c["anual"][-1]["saldo"] == "$ 0"
+    assert c["anual"][0]["pct_interes"] > c["anual"][-1]["pct_interes"]   # el interés pesa menos al final
+    assert len(c["cuotas"]) == 60
+
+
+def test_simulador_de_credito_abono_constante_y_trimestral():
+    c = tableros.credito({"monto": "100.000.000", "tasa": "18", "tipo": "EA", "plazo": "2",
+                          "unidad": "años", "periodicidad": "trimestral", "sistema": "abono_constante"})
+    titulos = [t["titulo"] for t in c["tarjetas"]]
+    assert titulos[:2] == ["Primera cuota", "Última cuota"] and len(c["cuotas"]) == 8
+
+
+@pytest.mark.parametrize("campos, mensaje", [
+    ({"monto": ""}, "Escriba el monto"),
+    ({"tasa": "abc"}, "La tasa debe ser un número"),
+    ({"plazo": "5", "unidad": "meses", "periodicidad": "trimestral"}, "número entero"),
+    ({"tipo": "XYZ"}, "Tipo de tasa desconocido"),
+])
+def test_simulador_de_credito_con_errores(campos, mensaje):
+    c = tableros.credito(campos)
+    assert any(mensaje in e for e in c["errores"]) and "tarjetas" not in c

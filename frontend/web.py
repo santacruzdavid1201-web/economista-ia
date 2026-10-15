@@ -297,8 +297,15 @@ def modulo(request: Request, clave: str, s: Sesion = Depends(sesion)):
     if m is None:
         raise HTTPException(404, "Ese módulo no existe.")
     t = (tableros.balance(s.ctx) if clave == "balance" and s.ctx else
-         tableros.macro(s.ctx) if clave == "macro" else None)
+         tableros.macro(s.ctx) if clave == "macro" else
+         tableros.proyectos() if clave == "proyectos" else None)
     return _pagina(request, "modulo.html", _contexto(request, s, m=m, t=t))
+
+
+@router.post("/proyectos/credito", response_class=HTMLResponse)
+async def credito(request: Request):
+    """Solo el resultado: el formulario no se redibuja y conserva el foco."""
+    return _pagina(request, "_credito.html", {"c": tableros.credito(await request.form())})
 
 
 # --------------------------------------------------------------------------- #

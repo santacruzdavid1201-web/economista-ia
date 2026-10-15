@@ -95,7 +95,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
 
 ## Fase 3: tablero
 
-- [ ] **8. Tablero de Proyectos con el simulador de crédito**
+- [x] **8. Tablero de Proyectos con el simulador de crédito**
   - Aceptación: módulo `proyectos` activo con ejemplos de preguntas;
     formulario (monto, tasa, tipo, plazo, periodicidad, sistema) por HTMX →
     cuota, totales, tabla por año y tabla completa desplegable; errores de

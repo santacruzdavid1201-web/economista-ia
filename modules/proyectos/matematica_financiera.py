@@ -214,8 +214,32 @@ def amortizacion(monto: float, tasa_periodica: float, cuotas: int,
 # --------------------------------------------------------------------------- #
 # periodicidad de las cuotas → tipo de la tasa periódica que se cobra en cada una
 PERIODICIDADES = {"mensual": "MV", "trimestral": "TV", "semestral": "SV", "anual": "EA"}
+MAX_CUOTAS = 600                    # 50 años de cuotas mensuales
+UNIDADES_PLAZO = ("años", "meses", "cuotas")
 SUPUESTO_COSTOS = ("La cuota no incluye seguros, comisiones ni el 4 por mil (GMF): el costo "
                    "real del crédito puede ser mayor.")
+
+
+def cuotas_del_plazo(plazo: float, unidad: str, periodicidad: str = "mensual") -> int:
+    """Número de cuotas de un plazo en años, meses o cuotas, según cada cuánto se paga."""
+    if unidad not in UNIDADES_PLAZO:
+        raise ErrorCredito(f"Unidad de plazo desconocida '{unidad}'. Unidades: "
+                           f"{', '.join(UNIDADES_PLAZO)}.")
+    if periodicidad not in PERIODICIDADES:
+        raise ErrorCredito(f"Periodicidad desconocida '{periodicidad}'. "
+                           f"Periodicidades: {', '.join(PERIODICIDADES)}.")
+    if plazo <= 0:
+        raise ErrorCredito("El plazo debe ser mayor que cero.")
+    por_anio = TIPOS[PERIODICIDADES[periodicidad]][1]
+    cuotas = {"cuotas": plazo, "años": plazo * por_anio, "meses": plazo * por_anio / 12}[unidad]
+    texto = f"{plazo:g}".replace(".", ",")
+    if cuotas != int(cuotas):
+        raise ErrorCredito(f"Un plazo de {texto} {unidad} no da un número entero de cuotas "
+                           f"{periodicidad}es.")
+    if cuotas > MAX_CUOTAS:
+        raise ErrorCredito(f"El plazo es demasiado largo para simularlo (más de {MAX_CUOTAS} "
+                           "cuotas).")
+    return int(cuotas)
 
 
 def _pesos(valor: float) -> str:

@@ -8,6 +8,7 @@ from modules.proyectos.matematica_financiera import (
     a_periodica,
     amortizacion,
     convertir_tasa,
+    cuotas_del_plazo,
     convertir,
     indice_rentabilidad,
     recuperacion_descontada,
@@ -230,3 +231,21 @@ def test_la_tasa_del_usuario_va_como_la_escribio():
     # El 7B la repite así ("1,5 %"); con "1,50 %" no estaría en el desplegable
     r = simular_credito(10_000_000, 0.015, "MV", 12)
     assert r.hallazgos[0].startswith("La tasa de 1,5 % mensual equivale a ")
+
+
+@pytest.mark.parametrize("plazo, unidad, periodicidad, esperado", [
+    (5, "años", "mensual", 60), (60, "meses", "mensual", 60), (18, "meses", "trimestral", 6),
+    (24, "cuotas", "mensual", 24), (2, "años", "anual", 2)])
+def test_cuotas_del_plazo(plazo, unidad, periodicidad, esperado):
+    assert cuotas_del_plazo(plazo, unidad, periodicidad) == esperado
+
+
+@pytest.mark.parametrize("plazo, unidad, periodicidad, mensaje", [
+    (5, "meses", "trimestral", "no da un número entero de cuotas trimestrales"),
+    (0, "meses", "mensual", "mayor que cero"),
+    (60, "años", "mensual", "demasiado largo"),
+    (5, "semanas", "mensual", "Unidad de plazo"),
+])
+def test_cuotas_del_plazo_invalido(plazo, unidad, periodicidad, mensaje):
+    with pytest.raises(ErrorCredito, match=mensaje):
+        cuotas_del_plazo(plazo, unidad, periodicidad)

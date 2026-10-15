@@ -1,0 +1,49 @@
+{#- Resultado del simulador de crédito: se incluye en el tablero y es la respuesta del formulario -#}
+{% if c.errores %}
+  <ul class="errores">{% for e in c.errores %}<li>{{ e }}</li>{% endfor %}</ul>
+{% else %}
+  <div class="tarjetas tarjetas-credito">
+    {% for k in c.tarjetas %}
+      <article class="tarjeta">
+        <h3 class="tarjeta-titulo">{{ k.titulo }}</h3>
+        <p class="tarjeta-valor">{{ k.valor }}</p>
+        <p class="tarjeta-nombre" title="{{ k.formula }}">{{ k.nombre }}</p>
+        {% if k.detalle %}<p class="tarjeta-cambio">{{ k.detalle }}</p>{% endif %}
+      </article>
+    {% endfor %}
+  </div>
+
+  <ul class="hallazgos">{% for h in c.hallazgos %}<li>{{ h }}</li>{% endfor %}</ul>
+  <ul class="bloque-avisos">{% for a in c.avisos %}<li>{{ a }}</li>{% endfor %}</ul>
+
+  <h3 class="subtema">Año por año</h3>
+  <p class="leyenda" aria-hidden="true">
+    <span class="leyenda-interes"></span> intereses <span class="leyenda-abono"></span> abono a la deuda
+  </p>
+  <div class="tabla-desplazable">
+    <table class="libro anual">
+      <tr><th>Año</th><th class="numero">Pagado</th><th class="numero">Intereses</th>
+        <th class="numero">Abono a la deuda</th><th class="numero">Saldo al final</th><th>Composición</th></tr>
+      {% for a in c.anual %}
+        <tr><td>{{ a.anio }}</td><td class="valor">{{ a.pagado }}</td><td class="valor">{{ a.intereses }}</td>
+          <td class="valor">{{ a.abono }}</td><td class="valor">{{ a.saldo }}</td>
+          <td><span class="composicion" role="img" aria-label="{{ a.pct_texto }} del pago del año son intereses">
+            <span class="composicion-interes" style="width: {{ a.pct_interes }}%"></span></span></td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <details class="desplegable">
+    <summary>Ver las {{ c.cuotas | length }} cuotas</summary>
+    <div class="tabla-desplazable">
+      <table class="libro anual">
+        <tr><th>Cuota</th><th class="numero">Saldo inicial</th><th class="numero">Interés</th>
+          <th class="numero">Abono</th><th class="numero">Cuota</th><th class="numero">Saldo final</th></tr>
+        {% for q in c.cuotas %}
+          <tr><td>{{ q.periodo }}</td><td class="valor">{{ q.saldo_inicial }}</td><td class="valor">{{ q.interes }}</td>
+            <td class="valor">{{ q.abono }}</td><td class="valor">{{ q.cuota }}</td><td class="valor">{{ q.saldo_final }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </details>
+{% endif %}

@@ -44,9 +44,13 @@ MODULOS = (
             "¿Qué pasa si las tasas suben 2 puntos?",
             "¿Por qué me afecta que el Banco de la República suba las tasas?")),
     Modulo("proyectos", "Evaluación de proyectos",
-           "Valor presente, tasa interna de retorno y sensibilidad de una inversión, como "
-           "una remodelación o una ampliación.",
-           "salmon", activo=False),
+           "La cuota de un crédito y las tasas equivalentes; pronto, valor presente, tasa "
+           "interna de retorno y sensibilidad de una inversión, como una remodelación.",
+           "salmon",
+           ("¿Cuánto pago por un crédito de 200 millones al 18 % EA a 5 años?",
+            "¿2 % mensual cuánto es en efectivo anual?",
+            "¿A cuánto equivale un 24 % NMV en efectivo anual?",
+            "¿Qué es mejor, un crédito con cuota fija o con abono constante?")),
     Modulo("econometria", "Econometría aplicada",
            "Pronósticos de demanda y efecto de precios y promociones con los datos de la "
            "empresa.",

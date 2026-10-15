@@ -5,8 +5,10 @@ calculan las posiciones en porcentaje y la plantilla solo las dibuja.
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import date
 
+from app.orchestrator.lectura import montos
 from app.orchestrator.tools_registry import (
     PANORAMA,
     POR_NOMBRE,
@@ -22,6 +24,15 @@ from modules.balance.dupont import variacion
 from modules.balance.razones import actividad, endeudamiento, liquidez, rentabilidad
 from modules.base import ResultadoModulo, formatear
 from modules.macro.panorama import inflacion_anual, panorama_macro
+from modules.proyectos.matematica_financiera import (
+    PERIODICIDADES,
+    TIPOS,
+    ErrorCredito,
+    ErrorTasa,
+    amortizacion,
+    cuotas_del_plazo,
+    simular_credito,
+)
 
 TEMAS = (("Liquidez", liquidez), ("Endeudamiento", endeudamiento),
          ("Rentabilidad", rentabilidad), ("Actividad", actividad), ("Riesgo financiero", altman))
@@ -288,3 +299,98 @@ def macro(ctx: ContextoEmpresa | None) -> dict:
     except catalogo.ErrorSerie as e:
         economia = {"error": str(e)}
     return {"economia": economia, "empresa": _empresa_macro(ctx) if ctx else None}
+
+
+# --------------------------------------------------------------------------- #
+# Proyectos: simulador de crédito, con los datos que escribe el usuario (sin empresa)
+# --------------------------------------------------------------------------- #
+CREDITO_EJEMPLO = {"monto": "200 millones", "tasa": "18", "tipo": "EA", "plazo": "5",
+                   "unidad": "años", "periodicidad": "mensual", "sistema": "cuota_fija"}
+OPCIONES = {
+    "tipos": [(clave, f"{clave} · {nombre}") for clave, (nombre, *_) in TIPOS.items()],
+    "unidades": [("años", "Años"), ("meses", "Meses")],
+    "periodicidades": [("mensual", "Mensuales"), ("trimestral", "Trimestrales"),
+                       ("semestral", "Semestrales"), ("anual", "Anuales")],
+}
+
+
+def _cero(valor: float) -> float:
+    """El saldo final queda en -0,0000001 por redondeo: se muestra $ 0."""
+    return 0.0 if abs(valor) < 0.5 else valor
+
+
+def _numero(texto: str) -> float | None:
+    try:
+        return float(texto.replace("%", "").replace(",", ".").strip())
+    except ValueError:
+        return None
+
+
+def credito(formulario: Mapping[str, object] | None = None) -> dict:
+    """Simulador de crédito: los valores del formulario (o el ejemplo) y su resultado."""
+    v = {k: str((formulario or {}).get(k, d)).strip() for k, d in CREDITO_EJEMPLO.items()}
+    errores = []
+    encontrados = montos(v["monto"])
+    monto = encontrados[0] if len(encontrados) == 1 else None
+    if not monto or monto <= 0:
+        errores.append("Escriba el monto del crédito en pesos, por ejemplo 200 millones o "
+                       "200.000.000.")
+    tasa = _numero(v["tasa"])
+    if tasa is None or not tasa >= 0:
+        errores.append("La tasa debe ser un número positivo o cero, por ejemplo 18 o 1,5.")
+    plazo = _numero(v["plazo"])
+    if plazo is None:
+        errores.append("El plazo debe ser un número, por ejemplo 5 años o 60 meses.")
+    if errores:
+        return {"v": v, "errores": errores}
+    try:
+        cuotas = cuotas_del_plazo(plazo, v["unidad"], v["periodicidad"])
+        r = simular_credito(monto, tasa / 100, v["tipo"], cuotas, v["periodicidad"], v["sistema"])
+    except (ErrorTasa, ErrorCredito) as e:
+        return {"v": v, "errores": [str(e)]}
+    tabla = amortizacion(monto, r.valor("tasa_periodica"), cuotas, v["sistema"])
+    ind = {i.clave: i for i in r.indicadores}
+
+    def tarjeta(clave: str, titulo: str, detalle: str | None = None) -> dict:
+        i = ind[clave]
+        # "$" y la cifra no se separan al partir la línea
+        valor = formatear(i.valor, i.unidad).replace("$ ", "$\u00a0")
+        return {"titulo": titulo, "valor": valor, "nombre": i.nombre,
+                "formula": i.formula, "detalle": detalle}
+
+    cada = v["periodicidad"]
+    primeras = [tarjeta("cuota", f"Cuota {cada}")] if v["sistema"] == "cuota_fija" else \
+        [tarjeta("primera_cuota", "Primera cuota"), tarjeta("ultima_cuota", "Última cuota")]
+    proporcion = formatear(ind["proporcion_intereses"].valor, "proporcion")
+    periodica = None if cada == "anual" else \
+        f"{formatear(ind['tasa_periodica'].valor, 'tasa')} {cada}"
+    por_anio = TIPOS[PERIODICIDADES[cada]][1]
+    anual = []
+    for k in range(0, cuotas, por_anio):
+        bloque = tabla[k:k + por_anio]
+        intereses, abono = sum(c.interes for c in bloque), sum(c.abono for c in bloque)
+        parte = intereses / (intereses + abono) if intereses + abono else 0
+        anual.append({"anio": k // por_anio + 1, "pagado": formatear(intereses + abono, "pesos"),
+                      "intereses": formatear(intereses, "pesos"),
+                      "abono": formatear(abono, "pesos"),
+                      "saldo": formatear(_cero(bloque[-1].saldo_final), "pesos"),
+                      "pct_interes": round(100 * parte, 1),
+                      "pct_texto": formatear(parte, "proporcion")})
+    return {
+        "v": v, "errores": [],
+        "tarjetas": [*primeras,
+                     tarjeta("intereses_totales", "Intereses del crédito",
+                             f"{proporcion} del monto prestado"),
+                     tarjeta("total_pagado", "Total a pagar"),
+                     tarjeta("tasa_efectiva_anual", "Costo efectivo anual", periodica)],
+        "hallazgos": r.hallazgos, "avisos": r.supuestos, "anual": anual,
+        "cuotas": [{"periodo": c.periodo, "saldo_inicial": formatear(c.saldo_inicial, "pesos"),
+                    "interes": formatear(c.interes, "pesos"), "abono": formatear(c.abono, "pesos"),
+                    "cuota": formatear(c.cuota, "pesos"),
+                    "saldo_final": formatear(_cero(c.saldo_final), "pesos")} for c in tabla],
+    }
+
+
+def proyectos() -> dict:
+    """Tablero de proyectos: por ahora, matemática financiera con los datos del usuario."""
+    return {"credito": credito(), "opciones": OPCIONES}

@@ -81,7 +81,7 @@ def test_portada_sin_empresa_y_con_los_modulos(cliente):
     assert "Sin empresa" in r.text and "Hotel Demo Andino" not in r.text
     assert 'id="empresa"' in r.text and "Suba al menos un balance de prueba." in r.text
     assert 'href="/modulo/balance"' in r.text and 'href="/modulo/macro"' in r.text
-    assert r.text.count("Próximamente") == 2
+    assert r.text.count("Próximamente") == 1
 
 
 def test_modulo_activo_tiene_ejemplos_que_van_al_chat(cliente):
@@ -121,7 +121,7 @@ def test_tablero_macro_sin_empresa(cliente):
 
 
 def test_modulo_inactivo_en_construccion(cliente):
-    r = cliente.get("/modulo/proyectos")
+    r = cliente.get("/modulo/econometria")
     assert r.status_code == 200 and "en construcción" in r.text
 
 
@@ -300,3 +300,25 @@ def test_corte_sugerido():
     assert web.corte_sugerido("balance_2015-06-30.csv") == date(2015, 6, 30)
     assert web.corte_sugerido("cierre 2016.xlsx") == date(2016, 12, 31)
     assert web.corte_sugerido("balance_2015-02-30.csv") == date(2015, 12, 31)
+
+
+CREDITO_NMV = {"monto": "150.000.000", "tasa": "24", "tipo": "NMV", "plazo": "36",
+               "unidad": "meses", "periodicidad": "mensual", "sistema": "cuota_fija"}
+
+
+def test_tablero_de_proyectos_abre_con_el_ejemplo(cliente):
+    r = cliente.get("/modulo/proyectos").text
+    assert "Simulador de crédito" in r and 'hx-post="/proyectos/credito"' in r
+    assert "$ 4.934.680" in r and "Ver las 60 cuotas" in r and "en construcción" not in r
+
+
+def test_simulador_de_credito_devuelve_solo_el_resultado(cliente):
+    r = cliente.post("/proyectos/credito", data=CREDITO_NMV)
+    assert r.status_code == 200 and "$ 5.884.928" in r.text
+    assert "26,82 % efectiva anual" in r.text
+    assert "<form" not in r.text            # el formulario no se redibuja: conserva el foco
+
+
+def test_simulador_de_credito_muestra_los_errores(cliente):
+    r = cliente.post("/proyectos/credito", data={**CREDITO_NMV, "monto": "mucho"})
+    assert r.status_code == 200 and "Escriba el monto" in r.text and "$ 5.884.928" not in r.text

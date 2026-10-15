@@ -2,7 +2,7 @@
 titulo: Tasas de interés equivalentes y cuota de un crédito
 temas: [tasa efectiva anual, EA, tasa nominal, NMV, mes vencido, tasa mensual, tasa anticipada, tasas equivalentes, cuota fija, abono constante, amortización, crédito, préstamo]
 fuente: Elaboración propia
-revisado: false
+revisado: true
 ---
 Una misma tasa de interés se puede expresar de varias formas. Dos tasas son
 equivalentes si, con cualquiera de las dos, se termina pagando lo mismo en el
