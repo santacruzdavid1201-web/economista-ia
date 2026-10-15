@@ -2,7 +2,7 @@
 
 Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del commit.
 
-- [ ] **1. Tornado y valores críticos (puro)**: caso a mano de la especificación;
+- [x] **1. Tornado y valores críticos (puro)**: caso a mano de la especificación;
   la tasa crítica es la TIR; VPN base negativo → cuánto mejorar; sin cruce → None.
   Archivos: `modules/proyectos/sensibilidad.py`, `modules/proyectos/matematica_financiera.py`,
   `tests/modules/proyectos/test_sensibilidad.py`.

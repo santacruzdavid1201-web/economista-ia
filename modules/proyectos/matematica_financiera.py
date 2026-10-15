@@ -76,7 +76,7 @@ def vpn(tasa: float, flujos: list[float]) -> float:
     return sum(f / (1 + tasa) ** t for t, f in enumerate(flujos))
 
 
-def _biseccion(f, a: float, b: float, iteraciones: int = 100) -> float:
+def biseccion(f, a: float, b: float, iteraciones: int = 100) -> float:
     fa = f(a)
     for _ in range(iteraciones):
         m = (a + b) / 2
@@ -110,7 +110,7 @@ def tir(flujos: list[float]) -> tuple[float | None, list[str]]:
             puntos.append((r, f(r)))
         except (OverflowError, ZeroDivisionError):
             continue
-    raices = [a if fa == 0 else _biseccion(f, a, b)
+    raices = [a if fa == 0 else biseccion(f, a, b)
               for (a, fa), (b, fb) in zip(puntos, puntos[1:]) if fa == 0 or fa * fb < 0]
     if len(raices) == 1:
         return raices[0], []
