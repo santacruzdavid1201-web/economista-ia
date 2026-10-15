@@ -292,13 +292,13 @@ def portada(request: Request, s: Sesion = Depends(sesion)):
 
 
 @router.get("/modulo/{clave}", response_class=HTMLResponse)
-def modulo(request: Request, clave: str, s: Sesion = Depends(sesion)):
+def modulo(request: Request, clave: str, pestana: str | None = None, s: Sesion = Depends(sesion)):
     m = POR_CLAVE.get(clave)
     if m is None:
         raise HTTPException(404, "Ese módulo no existe.")
     t = (tableros.balance(s.ctx) if clave == "balance" and s.ctx else
          tableros.macro(s.ctx) if clave == "macro" else
-         tableros.proyectos() if clave == "proyectos" else None)
+         tableros.proyectos(pestana) if clave == "proyectos" else None)
     return _pagina(request, "modulo.html", _contexto(request, s, m=m, t=t))
 
 

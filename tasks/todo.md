@@ -59,7 +59,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
 
 ## Fase 3: tablero
 
-- [ ] **5. Pestañas en el tablero de Proyectos**
+- [x] **5. Pestañas en el tablero de Proyectos**
   - Aceptación: "Su proyecto" (por defecto) y "Crédito y tasas" (simulador y
     conversor, sin cambios); `?pestana=credito` abre la segunda; valor
     desconocido → "Su proyecto"; HTMX cambia solo el contenido y empuja la

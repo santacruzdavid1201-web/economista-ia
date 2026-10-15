@@ -307,7 +307,7 @@ CREDITO_NMV = {"monto": "150.000.000", "tasa": "24", "tipo": "NMV", "plazo": "36
 
 
 def test_tablero_de_proyectos_abre_con_el_ejemplo(cliente):
-    r = cliente.get("/modulo/proyectos").text
+    r = cliente.get("/modulo/proyectos?pestana=credito").text
     assert "Simulador de crédito" in r and 'hx-post="/proyectos/credito"' in r
     assert "$ 4.934.680" in r and "Ver las 60 cuotas" in r and "en construcción" not in r
 
@@ -325,6 +325,21 @@ def test_simulador_de_credito_muestra_los_errores(cliente):
 
 
 def test_conversor_de_tasas_en_el_tablero(cliente):
-    assert "Conversor de tasas" in cliente.get("/modulo/proyectos").text
+    assert "Conversor de tasas" in cliente.get("/modulo/proyectos?pestana=credito").text
     r = cliente.post("/proyectos/tasas", data={"tasa": "24", "tipo": "NMV"})
     assert r.status_code == 200 and "26,82 %" in r.text and "<form" not in r.text
+
+
+def test_proyectos_abre_en_la_pestana_de_su_proyecto(cliente):
+    r = cliente.get("/modulo/proyectos").text
+    assert 'role="tablist"' in r and "Simulador de crédito" not in r
+    assert re.search(r'id="pestana-proyecto"[^>]*aria-selected="true"', r)
+    assert re.search(r'id="pestana-credito"[^>]*aria-selected="false"', r)
+    assert 'hx-get="/modulo/proyectos?pestana=credito"' in r and 'hx-push-url="true"' in r
+
+
+@pytest.mark.parametrize("pestana, credito", [("credito", True), ("proyecto", False), ("xyz", False)])
+def test_la_pestana_va_en_la_direccion(cliente, pestana, credito):
+    r = cliente.get(f"/modulo/proyectos?pestana={pestana}").text
+    assert ("Simulador de crédito" in r) is credito and ("Conversor de tasas" in r) is credito
+    assert re.search(r'id="pestana-credito"[^>]*aria-selected="%s"' % str(credito).lower(), r)

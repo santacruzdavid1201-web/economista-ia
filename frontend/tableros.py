@@ -412,6 +412,13 @@ def conversor(formulario: Mapping[str, object] | None = None) -> dict:
                        "formula": r.indicadores[0].formula} for hacia, r in filas]}
 
 
-def proyectos() -> dict:
-    """Tablero de proyectos: por ahora, matemática financiera con los datos del usuario."""
-    return {"credito": credito(), "conversor": conversor(), "opciones": OPCIONES}
+PESTANAS = (("proyecto", "Su proyecto"), ("credito", "Crédito y tasas"))
+
+
+def proyectos(pestana: str | None = None) -> dict:
+    """Tablero de proyectos en pestañas; solo se calcula la que se ve."""
+    pestana = pestana if pestana in dict(PESTANAS) else "proyecto"
+    tablero = {"pestana": pestana, "pestanas": PESTANAS, "opciones": OPCIONES}
+    if pestana == "credito":
+        tablero.update(credito=credito(), conversor=conversor())
+    return tablero

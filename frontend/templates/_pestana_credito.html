@@ -1,0 +1,57 @@
+{#- Pestaña "Crédito y tasas": simulador de crédito y conversor de tasas. Todo viene de tableros.py -#}
+<p class="tablero-corte">Matemática financiera con los datos que usted escriba: no necesita estados financieros</p>
+
+<section aria-labelledby="titulo-credito">
+  <h2 id="titulo-credito">Simulador de crédito</h2>
+  {% with v = t.credito.v, o = t.opciones %}
+  {#- Cada cambio recalcula solo el resultado (#credito): el formulario conserva el foco -#}
+  <form class="formulario simulador" hx-post="/proyectos/credito" hx-trigger="change delay:300ms, submit"
+        hx-target="#credito" hx-swap="innerHTML" hx-sync="this:replace">
+    <label>Monto del crédito
+      <input name="monto" value="{{ v.monto }}" inputmode="decimal" autocomplete="off"
+             aria-describedby="ayuda-monto">
+      <span id="ayuda-monto" class="ayuda">En pesos: 200 millones o 200.000.000</span></label>
+    <label>Tasa de interés (%)
+      <input name="tasa" value="{{ v.tasa }}" inputmode="decimal" autocomplete="off"></label>
+    <label>Tipo de tasa
+      <select name="tipo">
+        {% for clave, nombre in o.tipos %}<option value="{{ clave }}"{% if clave == v.tipo %} selected{% endif %}>{{ nombre }}</option>{% endfor %}
+      </select></label>
+    <label>Plazo
+      <input name="plazo" value="{{ v.plazo }}" inputmode="numeric" autocomplete="off"></label>
+    <label>Plazo en
+      <select name="unidad">
+        {% for clave, nombre in o.unidades %}<option value="{{ clave }}"{% if clave == v.unidad %} selected{% endif %}>{{ nombre }}</option>{% endfor %}
+      </select></label>
+    <label>Cuotas
+      <select name="periodicidad">
+        {% for clave, nombre in o.periodicidades %}<option value="{{ clave }}"{% if clave == v.periodicidad %} selected{% endif %}>{{ nombre }}</option>{% endfor %}
+      </select></label>
+    <fieldset>
+      <legend>Sistema de amortización</legend>
+      <label class="opcion"><input type="radio" name="sistema" value="cuota_fija"{% if v.sistema == "cuota_fija" %} checked{% endif %}> Cuota fija</label>
+      <label class="opcion"><input type="radio" name="sistema" value="abono_constante"{% if v.sistema == "abono_constante" %} checked{% endif %}> Abono constante a capital</label>
+    </fieldset>
+    <button type="submit" class="boton">Calcular</button>
+  </form>
+  {% endwith %}
+  <div id="credito" aria-live="polite">{% with c = t.credito %}{% include "_credito.html" %}{% endwith %}</div>
+</section>
+
+<section class="bloque" aria-labelledby="titulo-conversor">
+  <h2 id="titulo-conversor">Conversor de tasas</h2>
+  <p class="bloque-nota">La misma tasa expresada de cada forma: con cualquiera de ellas se paga lo mismo en el año.</p>
+  {% with v = t.conversor.v, o = t.opciones %}
+  <form class="formulario simulador" hx-post="/proyectos/tasas" hx-trigger="change delay:300ms, submit"
+        hx-target="#conversion" hx-swap="innerHTML" hx-sync="this:replace">
+    <label>Tasa (%)
+      <input name="tasa" value="{{ v.tasa }}" inputmode="decimal" autocomplete="off"></label>
+    <label>Tipo de tasa
+      <select name="tipo">
+        {% for clave, nombre in o.tipos %}<option value="{{ clave }}"{% if clave == v.tipo %} selected{% endif %}>{{ nombre }}</option>{% endfor %}
+      </select></label>
+    <button type="submit" class="boton">Convertir</button>
+  </form>
+  {% endwith %}
+  <div id="conversion" aria-live="polite">{% with c = t.conversor %}{% include "_conversion.html" %}{% endwith %}</div>
+</section>
