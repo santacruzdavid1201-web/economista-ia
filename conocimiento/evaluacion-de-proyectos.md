@@ -2,7 +2,7 @@
 titulo: "Evaluación de proyectos: VPN, TIR y tasa de oportunidad"
 temas: [VPN, valor presente neto, TIR, tasa interna de retorno, TIRM, recuperación, payback, índice de rentabilidad, tasa de oportunidad, crear valor, evaluar un proyecto, inversión, remodelación, ampliación, sensibilidad, valor crítico, punto de quiebre, tornado, riesgo del proyecto]
 fuente: Elaboración propia
-revisado: false
+revisado: true
 ---
 Evaluar un proyecto es comparar lo que deja con lo que dejaría la misma plata
 en la mejor alternativa de riesgo parecido. Esa rentabilidad de la
