@@ -3,8 +3,10 @@ import pytest
 
 from modules.proyectos.matematica_financiera import (
     TIPOS,
+    ErrorCredito,
     ErrorTasa,
     a_periodica,
+    amortizacion,
     convertir,
     indice_rentabilidad,
     recuperacion_descontada,
@@ -108,3 +110,47 @@ def test_valor_anual_equivalente():
     assert valor_anual_equivalente(0.10, FLUJOS) == pytest.approx(
         115.56587664776976 * 0.10 / (1 - 1.1 ** -4))
     assert valor_anual_equivalente(0, FLUJOS) == pytest.approx(400 / 4)
+
+
+# --------------------------------------------------------------------------- #
+# Amortización
+# --------------------------------------------------------------------------- #
+MENSUAL_18_EA = 1.18 ** (1 / 12) - 1
+
+
+def _cuadra(tabla, monto, i):
+    assert sum(c.abono for c in tabla) == pytest.approx(monto, abs=1)
+    assert abs(tabla[-1].saldo_final) < 1
+    for c in tabla:
+        assert c.interes == pytest.approx(c.saldo_inicial * i)
+        assert c.cuota == pytest.approx(c.interes + c.abono)
+
+
+def test_cuota_fija():
+    tabla = amortizacion(200_000_000, MENSUAL_18_EA, 60, "cuota_fija")
+    assert len(tabla) == 60 and tabla[0].periodo == 1
+    assert {round(c.cuota, 2) for c in tabla} == {4_934_680.31}
+    assert sum(c.interes for c in tabla) == pytest.approx(96_080_818.85, abs=0.01)
+    _cuadra(tabla, 200_000_000, MENSUAL_18_EA)
+
+
+def test_abono_constante():
+    tabla = amortizacion(200_000_000, MENSUAL_18_EA, 60, "abono_constante")
+    assert tabla[0].cuota == pytest.approx(6_111_019.40, abs=0.01)
+    assert tabla[-1].cuota == pytest.approx(3_379_628.10, abs=0.01)
+    assert sum(c.interes for c in tabla) == pytest.approx(84_719_425.13, abs=0.01)
+    _cuadra(tabla, 200_000_000, MENSUAL_18_EA)
+
+
+def test_tasa_cero_reparte_el_monto():
+    assert {c.cuota for c in amortizacion(1_200, 0, 12, "cuota_fija")} == {100}
+
+
+@pytest.mark.parametrize("monto, n, sistema, mensaje", [
+    (0, 12, "cuota_fija", "monto"),
+    (1_000, 0, "cuota_fija", "al menos una cuota"),
+    (1_000, 12, "aleman", "Sistema"),
+])
+def test_entradas_invalidas(monto, n, sistema, mensaje):
+    with pytest.raises(ErrorCredito, match=mensaje):
+        amortizacion(monto, 0.01, n, sistema)

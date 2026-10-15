@@ -11,6 +11,8 @@ Decisiones (SPEC-matematica-financiera.md, aprobadas el 15/10/2026):
 """
 from __future__ import annotations
 
+from typing import NamedTuple
+
 from modules.base import formatear
 
 # tipo → (nombre, periodos al año, nominal, anticipada)
@@ -161,3 +163,47 @@ def valor_anual_equivalente(tasa: float, flujos: list[float]) -> float:
     if tasa == 0:
         return vpn(0, flujos) / n
     return vpn(tasa, flujos) * tasa / (1 - (1 + tasa) ** -n)
+
+
+# --------------------------------------------------------------------------- #
+# Amortización de créditos
+# --------------------------------------------------------------------------- #
+SISTEMAS = {"cuota_fija": "cuota fija", "abono_constante": "abono constante a capital"}
+
+
+class ErrorCredito(ValueError):
+    """Monto, plazo o sistema que no sirven; el mensaje dice por qué."""
+
+
+class Cuota(NamedTuple):
+    periodo: int
+    saldo_inicial: float
+    interes: float
+    abono: float
+    cuota: float
+    saldo_final: float
+
+
+def amortizacion(monto: float, tasa_periodica: float, cuotas: int,
+                 sistema: str = "cuota_fija") -> list[Cuota]:
+    """
+    Tabla del crédito. Cuota fija (francés): P · i / (1 − (1 + i)^−n).
+    Abono constante: P / n de capital más el interés sobre el saldo, así que
+    las cuotas bajan.
+    """
+    if monto <= 0:
+        raise ErrorCredito("El monto del crédito debe ser mayor que cero.")
+    if cuotas < 1:
+        raise ErrorCredito("El crédito debe tener al menos una cuota.")
+    if sistema not in SISTEMAS:
+        raise ErrorCredito(f"Sistema de amortización desconocido '{sistema}'. "
+                           f"Sistemas: {', '.join(SISTEMAS)}.")
+    i = tasa_periodica
+    fija = monto / cuotas if i == 0 else monto * i / (1 - (1 + i) ** -cuotas)
+    tabla, saldo = [], monto
+    for k in range(1, cuotas + 1):
+        interes = saldo * i
+        abono = fija - interes if sistema == "cuota_fija" else monto / cuotas
+        tabla.append(Cuota(k, saldo, interes, abono, interes + abono, saldo - abono))
+        saldo -= abono
+    return tabla
