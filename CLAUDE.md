@@ -341,8 +341,16 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    "¿cuánto?" → nota pertinente); el buscador ignora verbos auxiliares
    ("¿qué puedes hacer?" coincidía con la nota nueva). Montos del crédito
    también con palabras ("$ 150.000.000 (150 millones)").
-   Siguiente: `costo-capital` (WACC: Kd del balance, Ke por CAPM en pesos con
-   TES y beta de Damodaran; verificar las fuentes antes de la spec). El
+   Siguiente: `costo-capital`. Borrador de la especificación (15/10/2026,
+   `SPEC-costo-capital.md`), pendiente de dos respuestas del usuario: cómo
+   obtener la beta del sector (Damodaran la publica solo en .xls; propuesta:
+   escribirla a mano una vez al año en `config/costo_capital.yaml`) y si sin
+   estados financieros se muestra solo el costo del patrimonio. Fuentes
+   verificadas: TES cero cupón UVR 10 años (SUAMECA 15277, real, 6,74 %) y
+   pesos (15274, 13,05 %; la diferencia implica 5,9 % de inflación esperada
+   por el mercado), prima de mercado madura de Damodaran (4,23 %,
+   `ctryprem.xlsx`). Propuesta: WACC en términos reales con el TES UVR, para
+   no mezclar la inflación del mercado con la senda del BanRep de los flujos. El
    Monte Carlo queda para después del módulo 2 (decidido el 15/10/2026).
    Pendientes del usuario: conciliar los casos a mano de evaluación y
    sensibilidad, revisar `conocimiento/evaluacion-de-proyectos.md`, cargar el
