@@ -10,6 +10,7 @@ from modules.proyectos.matematica_financiera import (
     convertir,
     indice_rentabilidad,
     recuperacion_descontada,
+    simular_credito,
     tir,
     tirm,
     valor_anual_equivalente,
@@ -154,3 +155,47 @@ def test_tasa_cero_reparte_el_monto():
 def test_entradas_invalidas(monto, n, sistema, mensaje):
     with pytest.raises(ErrorCredito, match=mensaje):
         amortizacion(monto, 0.01, n, sistema)
+
+
+# --------------------------------------------------------------------------- #
+# Simulador de crédito (análisis para el chat y el tablero)
+# --------------------------------------------------------------------------- #
+def test_simular_credito_cuota_fija():
+    r = simular_credito(200_000_000, 0.18, "EA", 60)
+    assert r.modulo == "proyectos" and r.analisis == "credito"
+    assert r.valor("cuota") == pytest.approx(4_934_680.31, abs=0.01)
+    assert r.valor("intereses_totales") == pytest.approx(96_080_818.85, abs=0.01)
+    assert r.valor("total_pagado") == pytest.approx(296_080_818.85, abs=0.01)
+    assert r.valor("proporcion_intereses") == pytest.approx(0.4804, abs=1e-4)
+    assert r.valor("tasa_periodica") == pytest.approx(MENSUAL_18_EA)
+    assert r.hallazgos == [
+        "Con una tasa de 18,00 % efectiva anual (1,39 % mensual), un crédito de "
+        "$ 200.000.000 a 60 cuotas mensuales tiene una cuota fija de $ 4.934.680.",
+        "En total pagaría $ 96.080.819 de intereses, el 48,0 % del monto prestado."]
+    assert any("seguros" in s for s in r.supuestos)
+
+
+def test_simular_credito_con_tasa_nominal_dice_su_equivalente_efectiva():
+    r = simular_credito(200_000_000, 0.24, "NMV", 60)
+    assert r.hallazgos[0] == ("La tasa de 24,00 % nominal mes vencido equivale a 26,82 % "
+                              "efectiva anual: la nominal no cuenta el interés sobre los intereses.")
+    assert r.valor("tasa_periodica") == pytest.approx(0.02)
+
+
+def test_simular_credito_abono_constante():
+    r = simular_credito(200_000_000, 0.18, "EA", 60, sistema="abono_constante")
+    assert r.valor("primera_cuota") == pytest.approx(6_111_019.40, abs=0.01)
+    assert r.valor("ultima_cuota") == pytest.approx(3_379_628.10, abs=0.01)
+    assert "la primera cuota es de $ 6.111.019 y la última de $ 3.379.628" in r.hallazgos[0]
+    assert "saldo cada vez menor" in r.hallazgos[0]
+
+
+def test_simular_credito_trimestral():
+    r = simular_credito(100_000_000, 0.18, "EA", 20, periodicidad="trimestral")
+    assert r.valor("tasa_periodica") == pytest.approx(1.18 ** 0.25 - 1)
+    assert "a 20 cuotas trimestrales" in r.hallazgos[0] and "trimestral)" in r.hallazgos[0]
+
+
+def test_simular_credito_pasa_los_supuestos_de_la_lectura():
+    r = simular_credito(1_000_000, 0.18, "EA", 12, supuestos=["Se asumió algo."])
+    assert r.supuestos[0] == "Se asumió algo."

@@ -11,6 +11,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Callable
 
+from app.orchestrator.lectura import (
+    monto_en_pesos,
+    periodicidad,
+    sistema,
+    tipo_de_tasa,
+    unidad_plazo,
+)
 from data_sources.externos.referencia import homologar_empresa
 from data_sources.externos.series import catalogo
 from data_sources.externos.series.modelo import Serie
@@ -23,6 +30,13 @@ from modules.esquema_financiero import HistorialFinanciero
 from modules.macro.crecimiento_real import crecimiento_real, meses_del_periodo
 from modules.macro.panorama import panorama_macro
 from modules.macro.sensibilidad_tasas import MAX_PUNTOS, ErrorPuntos, sensibilidad_tasas
+from modules.proyectos.matematica_financiera import (
+    PERIODICIDADES,
+    TIPOS,
+    ErrorCredito,
+    ErrorTasa,
+    simular_credito,
+)
 
 
 class ErrorHerramienta(ValueError):
@@ -118,6 +132,64 @@ def _sensibilidad_tasas(ctx: ContextoEmpresa, i: int, argumentos: dict) -> list[
         raise ErrorHerramienta(str(e)) from e
 
 
+MAX_CUOTAS = 600                    # 50 años de cuotas mensuales
+
+
+def _decimal(valor: float) -> str:
+    return f"{valor:g}".replace(".", ",")
+
+
+def _credito(ctx: ContextoEmpresa | None, i: int | None, argumentos: dict) -> list[ResultadoModulo]:
+    """
+    Sin empresa. El modelo da los números de la pregunta (monto, tasa, plazo); el
+    tipo de tasa, la unidad del plazo, la periodicidad y el sistema los lee Python.
+    """
+    pregunta = argumentos.get("pregunta", "")
+    monto = monto_en_pesos(pregunta, argumentos.get("monto"))
+    if monto is None or monto <= 0:
+        raise ErrorHerramienta("¿De cuánto es el crédito? Escriba el monto, por ejemplo: "
+                               "200 millones.")
+    try:
+        tasa = float(argumentos.get("tasa"))
+        if tasa < 0:
+            raise ValueError
+    except (TypeError, ValueError):
+        raise ErrorHerramienta("¿A qué tasa de interés? Escríbala con su tipo, por ejemplo: "
+                               "18 % EA o 1,5 % mensual.") from None
+    tipo, asumido = tipo_de_tasa(pregunta, tasa)
+    supuestos = []
+    if tipo is None:
+        tipo = "EA"
+        supuestos.append(f"La pregunta no dice el tipo de la tasa de {_decimal(tasa)} %; se "
+                         "asumió efectiva anual. Si es mensual o nominal, la cuota cambia.")
+    elif asumido:
+        supuestos.append(f"Se asumió que la tasa de {_decimal(tasa)} % anual es efectiva anual, "
+                         "como deben informarla los bancos en Colombia.")
+    try:
+        plazo = float(argumentos.get("plazo"))
+    except (TypeError, ValueError):
+        plazo = None
+    unidad = unidad_plazo(pregunta, plazo) if plazo else None
+    if unidad is None:
+        raise ErrorHerramienta("¿A qué plazo? Escríbalo en meses o años, por ejemplo: 60 meses "
+                               "o 5 años.")
+    cada = periodicidad(pregunta)
+    por_anio = TIPOS[PERIODICIDADES[cada]][1]
+    cuotas = plazo if unidad == "cuotas" else plazo * por_anio if unidad == "años" \
+        else plazo * por_anio / 12
+    if cuotas != int(cuotas):
+        raise ErrorHerramienta(f"Un plazo de {_decimal(plazo)} {unidad} no da un número entero de "
+                               f"cuotas {cada}es.")
+    if cuotas > MAX_CUOTAS:
+        raise ErrorHerramienta(f"El plazo es demasiado largo para simularlo (más de {MAX_CUOTAS} "
+                               "cuotas).")
+    try:
+        return [simular_credito(monto, tasa / 100, tipo, int(cuotas), cada, sistema(pregunta),
+                                supuestos)]
+    except (ErrorTasa, ErrorCredito) as e:
+        raise ErrorHerramienta(str(e)) from e
+
+
 PANORAMA = ("ipc", "tasa_politica", "ibr_3m", "trm", "pib", "desempleo")
 
 
@@ -184,6 +256,22 @@ HERRAMIENTAS: list[Herramienta] = [
         "(TRM)? ¿En cuánto está la tasa del Banco de la República? ¿Cuánto creció el PIB? "
         "¿Cómo va el desempleo? Datos actuales de la economía, no de la empresa.",
         _panorama, usa_periodo=False),
+    Herramienta(
+        "simular_credito",
+        "¿Cuánto pago por un crédito o préstamo? ¿De cuánto sería la cuota? ¿Cuántos intereses "
+        "pagaría? Cuota fija o abono constante con el monto, la tasa y el plazo que da la "
+        "pregunta. No necesita los estados financieros.",
+        _credito, usa_periodo=False,
+        parametros={
+            "monto": {"type": "number",
+                      "description": "Monto del crédito como aparece en la pregunta; p. ej. 200 "
+                                     "si dice 200 millones."},
+            "tasa": {"type": "number",
+                     "description": "Tasa de interés en porcentaje, como aparece en la pregunta; "
+                                    "p. ej. 18 si dice 18 % EA."},
+            "plazo": {"type": "number",
+                      "description": "Plazo como aparece en la pregunta, sin convertirlo; p. ej. "
+                                     "5 si dice 5 años."}}),
     Herramienta(
         "comparar_con_sector",
         "¿Cómo está la empresa frente a empresas similares de su sector? Ubica cada "

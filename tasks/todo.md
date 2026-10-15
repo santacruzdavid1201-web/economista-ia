@@ -5,7 +5,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
 
 ## Fase 1: cimientos
 
-- [ ] **1. Tasas equivalentes**
+- [x] **1. Tasas equivalentes**
   - Aceptación: `a_periodica(tasa, tipo)` → (periódica vencida, periodos al
     año) y `convertir(tasa, desde, hacia)` para EA, periódicas (mensual,
     trimestral, semestral), nominales vencidas (NMV, NTV, NSV) y anticipadas
@@ -18,7 +18,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
     `tests/modules/proyectos/test_matematica_financiera.py`
   - Tamaño: S
 
-- [ ] **2. Indicadores de proyectos**
+- [x] **2. Indicadores de proyectos**
   - Aceptación: `vpn`, `tir` (única, o `None` con advertencia si no hay o hay
     varias: −100, 230, −132 nombra 10 % y 20 %), `tirm`,
     `recuperacion_descontada` (interpolada; `None` si no se recupera),
@@ -29,7 +29,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
   - Archivos: los mismos dos de la tarea 1
   - Tamaño: S
 
-- [ ] **3. Amortización de créditos**
+- [x] **3. Amortización de créditos**
   - Aceptación: `amortizacion(monto, tasa_periodica, n, sistema)` con cuota
     fija y abono constante; casos de la especificación ($ 4.934.680 y
     $ 96.080.819; $ 6.111.019, $ 3.379.628 y $ 84.719.425); abonos = monto,
@@ -40,12 +40,12 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
   - Tamaño: S
 
 ### Punto de control: cimientos
-- [ ] Suite completa en verde.
+- [x] Suite completa en verde.
 - [ ] Casos a mano listos para que el usuario los concilie (no bloquea).
 
 ## Fase 2: chat
 
-- [ ] **4. Lectura de la pregunta**
+- [x] **4. Lectura de la pregunta**
   - Aceptación: `tipo_de_tasa(pregunta)` reconoce EA, NMV, mes vencido,
     mensual, trimestral, anticipada…; "18 % anual" → EA con supuesto; sin
     tipo → `None`. `montos(pregunta)` lee "200 millones", "1.500 millones",
@@ -54,7 +54,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
   - Archivos: `app/orchestrator/lectura.py`, `tests/app/test_lectura.py`
   - Tamaño: S
 
-- [ ] **5. Herramienta `simular_credito` de punta a punta**
+- [x] **5. Herramienta `simular_credito` de punta a punta**
   - Aceptación: análisis `simular_credito` → `ResultadoModulo` con cuota,
     intereses totales y proporción, hallazgos que nombran el tipo de tasa y el
     supuesto de seguros y comisiones; herramienta registrada sin periodo ni

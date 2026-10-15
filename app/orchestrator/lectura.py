@@ -68,15 +68,37 @@ def tipo_de_tasa(pregunta: str, tasa: float) -> tuple[str | None, bool]:
     return None, False
 
 
-def montos(pregunta: str) -> list[float]:
-    """Montos de la pregunta en pesos, con sus palabras ("200 millones", "$200.000.000")."""
+def _montos(pregunta: str) -> list[tuple[float, float]]:
+    """(número como está escrito, pesos) de cada monto; las tasas y los plazos no cuentan."""
     texto = sin_tildes(pregunta)
     palabras = "|".join(MULTIPLICADORES)
-    encontrados = [_numero(n) * MULTIPLICADORES.get(mult or "", 1)
-                   for n, mult in re.findall(rf"({NUMERO})(?:\s*({palabras})\b)?", texto)]
+    pares = []
+    for m in re.finditer(rf"({NUMERO})(?:\s*({palabras})\b)?", texto):
+        if re.match(r"\s*(?:%|anos?\b|mes(?:es)?\b|cuotas?\b)", texto[m.end():]):
+            continue
+        escrito = _numero(m.group(1))
+        pares.append((escrito, escrito * MULTIPLICADORES.get(m.group(2) or "", 1)))
     if re.search(r"(?<!\d )\bmil millones\b", texto):
-        encontrados.append(1e9)
-    return encontrados
+        pares.append((1e9, 1e9))
+    return pares
+
+
+def montos(pregunta: str) -> list[float]:
+    """Montos de la pregunta en pesos, con sus palabras ("200 millones", "$200.000.000")."""
+    return [pesos for _, pesos in _montos(pregunta)]
+
+
+def monto_en_pesos(pregunta: str, valor: object) -> float | None:
+    """
+    El monto en pesos que el modelo quiso decir: por "200 millones" da 200 o
+    200000000, según el día. None si no es un monto de la pregunta (inventado).
+    """
+    try:
+        v = float(valor)
+    except (TypeError, ValueError):
+        return None
+    return next((pesos for escrito, pesos in _montos(pregunta)
+                 if abs(v - pesos) < 0.5 or v == escrito), None)
 
 
 def unidad_plazo(pregunta: str, plazo: float) -> str | None:

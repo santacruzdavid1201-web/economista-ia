@@ -20,6 +20,7 @@ import yaml
 
 from app.config import RAIZ, config
 from app.llm.client import ClienteChat, ClienteLLM, ErrorLLM, LlamadaHerramienta
+from app.orchestrator.lectura import monto_en_pesos
 from app.orchestrator.tools_registry import (
     POR_NOMBRE,
     ContextoEmpresa,
@@ -41,8 +42,8 @@ FUERA_DE_ALCANCE = (
     "o tributarios específicos, lo indicado es consultar a un abogado o a un contador. "
     "Puedo ayudarle con la liquidez, el endeudamiento, la rentabilidad, la rotación de "
     "cartera e inventarios, el riesgo financiero (Z'' de Altman), el análisis DuPont, la "
-    "comparación con empresas de su sector, si sus ventas le ganaron a la inflación y "
-    "conceptos económicos que afectan a su "
+    "comparación con empresas de su sector, si sus ventas le ganaron a la inflación, la "
+    "cuota de un crédito y conceptos económicos que afectan a su "
     "negocio (tasas de interés, inflación, precios, endeudamiento)."
 )
 SIN_CHARLA = (
@@ -164,6 +165,10 @@ def _inventados(herramienta: Herramienta, argumentos: dict, pregunta: str) -> li
     for clave, esquema in herramienta.parametros.items():
         valor = argumentos.get(clave)
         if esquema.get("type") != "number" or valor in (None, ""):
+            continue
+        if clave == "monto":            # "200 millones" → 200 o 200000000: lo resuelve Python
+            if monto_en_pesos(pregunta, valor) is None:
+                inventados.append(clave)
             continue
         try:
             texto = f"{abs(float(valor)):g}"
@@ -367,7 +372,8 @@ def responder(pregunta: str, ctx: ContextoEmpresa | None, cliente: ClienteChat |
     try:
         i = indice_periodo(ctx.historial, argumentos.get("periodo")) if herramienta.usa_periodo \
             else None
-        resultados = herramienta.ejecutar(ctx, i, argumentos)
+        # Con la pregunta: lo que el 7B confunde (tipo de tasa, plazo) lo lee Python
+        resultados = herramienta.ejecutar(ctx, i, {**argumentos, "pregunta": pregunta})
     except ErrorHerramienta as e:
         return Respuesta(texto=str(e), origen="sin_llm", herramienta=herramienta.nombre,
                          argumentos=argumentos, eventos=eventos)

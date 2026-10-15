@@ -436,3 +436,58 @@ def test_si_insiste_en_calificar_sale_el_respaldo():
                    texto("Un aumento significativo."), texto("Algo preocupante."))
     r = responder("¿Cómo me afectan las tasas?", ctx_con_ipc(serie_tasas([])), llm, HOY)
     assert r.origen == "respaldo"
+
+
+# --------------------------------------------------------------------------- #
+# Simulador de crédito: sin empresa; el tipo de tasa y el plazo los lee Python
+# --------------------------------------------------------------------------- #
+CREDITO = "¿Cuánto pago por un crédito de 200 millones al 18 % EA a 5 años?"
+
+
+@pytest.mark.parametrize("monto", [200_000_000, 200])
+def test_simular_credito_sin_empresa(monto):
+    llm = LLMFalso(herramienta("simular_credito", monto=monto, tasa=18, plazo=5),
+                   texto("La cuota fija sería de $ 4.934.680."))
+    r = responder(CREDITO, None, llm, HOY)
+    assert r.origen == "llm" and r.herramienta == "simular_credito" and r.periodo is None
+    assert r.argumentos == {"monto": monto, "tasa": 18, "plazo": 5}       # sin la pregunta
+    assert r.resultados[0].valor("cuota") == pytest.approx(4_934_680.31, abs=0.01)
+    assert "efectiva anual" in llm.llamadas[1]["usuario"]
+
+
+def test_simular_credito_monto_inventado_pide_el_monto():
+    r = responder(CREDITO, None,
+                  LLMFalso(herramienta("simular_credito", monto=300, tasa=18, plazo=5)), HOY)
+    assert r.origen == "sin_llm" and "¿De cuánto es el crédito?" in r.texto
+    assert any("monto" in e and "no está en la pregunta" in e for e in r.eventos)
+
+
+@pytest.mark.parametrize("pregunta, supuesto", [
+    ("¿Cuánto pago por 200 millones al 18 % anual a 5 años?", "18 % anual es efectiva anual"),
+    ("¿Cuánto pago por 200 millones al 18 % a 5 años?", "no dice el tipo"),
+])
+def test_simular_credito_tipo_asumido_queda_en_las_notas(pregunta, supuesto):
+    llm = LLMFalso(herramienta("simular_credito", monto=200, tasa=18, plazo=5),
+                   texto("La cuota sería de $ 4.934.680."))
+    r = responder(pregunta, None, llm, HOY)
+    assert r.resultados[0].valor("cuota") == pytest.approx(4_934_680.31, abs=0.01)
+    assert any(supuesto in n for n in r.notas)
+
+
+def test_simular_credito_con_meses_y_abono_constante():
+    llm = LLMFalso(herramienta("simular_credito", monto=200, tasa=18, plazo=60),
+                   texto("La primera cuota sería de $ 6.111.019."))
+    r = responder("¿Y un crédito de 200 millones al 18 % EA a 60 meses con abono constante?",
+                  None, llm, HOY)
+    assert r.resultados[0].valor("primera_cuota") == pytest.approx(6_111_019.40, abs=0.01)
+
+
+def test_simular_credito_sin_unidad_de_plazo_la_pide():
+    r = responder("¿Cuánto pago por 200 millones al 18 % EA con plazo 5?", None,
+                  LLMFalso(herramienta("simular_credito", monto=200, tasa=18, plazo=5)), HOY)
+    assert r.origen == "sin_llm" and "¿A qué plazo?" in r.texto
+
+
+def test_simular_credito_no_pide_periodo():
+    credito = next(e for e in esquema_openai() if e["function"]["name"] == "simular_credito")
+    assert set(credito["function"]["parameters"]["properties"]) == {"monto", "tasa", "plazo"}

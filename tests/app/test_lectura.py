@@ -1,7 +1,14 @@
 """Lectura de la pregunta: lo que el 7B confunde (tipo de tasa, montos, plazo) lo lee Python."""
 import pytest
 
-from app.orchestrator.lectura import montos, periodicidad, sistema, tipo_de_tasa, unidad_plazo
+from app.orchestrator.lectura import (
+    monto_en_pesos,
+    montos,
+    periodicidad,
+    sistema,
+    tipo_de_tasa,
+    unidad_plazo,
+)
 
 
 @pytest.mark.parametrize("pregunta, tasa, esperado", [
@@ -76,3 +83,15 @@ def test_periodicidad(pregunta, esperado):
 ])
 def test_sistema(pregunta, esperado):
     assert sistema(pregunta) == esperado
+
+
+@pytest.mark.parametrize("valor, esperado", [
+    (200_000_000, 200_000_000),     # el modelo lo pasó a pesos
+    (200, 200_000_000),             # el modelo lo dejó como está escrito
+    (300, None),                    # inventado
+    (18, None),                     # es la tasa
+    (5, None),                      # es el plazo
+])
+def test_monto_en_pesos(valor, esperado):
+    pregunta = "¿Cuánto pago por un crédito de 200 millones al 18 % EA a 5 años?"
+    assert monto_en_pesos(pregunta, valor) == esperado

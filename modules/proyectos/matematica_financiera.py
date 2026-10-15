@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import NamedTuple
 
-from modules.base import formatear
+from modules.base import Indicador, ResultadoModulo, formatear
 
 # tipo → (nombre, periodos al año, nominal, anticipada)
 TIPOS: dict[str, tuple[str, int, bool, bool]] = {
@@ -207,3 +207,83 @@ def amortizacion(monto: float, tasa_periodica: float, cuotas: int,
         tabla.append(Cuota(k, saldo, interes, abono, interes + abono, saldo - abono))
         saldo -= abono
     return tabla
+
+
+# --------------------------------------------------------------------------- #
+# Simulador de crédito: el análisis que ven el chat y el tablero
+# --------------------------------------------------------------------------- #
+# periodicidad de las cuotas → tipo de la tasa periódica que se cobra en cada una
+PERIODICIDADES = {"mensual": "MV", "trimestral": "TV", "semestral": "SV", "anual": "EA"}
+SUPUESTO_COSTOS = ("La cuota no incluye seguros, comisiones ni el 4 por mil (GMF): el costo "
+                   "real del crédito puede ser mayor.")
+
+
+def _pesos(valor: float) -> str:
+    return formatear(valor, "pesos")
+
+
+def simular_credito(monto: float, tasa: float, tipo: str, cuotas: int,
+                    periodicidad: str = "mensual", sistema: str = "cuota_fija",
+                    supuestos: list[str] | tuple[str, ...] = ()) -> ResultadoModulo:
+    """
+    Cuota, intereses y total de un crédito. La tasa (en decimales, con su tipo)
+    se lleva a la del periodo de pago; los hallazgos dicen la efectiva anual y,
+    si la tasa era nominal, que no es lo mismo (error típico del 7B).
+    """
+    if periodicidad not in PERIODICIDADES:
+        raise ErrorCredito(f"Periodicidad desconocida '{periodicidad}'. "
+                           f"Periodicidades: {', '.join(PERIODICIDADES)}.")
+    periodo = PERIODICIDADES[periodicidad]
+    i, ea = convertir(tasa, tipo, periodo), convertir(tasa, tipo, "EA")
+    tabla = amortizacion(monto, i, cuotas, sistema)
+    intereses = sum(c.interes for c in tabla)
+    nombre, _, nominal, _ = TIPOS[tipo]
+    m = TIPOS[periodo][1]
+
+    hallazgos = []
+    if tipo != "EA":
+        hallazgos.append(f"La tasa de {formatear(tasa, 'tasa')} {nombre} equivale a "
+                         f"{formatear(ea, 'tasa')} efectiva anual"
+                         + (": la nominal no cuenta el interés sobre los intereses." if nominal
+                            else "."))
+    tasa_texto = f"{formatear(ea, 'tasa')} efectiva anual" + (
+        "" if periodicidad == "anual" else f" ({formatear(i, 'tasa')} {periodicidad})")
+    plazo = (f"{cuotas} cuotas {periodicidad}es" if cuotas > 1 else f"1 cuota {periodicidad}")
+    base = f"Con una tasa de {tasa_texto}, un crédito de {_pesos(monto)} a {plazo}"
+    indicadores = [
+        Indicador(clave="tasa_efectiva_anual", nombre="Tasa efectiva anual", valor=ea,
+                  unidad="tasa", formula=f"(1 + i)^{m} − 1, con i la tasa {periodicidad}"),
+        Indicador(clave="tasa_periodica", nombre=f"Tasa {periodicidad} equivalente", valor=i,
+                  unidad="tasa", formula=f"(1 + tasa efectiva anual)^(1/{m}) − 1"),
+    ]
+    if sistema == "cuota_fija":
+        hallazgos.append(f"{base} tiene una cuota fija de {_pesos(tabla[0].cuota)}.")
+        indicadores.append(Indicador(clave="cuota", nombre="Cuota fija", valor=tabla[0].cuota,
+                                     unidad="pesos", formula="monto × i / (1 − (1 + i)^−n)"))
+    else:
+        hallazgos.append(
+            f"{base} con abono constante a capital de {_pesos(tabla[0].abono)} por cuota: la "
+            f"primera cuota es de {_pesos(tabla[0].cuota)} y la última de "
+            f"{_pesos(tabla[-1].cuota)}. Las cuotas bajan porque el interés se cobra sobre un "
+            "saldo cada vez menor.")
+        indicadores += [
+            Indicador(clave="abono_capital", nombre="Abono a capital por cuota",
+                      valor=tabla[0].abono, unidad="pesos", formula="monto / n"),
+            Indicador(clave="primera_cuota", nombre="Primera cuota", valor=tabla[0].cuota,
+                      unidad="pesos", formula="abono + monto × i"),
+            Indicador(clave="ultima_cuota", nombre="Última cuota", valor=tabla[-1].cuota,
+                      unidad="pesos", formula="abono + último saldo × i"),
+        ]
+    hallazgos.append(f"En total pagaría {_pesos(intereses)} de intereses, el "
+                     f"{formatear(intereses / monto, 'proporcion')} del monto prestado.")
+    indicadores += [
+        Indicador(clave="intereses_totales", nombre="Intereses totales", valor=intereses,
+                  unidad="pesos", formula="suma de los intereses de todas las cuotas"),
+        Indicador(clave="total_pagado", nombre="Total pagado", valor=monto + intereses,
+                  unidad="pesos", formula="monto + intereses totales"),
+        Indicador(clave="proporcion_intereses", nombre="Intereses sobre el monto prestado",
+                  valor=intereses / monto, unidad="proporcion",
+                  formula="intereses totales / monto"),
+    ]
+    return ResultadoModulo(modulo="proyectos", analisis="credito", indicadores=indicadores,
+                           hallazgos=hallazgos, supuestos=[*supuestos, SUPUESTO_COSTOS])

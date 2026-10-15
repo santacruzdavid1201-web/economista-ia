@@ -109,3 +109,26 @@ crecimiento_pib: >-
 desempleo: >-
   Qué parte de las personas que buscan trabajo no lo consiguen. Se compara con
   el mismo mes del año anterior porque la serie no corrige la estacionalidad.
+tasa_efectiva_anual: >-
+  Lo que de verdad cuesta el crédito en un año, contando el interés que se
+  cobra sobre los intereses. Es la tasa que deben informar los bancos en
+  Colombia y la que sirve para comparar créditos.
+tasa_periodica: >-
+  La tasa que se cobra en cada cuota (cada mes, trimestre o semestre). Es
+  equivalente a la efectiva anual, pero no es la efectiva anual dividida entre
+  el número de cuotas del año.
+cuota: >-
+  Lo que se paga en cada periodo con el sistema de cuota fija. Es igual en
+  todas las cuotas: al principio casi todo es interés y al final casi todo es
+  abono a la deuda.
+abono_capital: >-
+  En el sistema de abono constante, la parte de cada cuota que reduce la
+  deuda. Es igual en todas las cuotas; el interés se cobra sobre lo que se
+  sigue debiendo, por eso las cuotas bajan.
+intereses_totales: >-
+  Todo lo que se paga por encima del monto prestado durante la vida del
+  crédito, sin seguros ni comisiones.
+total_pagado: >-
+  El monto prestado más todos los intereses.
+proporcion_intereses: >-
+  Cuánto suman los intereses frente al monto prestado.
