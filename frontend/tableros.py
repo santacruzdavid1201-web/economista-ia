@@ -27,7 +27,13 @@ from modules.base import Indicador, ResultadoModulo, formatear
 from modules.macro.panorama import inflacion_anual, panorama_macro
 from modules.proyectos.evaluacion import evaluar
 from modules.proyectos.flujo import ErrorProyecto, flujo_caja
-from modules.proyectos.sensibilidad import CAMBIOS, POR_CLAVE, FilaTornado, movimiento, sensibilidad
+from modules.proyectos.sensibilidad import (
+    CAMBIOS,
+    POR_CLAVE,
+    FilaTornado,
+    sensibilidad,
+    texto_critico,
+)
 from modules.proyectos.matematica_financiera import (
     PERIODICIDADES,
     TIPOS,
@@ -488,13 +494,8 @@ def _evaluacion(r: ResultadoModulo, tasa: float, horizonte: int) -> dict:
 
 
 def _critico(fila: FilaTornado) -> str:
-    """En palabras, como los hallazgos: 'los ingresos caen 3,1 % (a $ 58.158.416)'."""
-    if fila.critico is None:
-        return "no llega a cero aunque el dato se mueva entre −99 % y +200 %"
-    variable = POR_CLAVE[fila.variable]
-    texto = movimiento(variable, fila.critico, fila.valor_critico)
-    return texto if variable.en_nivel else \
-        f"{texto} (a {formatear(fila.valor_critico, 'pesos')})"
+    """En palabras, como los hallazgos: 'los ingresos caen 3,1 % (a $ 58.157.973)'."""
+    return texto_critico(fila) or "no llega a cero aunque el dato se mueva entre −99 % y +200 %"
 
 
 def sensibilidad_tab(valores: Mapping[str, object] | None = None, hoy: date | None = None) -> dict:

@@ -13,14 +13,16 @@ from datetime import date
 from typing import Callable
 
 from app.orchestrator.lectura import (
+    direccion,
     monto_en_pesos,
     periodicidad,
     sistema,
     tipo_de_tasa,
     tipo_destino,
     unidad_plazo,
+    variable_del_proyecto,
 )
-from app.orchestrator.proyecto import leer_proyecto
+from app.orchestrator.proyecto import ProyectoLeido, leer_proyecto
 from data_sources.externos.referencia import homologar_empresa
 from data_sources.externos.series import catalogo
 from data_sources.externos.series.modelo import Serie
@@ -42,6 +44,7 @@ from modules.proyectos.matematica_financiera import (
     cuotas_del_plazo,
     simular_credito,
 )
+from modules.proyectos.sensibilidad import critico_de, escenario, sensibilidad
 
 
 class ErrorHerramienta(ValueError):
@@ -187,8 +190,7 @@ SIN_PROYECTO = ("Para evaluar su proyecto, primero escríbalo en la pestaña «S
                 "módulo Evaluación de proyectos y pulse Calcular (también sirve con el ejemplo).")
 
 
-def _evaluar_proyecto(ctx: ContextoEmpresa | None, i: int | None,
-                      argumentos: dict) -> list[ResultadoModulo]:
+def _proyecto_leido(argumentos: dict) -> ProyectoLeido:
     """El último proyecto válido de la sesión, con la tasa de la pregunta si la da."""
     valores = argumentos.get("proyecto")
     if not valores:
@@ -203,11 +205,55 @@ def _evaluar_proyecto(ctx: ContextoEmpresa | None, i: int | None,
     if leido.tasa is None:
         raise ErrorHerramienta("Su proyecto no tiene tasa de oportunidad. Escríbala en la pestaña "
                                "«Su proyecto» o en la pregunta, por ejemplo: ¿y si mi tasa es 18 %?")
-    r = evaluar(flujo_caja(leido.proyecto, leido.senda), leido.tasa)
-    r.supuestos.insert(0, f"Se evaluó el proyecto «{leido.proyecto.nombre}» de la pestaña Su "
+    return leido
+
+
+def _con_el_proyecto(r: ResultadoModulo, leido: ProyectoLeido, que: str) -> list[ResultadoModulo]:
+    """Dice qué proyecto se usó (el nombre lo escribió el usuario: va en las notas, nunca en el
+    prompt) y suma las fuentes y avisos de la inflación."""
+    r.supuestos.insert(0, f"Se {que} el proyecto «{leido.proyecto.nombre}» de la pestaña Su "
                           "proyecto, con flujos a precios de hoy.")
     r.fuentes, r.advertencias = leido.fuentes, r.advertencias + leido.avisos
     return [r]
+
+
+def _evaluar_proyecto(ctx: ContextoEmpresa | None, i: int | None,
+                      argumentos: dict) -> list[ResultadoModulo]:
+    leido = _proyecto_leido(argumentos)
+    return _con_el_proyecto(evaluar(flujo_caja(leido.proyecto, leido.senda), leido.tasa), leido,
+                            "evaluó")
+
+
+def _sensibilidad_proyecto(ctx: ContextoEmpresa | None, i: int | None,
+                           argumentos: dict) -> list[ResultadoModulo]:
+    """Con cifra, el escenario pedido; sin ella, el resumen. La variable y si sube o baja las lee
+    Python; el modelo solo da el porcentaje."""
+    leido = _proyecto_leido(argumentos)
+    pregunta = argumentos.get("pregunta", "")
+    variable, asumida = variable_del_proyecto(pregunta)
+    cambio = argumentos.get("cambio")
+    if cambio not in (None, ""):
+        try:
+            magnitud = abs(float(cambio))
+        except (TypeError, ValueError):
+            magnitud = None
+        if not magnitud or magnitud > 100:
+            raise ErrorHerramienta("El cambio debe ser un porcentaje entre 1 y 100, por ejemplo: "
+                                   "¿y si vendo 10 % menos?")
+        if variable is None:
+            raise ErrorHerramienta("¿Qué dato del proyecto cambia? Por ejemplo: ¿y si vendo 10 % "
+                                   "menos? o ¿y si los costos fijos suben 20 %?")
+        signo = direccion(pregunta) or (1 if float(cambio) > 0 else -1)
+        r = escenario(leido.proyecto, leido.senda, leido.tasa, variable, signo * magnitud / 100)
+    else:
+        s = sensibilidad(leido.proyecto, leido.senda, leido.tasa)
+        r = s.resultado
+        # "¿Hasta cuánto pueden caer las ventas?": primero el valor crítico de ese dato
+        if variable and (frase := critico_de(s, variable)):
+            r.hallazgos.insert(0, frase)
+    if asumida:
+        r.supuestos.insert(0, "La pregunta dice «costos» sin más: se tomaron los costos variables.")
+    return _con_el_proyecto(r, leido, "analizó")
 
 
 def _convertir(ctx: ContextoEmpresa | None, i: int | None, argumentos: dict) -> list[ResultadoModulo]:
@@ -325,6 +371,17 @@ HERRAMIENTAS: list[Herramienta] = [
             "type": "number",
             "description": "Tasa en porcentaje, como aparece en la pregunta; p. ej. 2 si dice "
                            "2 % mensual."}}),
+    Herramienta(
+        "analizar_sensibilidad_proyecto",
+        "¿Qué pasa con mi proyecto si vendo menos, si suben los costos o si la inversión sale más "
+        "cara? ¿Hasta cuánto pueden caer las ventas? ¿Qué variable pesa más? Mueve un dato del "
+        "proyecto de la pestaña Su proyecto y dice cómo cambia su valor. No necesita los estados "
+        "financieros.",
+        _sensibilidad_proyecto, usa_periodo=False,
+        parametros={"cambio": {
+            "type": "number",
+            "description": "Porcentaje que cambia el dato, solo si la pregunta da una cifra; "
+                           "p. ej. 10 si dice 10 % menos."}}),
     Herramienta(
         "evaluar_proyecto",
         "¿Me conviene mi proyecto? ¿Crea valor? ¿Cuál es su VPN o su TIR? ¿En cuánto tiempo "

@@ -3,7 +3,7 @@ import pytest
 
 from modules.proyectos.flujo import Senda, crear_proyecto, flujo_caja
 from modules.proyectos.matematica_financiera import tir
-from modules.proyectos.sensibilidad import POR_CLAVE, escenario, movimiento, sensibilidad
+from modules.proyectos.sensibilidad import POR_CLAVE, critico_de, escenario, movimiento, sensibilidad
 
 EJEMPLO = dict(nombre="Remodelación", inversion=100_000_000, vida_util=5, horizonte=5,
                ingresos=60_000_000, crecimiento_real=0, costos_variables=0.30,
@@ -94,3 +94,11 @@ def test_escenario_desde_un_vpn_negativo():
     p = crear_proyecto(**EJEMPLO)
     assert "pasa a crear valor" in escenario(p, SIN_INFLACION, 0.15, "ingresos", 0.20).hallazgos[0]
     assert "sigue sin crear valor" in escenario(p, SIN_INFLACION, 0.15, "ingresos", -0.10).hallazgos[0]
+
+
+def test_valor_critico_de_un_dato_en_palabras():
+    s = tornado()
+    assert critico_de(s, "ingresos") == ("El proyecto deja de crear valor si los ingresos caen "
+                                         "3,1 % (a $ 58.156.737), con todo lo demás igual.")
+    assert critico_de(tornado(tasa=0.15), "ingresos").startswith(
+        "El proyecto pasa a crear valor si los ingresos suben")

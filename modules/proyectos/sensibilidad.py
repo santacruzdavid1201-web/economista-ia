@@ -141,6 +141,26 @@ def sensibilidad(proyecto: Proyecto, senda: Senda, tasa: float) -> Sensibilidad:
     return Sensibilidad(base, filas, resultado)
 
 
+def texto_critico(fila: FilaTornado) -> str | None:
+    """'los ingresos caen 3,1 % (a $ 58.157.973)'; None si no llega a cero en el rango."""
+    if fila.critico is None:
+        return None
+    variable = POR_CLAVE[fila.variable]
+    texto = movimiento(variable, fila.critico, fila.valor_critico)
+    return texto if variable.en_nivel else \
+        f"{texto} (a {formatear(fila.valor_critico, 'pesos')})"
+
+
+def critico_de(s: Sensibilidad, variable: str) -> str | None:
+    """El valor crítico de un dato, en una frase ("¿hasta cuánto pueden caer las ventas?")."""
+    fila = next((f for f in s.filas if f.variable == variable), None)
+    texto = texto_critico(fila) if fila else None
+    if texto is None:
+        return None
+    efecto = "deja de crear valor" if s.vpn_base >= 0 else "pasa a crear valor"
+    return f"El proyecto {efecto} si {texto}, con todo lo demás igual."
+
+
 def escenario(proyecto: Proyecto, senda: Senda, tasa: float, variable: str,
               cambio: float) -> ResultadoModulo:
     """Un cambio puntual ("¿y si vendo 10 % menos?"), dicho en palabras."""

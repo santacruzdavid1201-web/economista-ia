@@ -609,3 +609,41 @@ def test_credito_con_cifras_no_se_desvia():
                    texto("La cuota fija sería de $ 4.934.680."))
     r = responder(CREDITO, None, llm, HOY, buscador=BuscadorUnaNota())
     assert r.herramienta == "simular_credito"
+
+
+# --------------------------------------------------------------------------- #
+# Sensibilidad del proyecto de la sesión
+# --------------------------------------------------------------------------- #
+def test_escenario_de_la_pregunta():
+    llm = LLMFalso(herramienta("analizar_sensibilidad_proyecto", cambio=10),
+                   texto("Si vende 10 % menos, el proyecto sigue sin crear valor."))
+    r = responder("¿Y si vendo 10 % menos?", None, llm, HOY, proyecto=PROYECTO_3)
+    assert r.herramienta == "analizar_sensibilidad_proyecto"
+    assert r.resultados[0].analisis == "escenario"
+    assert r.resultados[0].hallazgos[0].startswith("Si los ingresos caen 10 %")
+
+
+def test_sin_cifra_responde_el_resumen():
+    llm = LLMFalso(herramienta("analizar_sensibilidad_proyecto"), texto("Pesan más los ingresos."))
+    r = responder("¿Qué variable pesa más en mi proyecto?", None, llm, HOY, proyecto=PROYECTO_3)
+    assert r.resultados[0].analisis == "sensibilidad"
+    assert r.resultados[0].hallazgos[0].startswith("Lo que más mueve el VPN")
+
+
+def test_hasta_cuanto_pueden_caer_las_ventas_empieza_por_su_valor_critico():
+    llm = LLMFalso(herramienta("analizar_sensibilidad_proyecto"), texto("Tendrían que subir."))
+    r = responder("¿Hasta cuánto pueden caer las ventas?", None, llm, HOY, proyecto=PROYECTO_3)
+    assert "los ingresos" in r.resultados[0].hallazgos[0]
+
+
+def test_costos_sin_mas_se_toman_como_variables_con_supuesto():
+    llm = LLMFalso(herramienta("analizar_sensibilidad_proyecto", cambio=10), texto("Bajaría."))
+    r = responder("¿Y si los costos suben 10 %?", None, llm, HOY, proyecto=PROYECTO_3)
+    assert r.resultados[0].hallazgos[0].startswith("Si los costos variables suben")
+    assert any("«costos» sin más" in n for n in r.notas)
+
+
+def test_sensibilidad_sin_proyecto_remite_a_la_pestana():
+    r = responder("¿Y si vendo 10 % menos?", None,
+                  LLMFalso(herramienta("analizar_sensibilidad_proyecto", cambio=10)), HOY)
+    assert r.texto == SIN_PROYECTO
