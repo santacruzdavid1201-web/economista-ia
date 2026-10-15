@@ -227,6 +227,12 @@ main { max-width: 74rem; margin: 0 auto; padding: 0 1.5rem 6rem; }   /* abajo: e
 .palanca-pista::after { content: ""; position: absolute; left: 50%; top: -0.2rem; bottom: -0.2rem; width: 1px; background: var(--gris); }
 .palanca-barra { position: absolute; top: 0; bottom: 0; border-radius: 0.3rem; background: var(--acento); }
 .palanca-barra.negativa { background: var(--coral); }
+/* Tornado de sensibilidad: coral donde el VPN baja, menta donde sube, línea en VPN = 0 */
+.tornado .palanca { grid-template-columns: 10rem minmax(0, 1fr); }
+.palanca-barra.sube { background: var(--menta); }
+.tornado-cero { position: absolute; top: -0.3rem; bottom: -0.3rem; width: 2px; background: var(--tinta); }
+.leyenda-cero { display: inline-block; width: 2px; height: 0.9rem; background: var(--tinta); }
+.criticos th:nth-child(2) { text-align: left; }
 .palanca-valor { text-align: right; font-weight: 700; color: var(--petroleo); font-variant-numeric: tabular-nums; }
 
 .anual th.numero, .escenarios th.numero { text-align: right; }

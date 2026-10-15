@@ -12,6 +12,8 @@
   <div id="panel-proyectos" role="tabpanel" aria-labelledby="pestana-{{ t.pestana }}">
     {% if t.pestana == "credito" %}
       {% include "_pestana_credito.html" %}
+    {% elif t.pestana == "sensibilidad" %}
+      {% include "_pestana_sensibilidad.html" %}
     {% else %}
       {% include "_pestana_proyecto.html" %}
     {% endif %}

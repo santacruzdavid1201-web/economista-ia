@@ -392,3 +392,16 @@ def test_el_formulario_actualiza_tambien_la_evaluacion_de_arriba(cliente):
 
 def test_la_pagina_no_repite_el_bloque_de_evaluacion(cliente):
     assert cliente.get("/modulo/proyectos").text.count('id="evaluacion"') == 1
+
+
+def test_pestana_de_sensibilidad(cliente):
+    r = cliente.get("/modulo/proyectos?pestana=sensibilidad").text
+    assert re.search(r'id="pestana-sensibilidad"[^>]*aria-selected="true"', r)
+    assert "¿Qué tan frágil es su proyecto?" in r and 'class="tornado' in r
+    assert "Es el proyecto de ejemplo" in r
+
+
+def test_la_sensibilidad_usa_el_proyecto_de_la_sesion(cliente):
+    cliente.post("/proyectos/flujo", data=PROYECTO)
+    r = cliente.get("/modulo/proyectos?pestana=sensibilidad").text
+    assert "Hotel del lago" in r and "Es el proyecto de ejemplo" not in r

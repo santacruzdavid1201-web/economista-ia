@@ -1,0 +1,60 @@
+{#- Pestaña "Sensibilidad": tornado y valores críticos del proyecto de la sesión. Todo viene de tableros.py -#}
+{% with c = t.sensibilidad %}
+<p class="tablero-corte">Cuánto se mueve el VPN si cada dato sale distinto de lo previsto</p>
+
+<section aria-labelledby="titulo-sensibilidad">
+  <h2 id="titulo-sensibilidad">¿Qué tan frágil es su proyecto?</h2>
+  {% if c.es_ejemplo %}
+    <p class="nota-ejemplo">Es el proyecto de ejemplo: escriba el suyo en la pestaña Su proyecto.</p>
+  {% endif %}
+  {% if c.errores %}
+    <ul class="errores">{% for e in c.errores %}<li>{{ e }}</li>{% endfor %}</ul>
+  {% else %}
+    <p class="bloque-nota">{{ c.proyecto }}, con una tasa de oportunidad de {{ c.tasa }}: VPN de
+      {{ c.vpn }}. Cada dato se mueve solo, con todo lo demás igual.</p>
+    <ul class="hallazgos">{% for h in c.hallazgos %}<li>{{ h }}</li>{% endfor %}</ul>
+
+    <h3 class="subtema">Cuánto se mueve el VPN con 20 % menos y 20 % más</h3>
+    <p class="leyenda" aria-hidden="true">
+      <span class="leyenda-interes"></span> el VPN baja <span class="leyenda-abono"></span> el VPN sube
+      {% if c.cero is not none %}<span class="leyenda-cero"></span> VPN igual a cero{% endif %}
+    </p>
+    <ul class="palancas tornado">
+      {% for f in c.filas %}
+        <li class="palanca">
+          <span class="palanca-nombre">{{ f.nombre }}</span>
+          <span class="palanca-pista" role="img" aria-label="{{ f.descripcion }}">
+            <span class="palanca-barra negativa" style="left: {{ f.barra.izquierda }}%; width: {{ 50 - f.barra.izquierda }}%"></span>
+            <span class="palanca-barra sube" style="left: 50%; width: {{ f.barra.derecha - 50 }}%"></span>
+            {% if c.cero is not none %}<span class="tornado-cero" style="left: {{ c.cero }}%"></span>{% endif %}
+          </span>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <h3 class="subtema">VPN con cada cambio</h3>
+    <div class="tabla-desplazable">
+      <table class="libro anual flujo">
+        <tr><th>Dato</th><th class="numero">Hoy</th><th class="numero">−20 %</th><th class="numero">−10 %</th>
+          <th class="numero">+10 %</th><th class="numero">+20 %</th></tr>
+        {% for f in c.filas %}
+          <tr><td>{{ f.nombre }}</td><td class="valor">{{ f.actual }}</td>
+            {% for x in f.vpn %}<td class="valor{% if x.startswith('$ -') %} negativa{% endif %}">{{ x }}</td>{% endfor %}</tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <h3 class="subtema">¿Hasta dónde puede moverse cada dato?</h3>
+    <div class="tabla-desplazable">
+      <table class="libro criticos">
+        <tr><th>Dato</th><th>El VPN llega a cero si…</th></tr>
+        {% for f in c.filas %}<tr><td>{{ f.nombre }}</td><td>{{ f.critico }}</td></tr>{% endfor %}
+      </table>
+    </div>
+    <ul class="bloque-avisos">
+      {% for a in c.avisos %}<li>{{ a }}</li>{% endfor %}
+      {% for f in c.fuentes %}<li>{{ f }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+</section>
+{% endwith %}

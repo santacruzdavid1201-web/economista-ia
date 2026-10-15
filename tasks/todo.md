@@ -9,7 +9,7 @@ Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del 
 - [x] **2. Escenario puntual y lectura de la pregunta**: "si los ingresos caen
   10 %…" en palabras; `variable_del_proyecto` y `direccion`.
   Archivos: `modules/proyectos/sensibilidad.py`, `app/orchestrator/lectura.py`, tests.
-- [ ] **3. Pestaña "Sensibilidad"**: tornado ordenado, tabla y valores críticos del
+- [x] **3. Pestaña "Sensibilidad"**: tornado ordenado, tabla y valores críticos del
   proyecto de la sesión; sin tasa → mensaje.
   Archivos: `frontend/tableros.py`, `frontend/templates/_pestana_sensibilidad.html`,
   `frontend/static/estilo.css`, tests del frontend.

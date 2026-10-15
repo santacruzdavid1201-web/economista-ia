@@ -153,3 +153,33 @@ def test_evaluacion_que_no_crea_valor_lo_dice_en_palabras():
 def test_sin_tasa_de_oportunidad_hay_flujo_pero_no_evaluacion():
     c = tableros.flujo({**tableros.PROYECTO_EJEMPLO, "tasa_oportunidad": ""})
     assert c["errores"] == [] and c["evaluacion"] is None and c["filas"]
+
+
+# --------------------------------------------------------------------------- #
+# Proyectos: pestaña "Sensibilidad"
+# --------------------------------------------------------------------------- #
+CASO_A_MANO = {**tableros.PROYECTO_EJEMPLO, "inflacion": "0", "tasa_oportunidad": "10"}
+
+
+def test_sensibilidad_del_caso_a_mano():
+    c = tableros.sensibilidad_tab(CASO_A_MANO)
+    assert c["errores"] == [] and not c["es_ejemplo"]
+    assert [f["nombre"] for f in c["filas"]] == ["Ingresos", "Inversión", "Costos variables",
+                                                 "Tasa de oportunidad", "Costos fijos"]
+    ingresos = c["filas"][0]
+    assert ingresos["vpn"] == ["$ -17.133.401", "$ -7.012.001", "$ 13.230.801", "$ 23.352.201"]
+    assert ingresos["critico"].startswith("los ingresos caen 3,1 % (a $ 58.1")
+    tasa = c["filas"][3]
+    assert tasa["actual"] == "10,00 %" and tasa["critico"] == "la tasa de oportunidad sube a 11,11 %"
+    # Barras: la de ingresos es la más larga; la línea de VPN = 0 cae dentro del gráfico
+    assert ingresos["barra"]["izquierda"] == 0 and ingresos["barra"]["derecha"] == 100
+    assert 0 < c["cero"] < 50
+
+
+def test_sensibilidad_con_el_ejemplo_lo_dice():
+    assert tableros.sensibilidad_tab()["es_ejemplo"]
+
+
+def test_sensibilidad_sin_tasa_remite_a_su_proyecto():
+    c = tableros.sensibilidad_tab({**CASO_A_MANO, "tasa_oportunidad": ""})
+    assert any("tasa de oportunidad" in e for e in c["errores"]) and "filas" not in c

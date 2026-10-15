@@ -27,6 +27,7 @@ from modules.base import Indicador, ResultadoModulo, formatear
 from modules.macro.panorama import inflacion_anual, panorama_macro
 from modules.proyectos.evaluacion import evaluar
 from modules.proyectos.flujo import ErrorProyecto, flujo_caja
+from modules.proyectos.sensibilidad import CAMBIOS, POR_CLAVE, FilaTornado, movimiento, sensibilidad
 from modules.proyectos.matematica_financiera import (
     PERIODICIDADES,
     TIPOS,
@@ -486,7 +487,57 @@ def _evaluacion(r: ResultadoModulo, tasa: float, horizonte: int) -> dict:
     }
 
 
-PESTANAS = (("proyecto", "Su proyecto"), ("credito", "Crédito y tasas"))
+def _critico(fila: FilaTornado) -> str:
+    """En palabras, como los hallazgos: 'los ingresos caen 3,1 % (a $ 58.158.416)'."""
+    if fila.critico is None:
+        return "no llega a cero aunque el dato se mueva entre −99 % y +200 %"
+    variable = POR_CLAVE[fila.variable]
+    texto = movimiento(variable, fila.critico, fila.valor_critico)
+    return texto if variable.en_nivel else \
+        f"{texto} (a {formatear(fila.valor_critico, 'pesos')})"
+
+
+def sensibilidad_tab(valores: Mapping[str, object] | None = None, hoy: date | None = None) -> dict:
+    """Pestaña "Sensibilidad": el tornado y los valores críticos del proyecto de la sesión (o del
+    ejemplo). Las barras van en porcentaje del ancho, con el VPN base en el centro."""
+    v = {k: str((valores or {}).get(k, d)).strip() for k, d in PROYECTO_EJEMPLO.items()}
+    salida: dict = {"es_ejemplo": valores is None, "errores": []}
+    try:
+        leido = leer_proyecto(v, hoy or date.today())
+    except ErrorProyecto as e:
+        return {**salida, "errores": e.mensajes}
+    if leido.tasa is None:
+        return {**salida, "errores": ["Escriba su tasa de oportunidad en la pestaña Su proyecto "
+                                      "para ver la sensibilidad."]}
+    s = sensibilidad(leido.proyecto, leido.senda, leido.tasa)
+    escala = max(abs(x - s.vpn_base) for f in s.filas for x in f.vpn.values()) or 1.0
+
+    def posicion(valor: float) -> float:
+        return round(50 + (valor - s.vpn_base) / escala * 50, 1)
+
+    filas = []
+    for f in s.filas:
+        variable = POR_CLAVE[f.variable]
+        izquierda, derecha = posicion(min(f.vpn.values())), posicion(max(f.vpn.values()))
+        filas.append({
+            "nombre": f.nombre,
+            "actual": formatear(f.actual, "tasa" if variable.en_nivel else "pesos"),
+            "vpn": [formatear(f.vpn[c], "pesos") for c in CAMBIOS],
+            "critico": _critico(f),
+            "barra": {"izquierda": izquierda, "derecha": derecha},
+            "descripcion": (f"{f.nombre}: con 20 % menos, VPN de {formatear(f.vpn[-0.2], 'pesos')}; "
+                            f"con 20 % más, {formatear(f.vpn[0.2], 'pesos')}"),
+        })
+    cero = posicion(0)
+    return {**salida, "proyecto": leido.proyecto.nombre,
+            "vpn": formatear(s.vpn_base, "pesos"), "tasa": como_la_escribio(leido.tasa),
+            "filas": filas, "cero": cero if 0 <= cero <= 100 else None,
+            "hallazgos": s.resultado.hallazgos,
+            "avisos": leido.avisos + s.resultado.supuestos, "fuentes": leido.fuentes}
+
+
+PESTANAS = (("proyecto", "Su proyecto"), ("sensibilidad", "Sensibilidad"),
+            ("credito", "Crédito y tasas"))
 
 
 def proyectos(pestana: str | None = None, proyecto: Mapping[str, object] | None = None) -> dict:
@@ -496,6 +547,8 @@ def proyectos(pestana: str | None = None, proyecto: Mapping[str, object] | None 
     tablero = {"pestana": pestana, "pestanas": PESTANAS, "opciones": OPCIONES}
     if pestana == "credito":
         tablero.update(credito=credito(), conversor=conversor())
+    elif pestana == "sensibilidad":
+        tablero["sensibilidad"] = sensibilidad_tab(proyecto)
     else:
         tablero["flujo"] = flujo(proyecto)
     return tablero
