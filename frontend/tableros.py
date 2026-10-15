@@ -23,7 +23,7 @@ from modules.balance.altman import ZONA_RIESGO, ZONA_SEGURA, altman, calificacio
 from modules.balance.benchmark import DIRECCION, comparar
 from modules.balance.dupont import variacion
 from modules.balance.razones import actividad, endeudamiento, liquidez, rentabilidad
-from modules.base import ResultadoModulo, formatear
+from modules.base import Indicador, ResultadoModulo, formatear
 from modules.macro.panorama import inflacion_anual, panorama_macro
 from modules.proyectos.evaluacion import evaluar
 from modules.proyectos.flujo import ErrorProyecto, flujo_caja
@@ -324,6 +324,14 @@ def _cero(valor: float) -> float:
     return 0.0 if abs(valor) < 0.5 else valor
 
 
+def _tarjeta(indicador: Indicador, titulo: str, detalle: str | None = None) -> dict:
+    """Tarjeta de un indicador; "—" si no se pudo calcular. "$" y la cifra no se separan."""
+    valor = "—" if indicador.valor is None else \
+        formatear(indicador.valor, indicador.unidad).replace("$ ", "$\u00a0")
+    return {"titulo": titulo, "valor": valor, "nombre": indicador.nombre,
+            "formula": indicador.formula, "detalle": detalle}
+
+
 def credito(formulario: Mapping[str, object] | None = None) -> dict:
     """Simulador de crédito: los valores del formulario (o el ejemplo) y su resultado."""
     v = {k: str((formulario or {}).get(k, d)).strip() for k, d in CREDITO_EJEMPLO.items()}
@@ -349,16 +357,10 @@ def credito(formulario: Mapping[str, object] | None = None) -> dict:
     tabla = amortizacion(monto, r.valor("tasa_periodica"), cuotas, v["sistema"])
     ind = {i.clave: i for i in r.indicadores}
 
-    def tarjeta(clave: str, titulo: str, detalle: str | None = None) -> dict:
-        i = ind[clave]
-        # "$" y la cifra no se separan al partir la línea
-        valor = formatear(i.valor, i.unidad).replace("$ ", "$\u00a0")
-        return {"titulo": titulo, "valor": valor, "nombre": i.nombre,
-                "formula": i.formula, "detalle": detalle}
-
     cada = v["periodicidad"]
-    primeras = [tarjeta("cuota", f"Cuota {cada}")] if v["sistema"] == "cuota_fija" else \
-        [tarjeta("primera_cuota", "Primera cuota"), tarjeta("ultima_cuota", "Última cuota")]
+    primeras = [_tarjeta(ind["cuota"], f"Cuota {cada}")] if v["sistema"] == "cuota_fija" else \
+        [_tarjeta(ind["primera_cuota"], "Primera cuota"),
+         _tarjeta(ind["ultima_cuota"], "Última cuota")]
     proporcion = formatear(ind["proporcion_intereses"].valor, "proporcion")
     periodica = None if cada == "anual" else \
         f"{formatear(ind['tasa_periodica'].valor, 'tasa')} {cada}"
@@ -377,10 +379,10 @@ def credito(formulario: Mapping[str, object] | None = None) -> dict:
     return {
         "v": v, "errores": [],
         "tarjetas": [*primeras,
-                     tarjeta("intereses_totales", "Intereses del crédito",
+                     _tarjeta(ind["intereses_totales"], "Intereses del crédito",
                              f"{proporcion} del monto prestado"),
-                     tarjeta("total_pagado", "Total a pagar"),
-                     tarjeta("tasa_efectiva_anual", "Costo efectivo anual", periodica)],
+                     _tarjeta(ind["total_pagado"], "Total a pagar"),
+                     _tarjeta(ind["tasa_efectiva_anual"], "Costo efectivo anual", periodica)],
         "hallazgos": r.hallazgos, "avisos": r.supuestos, "anual": anual,
         "cuotas": [{"periodo": c.periodo, "saldo_inicial": formatear(c.saldo_inicial, "pesos"),
                     "interes": formatear(c.interes, "pesos"), "abono": formatear(c.abono, "pesos"),
@@ -468,22 +470,17 @@ def _evaluacion(r: ResultadoModulo, tasa: float, horizonte: int) -> dict:
     """Tarjetas de la evaluación. El resultado va en palabras, no solo en el color."""
     ind = {i.clave: i for i in r.indicadores}
 
-    def tarjeta(clave: str, titulo: str, detalle: str | None = None) -> dict:
-        i = ind[clave]
-        valor = "—" if i.valor is None else formatear(i.valor, i.unidad).replace("$ ", "$ ")
-        return {"titulo": titulo, "valor": valor, "nombre": i.nombre, "formula": i.formula,
-                "detalle": detalle}
-
     vpn, recuperacion = ind["vpn"].valor, ind["recuperacion"].valor
     return {
         "tarjetas": [
-            tarjeta("vpn", "VPN", "Crea valor" if vpn >= 0 else "No crea valor"),
-            tarjeta("tir", "TIR", f"Frente a {como_la_escribio(tasa)} de oportunidad"
+            _tarjeta(ind["vpn"], "VPN", "Crea valor" if vpn >= 0 else "No crea valor"),
+            _tarjeta(ind["tir"], "TIR", f"Frente a {como_la_escribio(tasa)} de oportunidad"
                     if ind["tir"].valor is not None else "No hay una TIR única"),
-            tarjeta("tirm", "TIRM", "Reinvierte a la tasa de oportunidad"),
-            tarjeta("recuperacion", "Recuperación", f"De {horizonte} años" if recuperacion
+            _tarjeta(ind["tirm"], "TIRM", "Reinvierte a la tasa de oportunidad"),
+            _tarjeta(ind["recuperacion"], "Recuperación", f"De {horizonte} años" if recuperacion
                     is not None else f"No se recupera en {horizonte} años"),
-            tarjeta("indice_rentabilidad", "Índice de rentabilidad", "Pesos de hoy por peso invertido"),
+            _tarjeta(ind["indice_rentabilidad"], "Índice de rentabilidad",
+                     "Pesos de hoy por peso invertido"),
         ],
         "hallazgos": r.hallazgos, "avisos": r.advertencias,
     }

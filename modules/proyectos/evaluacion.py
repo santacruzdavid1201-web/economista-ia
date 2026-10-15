@@ -36,6 +36,7 @@ def evaluar(flujo: Flujo, tasa: float) -> ResultadoModulo:
     valor = vpn(tasa, flujos)
     la_tir, avisos = tir(flujos)
     recuperacion = recuperacion_descontada(tasa, flujos)
+    indice = indice_rentabilidad(tasa, flujos)
     escrita = como_la_escribio(tasa)
 
     # El VPN en palabras y con la cifra en positivo: el 7B pierde el signo de "$ -4.174.372"
@@ -57,7 +58,7 @@ def evaluar(flujo: Flujo, tasa: float) -> ResultadoModulo:
                f"menor que la tasa de oportunidad de {escrita}: el proyecto rinde, pero menos que "
                "la alternativa."))
     # El 7B leyó un índice de 0,97 como "sugiere rendimiento": menos de uno es devolver menos
-    if (indice := indice_rentabilidad(tasa, flujos)) is not None:
+    if indice is not None:
         hallazgos.append(f"Devuelve {formatear(indice, 'veces').removesuffix(' veces')} pesos de "
                          "hoy por cada peso invertido (índice de rentabilidad): "
                          + ("más de uno, por eso crea valor." if indice >= 1 else
@@ -82,7 +83,7 @@ def evaluar(flujo: Flujo, tasa: float) -> ResultadoModulo:
                   unidad="anios", formula="años hasta que el flujo descontado acumulado llega a "
                                           "cero"),
         Indicador(clave="indice_rentabilidad", nombre="Índice de rentabilidad",
-                  valor=indice_rentabilidad(tasa, flujos), unidad="veces",
+                  valor=indice, unidad="veces",
                   formula="valor presente de los flujos desde el año 1 / inversión del año 0"),
     ]
     return ResultadoModulo(modulo="proyectos", analisis="evaluacion", indicadores=indicadores,
