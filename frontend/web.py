@@ -308,6 +308,11 @@ async def credito(request: Request):
     return _pagina(request, "_credito.html", {"c": tableros.credito(await request.form())})
 
 
+@router.post("/proyectos/tasas", response_class=HTMLResponse)
+async def tasas(request: Request):
+    return _pagina(request, "_conversion.html", {"c": tableros.conversor(await request.form())})
+
+
 # --------------------------------------------------------------------------- #
 # Conversación
 # --------------------------------------------------------------------------- #

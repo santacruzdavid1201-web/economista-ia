@@ -107,7 +107,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
     `tests/frontend/test_web.py`
   - Tamaño: M
 
-- [ ] **9. Conversor de tasas en el tablero**
+- [x] **9. Conversor de tasas en el tablero**
   - Aceptación: una tasa y su tipo → equivalentes (EA, mensual, NMV,
     trimestral, NTV, mes anticipado) con la fórmula en el título.
   - Verificar: suite + revisión manual

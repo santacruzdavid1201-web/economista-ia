@@ -1,0 +1,17 @@
+{#- Resultado del conversor de tasas: se incluye en el tablero y es la respuesta del formulario -#}
+{% if c.errores %}
+  <ul class="errores">{% for e in c.errores %}<li>{{ e }}</li>{% endfor %}</ul>
+{% else %}
+  <ul class="hallazgos">{% for h in c.hallazgos %}<li>{{ h }}</li>{% endfor %}</ul>
+  <div class="tabla-desplazable">
+    <table class="libro anual equivalencias">
+      <tr><th>Tipo de tasa</th><th class="numero">Tasa equivalente</th><th>Cómo se calcula</th></tr>
+      {% for f in c.filas %}
+        <tr{% if f.origen %} class="fila-origen"{% endif %}>
+          <td>{{ f.tipo }} · {{ f.nombre }}{% if f.origen %} <span class="ayuda">(la que escribió)</span>{% endif %}</td>
+          <td class="valor">{{ f.valor }}</td>
+          <td class="formula">{{ f.formula }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+{% endif %}

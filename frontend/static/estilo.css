@@ -410,12 +410,13 @@ main { max-width: 74rem; margin: 0 auto; padding: 0 1.5rem 6rem; }   /* abajo: e
 .simulador label { align-content: start; }
 .simulador fieldset { grid-column: 1 / -1; }
 .tarjetas-credito .tarjeta-valor { font-size: clamp(1.3rem, 3.2vw, 1.9rem); }
-.simulador .boton { justify-self: start; margin-bottom: 1.25rem; }
+.simulador .boton { justify-self: start; align-self: end; margin-bottom: 0.9rem; }
 .composicion { display: block; width: 7rem; height: 0.6rem; margin-top: 0.45rem; border-radius: 0.3rem; background: var(--menta); overflow: hidden; }
 .composicion-interes { display: block; height: 100%; background: var(--coral); }
 .leyenda-interes, .leyenda-abono { display: inline-block; width: 1.2rem; height: 0.55rem; border-radius: 0.3rem; }
 .leyenda-interes { background: var(--coral); }
 .leyenda-abono { background: var(--menta); }
+.fila-origen td { background: var(--fondo); font-weight: 700; }
 
 /* ------------------------------------------------------------ transiciones */
 ::view-transition-old(root) { animation: 160ms ease-in both salir; }

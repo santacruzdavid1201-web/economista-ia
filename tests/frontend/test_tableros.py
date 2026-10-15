@@ -84,3 +84,20 @@ def test_simulador_de_credito_abono_constante_y_trimestral():
 def test_simulador_de_credito_con_errores(campos, mensaje):
     c = tableros.credito(campos)
     assert any(mensaje in e for e in c["errores"]) and "tarjetas" not in c
+
+
+def test_conversor_de_tasas_con_el_ejemplo():
+    c = tableros.conversor()
+    assert c["errores"] == [] and c["v"] == {"tasa": "2", "tipo": "MV"}
+    filas = {f["tipo"]: f for f in c["filas"]}
+    assert len(filas) == 11 and filas["EA"]["valor"] == "26,82 %"
+    assert filas["MV"]["origen"] and not filas["EA"]["origen"]
+    assert filas["NMV"]["valor"] == "24,00 %" and "nominal = periódica × 12" in filas["NMV"]["formula"]
+    assert c["hallazgos"] == ["Una tasa de 2 % mensual equivale a 26,82 % efectiva anual."]
+
+
+@pytest.mark.parametrize("campos, mensaje", [
+    ({"tasa": "abc"}, "La tasa debe ser un número"), ({"tipo": "XYZ"}, "Tipo de tasa desconocido")])
+def test_conversor_de_tasas_con_errores(campos, mensaje):
+    c = tableros.conversor(campos)
+    assert any(mensaje in e for e in c["errores"]) and "filas" not in c

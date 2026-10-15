@@ -37,3 +37,21 @@
   {% endwith %}
   <div id="credito" aria-live="polite">{% with c = t.credito %}{% include "_credito.html" %}{% endwith %}</div>
 </section>
+
+<section class="bloque" aria-labelledby="titulo-conversor">
+  <h2 id="titulo-conversor">Conversor de tasas</h2>
+  <p class="bloque-nota">La misma tasa expresada de cada forma: con cualquiera de ellas se paga lo mismo en el año.</p>
+  {% with v = t.conversor.v, o = t.opciones %}
+  <form class="formulario simulador" hx-post="/proyectos/tasas" hx-trigger="change delay:300ms, submit"
+        hx-target="#conversion" hx-swap="innerHTML" hx-sync="this:replace">
+    <label>Tasa (%)
+      <input name="tasa" value="{{ v.tasa }}" inputmode="decimal" autocomplete="off"></label>
+    <label>Tipo de tasa
+      <select name="tipo">
+        {% for clave, nombre in o.tipos %}<option value="{{ clave }}"{% if clave == v.tipo %} selected{% endif %}>{{ nombre }}</option>{% endfor %}
+      </select></label>
+    <button type="submit" class="boton">Convertir</button>
+  </form>
+  {% endwith %}
+  <div id="conversion" aria-live="polite">{% with c = t.conversor %}{% include "_conversion.html" %}{% endwith %}</div>
+</section>

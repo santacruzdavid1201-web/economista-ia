@@ -322,3 +322,9 @@ def test_simulador_de_credito_devuelve_solo_el_resultado(cliente):
 def test_simulador_de_credito_muestra_los_errores(cliente):
     r = cliente.post("/proyectos/credito", data={**CREDITO_NMV, "monto": "mucho"})
     assert r.status_code == 200 and "Escriba el monto" in r.text and "$ 5.884.928" not in r.text
+
+
+def test_conversor_de_tasas_en_el_tablero(cliente):
+    assert "Conversor de tasas" in cliente.get("/modulo/proyectos").text
+    r = cliente.post("/proyectos/tasas", data={"tasa": "24", "tipo": "NMV"})
+    assert r.status_code == 200 and "26,82 %" in r.text and "<form" not in r.text

@@ -30,6 +30,7 @@ from modules.proyectos.matematica_financiera import (
     ErrorCredito,
     ErrorTasa,
     amortizacion,
+    convertir_tasa,
     cuotas_del_plazo,
     simular_credito,
 )
@@ -391,6 +392,26 @@ def credito(formulario: Mapping[str, object] | None = None) -> dict:
     }
 
 
+CONVERSOR_EJEMPLO = {"tasa": "2", "tipo": "MV"}
+
+
+def conversor(formulario: Mapping[str, object] | None = None) -> dict:
+    """Una tasa y su tipo → su equivalente en cada tipo, con la fórmula de cada conversión."""
+    v = {k: str((formulario or {}).get(k, d)).strip() for k, d in CONVERSOR_EJEMPLO.items()}
+    tasa = _numero(v["tasa"])
+    if tasa is None or not tasa > -100:
+        return {"v": v, "errores": ["La tasa debe ser un número, por ejemplo 2 o 1,5."]}
+    try:
+        filas = [(hacia, convertir_tasa(tasa / 100, v["tipo"], hacia)) for hacia in TIPOS]
+        resumen = convertir_tasa(tasa / 100, v["tipo"], "MV" if v["tipo"] == "EA" else "EA")
+    except ErrorTasa as e:
+        return {"v": v, "errores": [str(e)]}
+    return {"v": v, "errores": [], "hallazgos": resumen.hallazgos,
+            "filas": [{"tipo": hacia, "nombre": TIPOS[hacia][0], "origen": hacia == v["tipo"],
+                       "valor": formatear(r.valor("tasa_convertida"), "tasa"),
+                       "formula": r.indicadores[0].formula} for hacia, r in filas]}
+
+
 def proyectos() -> dict:
     """Tablero de proyectos: por ahora, matemática financiera con los datos del usuario."""
-    return {"credito": credito(), "opciones": OPCIONES}
+    return {"credito": credito(), "conversor": conversor(), "opciones": OPCIONES}
