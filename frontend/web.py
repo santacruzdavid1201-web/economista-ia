@@ -349,7 +349,8 @@ def respuesta(request: Request, pid: str, s: Sesion = Depends(sesion),
                             'Escríbala de nuevo.</p>')
     historial = [(t.pregunta, t.respuesta) for t in s.chat if t.respuesta]
     try:
-        turno.respuesta = responder(turno.pregunta, s.ctx, cliente, historial=historial)
+        turno.respuesta = responder(turno.pregunta, s.ctx, cliente, historial=historial,
+                                    proyecto=s.proyecto)
     except Exception as e:  # última red: la interfaz nunca se cae
         turno.respuesta = Respuesta(texto=f"Ocurrió un error inesperado: {e}", origen="error")
     s.chat.append(turno)

@@ -9,6 +9,7 @@ gerente qué pregunta responde cada una, no solo qué indicadores calcula.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date
 from typing import Callable
 
 from app.orchestrator.lectura import (
@@ -19,6 +20,7 @@ from app.orchestrator.lectura import (
     tipo_destino,
     unidad_plazo,
 )
+from app.orchestrator.proyecto import leer_proyecto
 from data_sources.externos.referencia import homologar_empresa
 from data_sources.externos.series import catalogo
 from data_sources.externos.series.modelo import Serie
@@ -31,6 +33,8 @@ from modules.esquema_financiero import HistorialFinanciero
 from modules.macro.crecimiento_real import crecimiento_real, meses_del_periodo
 from modules.macro.panorama import panorama_macro
 from modules.macro.sensibilidad_tasas import MAX_PUNTOS, ErrorPuntos, sensibilidad_tasas
+from modules.proyectos.evaluacion import evaluar
+from modules.proyectos.flujo import ErrorProyecto, flujo_caja
 from modules.proyectos.matematica_financiera import (
     ErrorCredito,
     ErrorTasa,
@@ -179,6 +183,33 @@ def _credito(ctx: ContextoEmpresa | None, i: int | None, argumentos: dict) -> li
         raise ErrorHerramienta(str(e)) from e
 
 
+SIN_PROYECTO = ("Para evaluar su proyecto, primero escríbalo en la pestaña «Su proyecto» del "
+                "módulo Evaluación de proyectos y pulse Calcular (también sirve con el ejemplo).")
+
+
+def _evaluar_proyecto(ctx: ContextoEmpresa | None, i: int | None,
+                      argumentos: dict) -> list[ResultadoModulo]:
+    """El último proyecto válido de la sesión, con la tasa de la pregunta si la da."""
+    valores = argumentos.get("proyecto")
+    if not valores:
+        raise ErrorHerramienta(SIN_PROYECTO)
+    tasa = argumentos.get("tasa")
+    if tasa not in (None, ""):
+        valores = {**valores, "tasa_oportunidad": str(tasa)}
+    try:
+        leido = leer_proyecto(valores, date.today())
+    except ErrorProyecto as e:
+        raise ErrorHerramienta(" ".join(e.mensajes)) from e
+    if leido.tasa is None:
+        raise ErrorHerramienta("Su proyecto no tiene tasa de oportunidad. Escríbala en la pestaña "
+                               "«Su proyecto» o en la pregunta, por ejemplo: ¿y si mi tasa es 18 %?")
+    r = evaluar(flujo_caja(leido.proyecto, leido.senda), leido.tasa)
+    r.supuestos.insert(0, f"Se evaluó el proyecto «{leido.proyecto.nombre}» de la pestaña Su "
+                          "proyecto, con flujos a precios de hoy.")
+    r.fuentes, r.advertencias = leido.fuentes, r.advertencias + leido.avisos
+    return [r]
+
+
 def _convertir(ctx: ContextoEmpresa | None, i: int | None, argumentos: dict) -> list[ResultadoModulo]:
     """Sin empresa. El modelo da la cifra; el tipo de origen y el de destino los lee Python."""
     pregunta = argumentos.get("pregunta", "")
@@ -294,6 +325,16 @@ HERRAMIENTAS: list[Herramienta] = [
             "type": "number",
             "description": "Tasa en porcentaje, como aparece en la pregunta; p. ej. 2 si dice "
                            "2 % mensual."}}),
+    Herramienta(
+        "evaluar_proyecto",
+        "¿Me conviene mi proyecto? ¿Crea valor? ¿Cuál es su VPN o su TIR? ¿En cuánto tiempo "
+        "recupero la inversión? ¿Y si mi tasa de oportunidad fuera otra? Evalúa el proyecto que el "
+        "gerente escribió en la pestaña Su proyecto. No necesita los estados financieros.",
+        _evaluar_proyecto, usa_periodo=False,
+        parametros={"tasa": {
+            "type": "number",
+            "description": "Tasa de oportunidad en porcentaje, solo si la pregunta da una cifra; "
+                           "p. ej. 18."}}),
     Herramienta(
         "comparar_con_sector",
         "¿Cómo está la empresa frente a empresas similares de su sector? Ubica cada "

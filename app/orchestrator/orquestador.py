@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import re
 import unicodedata
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import date
 from textwrap import shorten
@@ -23,6 +23,7 @@ from app.llm.client import ClienteChat, ClienteLLM, ErrorLLM, LlamadaHerramienta
 from app.orchestrator.lectura import monto_en_pesos
 from app.orchestrator.tools_registry import (
     POR_NOMBRE,
+    SIN_PROYECTO,
     ContextoEmpresa,
     ErrorHerramienta,
     Herramienta,
@@ -303,10 +304,12 @@ def _conceptual(pregunta: str, cliente: ClienteChat, buscador: Buscador | None,
 
 def responder(pregunta: str, ctx: ContextoEmpresa | None, cliente: ClienteChat | None = None,
               hoy: date | None = None, buscador: Buscador | None = None,
-              historial: Sequence[tuple[str, Respuesta]] = ()) -> Respuesta:
+              historial: Sequence[tuple[str, Respuesta]] = (),
+              proyecto: Mapping[str, object] | None = None) -> Respuesta:
     """
     `ctx`: None si el usuario aún no subió estados financieros (solo conversa y explica).
     `historial`: turnos anteriores (pregunta, respuesta), el más reciente al final.
+    `proyecto`: lo que el usuario escribió en la pestaña Su proyecto (o None).
     """
     try:
         pregunta = validar_pregunta(pregunta)
@@ -373,7 +376,8 @@ def responder(pregunta: str, ctx: ContextoEmpresa | None, cliente: ClienteChat |
         i = indice_periodo(ctx.historial, argumentos.get("periodo")) if herramienta.usa_periodo \
             else None
         # Con la pregunta: lo que el 7B confunde (tipo de tasa, plazo) lo lee Python
-        resultados = herramienta.ejecutar(ctx, i, {**argumentos, "pregunta": pregunta})
+        resultados = herramienta.ejecutar(ctx, i, {**argumentos, "pregunta": pregunta,
+                                                   "proyecto": proyecto})
     except ErrorHerramienta as e:
         return Respuesta(texto=str(e), origen="sin_llm", herramienta=herramienta.nombre,
                          argumentos=argumentos, eventos=eventos)

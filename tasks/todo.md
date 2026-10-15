@@ -50,7 +50,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
 
 ## Fase 3: chat
 
-- [ ] **4. Herramienta `evaluar_proyecto`**
+- [x] **4. Herramienta `evaluar_proyecto`**
   - Aceptación: `responder(..., proyecto=...)` pasa el proyecto a las
     herramientas; `evaluar_proyecto` lo evalúa (tasa de la pregunta si la da,
     descartada si no está en ella); sin proyecto → mensaje que remite a la

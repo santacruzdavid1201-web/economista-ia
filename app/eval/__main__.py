@@ -17,6 +17,7 @@ from datetime import datetime
 
 from app.config import RAIZ, config
 from app.demo import contexto_demo
+from app.orchestrator.proyecto import PROYECTO_EJEMPLO
 from app.eval.evaluador import cargar_set, correr, informe, resumir
 from app.llm.client import ClienteLLM
 
@@ -55,7 +56,8 @@ def main() -> int:
         origen = r.respuesta.origen if r.respuesta else "excepción"
         print(f"  {r.caso.id:>4} {estado} {r.segundos:5.1f} s  {origen:<9} {r.caso.pregunta[:60]}")
 
-    resultados = correr(s.casos, contexto_demo(), ClienteLLM(), al_terminar=avance)
+    resultados = correr(s.casos, contexto_demo(), ClienteLLM(), al_terminar=avance,
+                        proyecto=PROYECTO_EJEMPLO)
     ahora = datetime.now()
     texto = informe(resultados, s, f"Evaluación · {ahora:%Y-%m-%d %H:%M} · {modelo}")
     SALIDA.mkdir(parents=True, exist_ok=True)

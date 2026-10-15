@@ -23,6 +23,10 @@ Reglas:
 - Si pregunta cuánto pagaría por un crédito o préstamo (la cuota, los
   intereses, el total), usa simular_credito, aunque no haya estados
   financieros. Simular un crédito no es asesoría de inversiones.
+- Si pregunta por su proyecto (si le conviene, si crea valor, su VPN, su TIR,
+  en cuánto recupera la inversión o qué pasa con otra tasa de oportunidad),
+  usa evaluar_proyecto. Si pregunta qué es el VPN o la TIR, sin hablar de su
+  proyecto, usa consulta_conceptual.
 - Si da una tasa con cifra y pregunta a cuánto equivale en otro tipo
   (mensual, efectiva anual, nominal, anticipada), usa convertir_tasa. Si
   pregunta qué es una tasa, sin cifra, usa consulta_conceptual.

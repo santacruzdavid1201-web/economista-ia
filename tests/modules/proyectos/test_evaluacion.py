@@ -26,7 +26,8 @@ def test_caso_a_mano_sin_inflacion_al_10_por_ciento():
     assert r.hallazgos[0] == ("Con una tasa de oportunidad de 10 % efectiva anual, el proyecto "
                               "crea valor: deja $ 3.109.400 más, en pesos de hoy, que invertir esa "
                               "plata en la alternativa.")
-    assert "La TIR es 11,11 %, mayor que la tasa de oportunidad de 10 %." in r.hallazgos
+    assert ("La TIR es 11,11 %, mayor que la tasa de oportunidad de 10 %: el proyecto rinde más "
+            "que la alternativa.") in r.hallazgos
     assert "Recupera la inversión, con su costo de oportunidad, en 4,9 años de 5." in r.hallazgos
 
 
@@ -35,7 +36,9 @@ def test_no_crea_valor_lo_dice_en_palabras_con_la_cifra_en_positivo():
     assert r.valor("vpn") == pytest.approx(-4_174_372, abs=1)
     assert r.hallazgos[0].startswith("Con una tasa de oportunidad de 15 % efectiva anual, el "
                                      "proyecto no crea valor: deja $ 4.174.372 menos")
-    assert "La TIR es 13,40 %, menor que la tasa de oportunidad de 15 %." in r.hallazgos
+    # "No crea valor" no es "no rinde": el 7B dijo "no es rentable en términos absolutos"
+    assert ("La TIR es 13,40 %, menor que la tasa de oportunidad de 15 %: el proyecto rinde, pero "
+            "menos que la alternativa.") in r.hallazgos
     assert ("No recupera la inversión, con su costo de oportunidad, dentro de los 5 años del "
             "horizonte.") in r.hallazgos
 
@@ -68,3 +71,10 @@ def test_supuestos_de_la_tirm_y_del_flujo():
     r = evaluacion(0.10)
     assert any("TIRM" in s and "tasa de oportunidad" in s for s in r.supuestos)
     assert any("sin la financiación" in s for s in r.supuestos)
+
+
+def test_tir_negativa_dice_que_no_devuelve_la_inversion():
+    r = evaluacion(0.10, ingresos=30_000_000)
+    assert r.valor("tir") < 0
+    assert any(h.startswith("La TIR es -") and "no devuelve ni siquiera la inversión" in h
+               for h in r.hallazgos)

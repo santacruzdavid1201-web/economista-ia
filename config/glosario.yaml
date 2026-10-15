@@ -135,3 +135,20 @@ proporcion_intereses: >-
 tasa_convertida: >-
   La tasa del tipo pedido que cobra lo mismo que la tasa de la pregunta: con
   cualquiera de las dos se termina pagando igual en el año.
+vpn: >-
+  Valor presente neto: lo que el proyecto deja de más (o de menos) frente a
+  invertir la misma plata en la alternativa que rinde la tasa de oportunidad,
+  todo traído a pesos de hoy. Si es positivo, el proyecto crea valor.
+tir: >-
+  Tasa interna de retorno: la rentabilidad anual que da el propio proyecto. Se
+  compara con la tasa de oportunidad; si hay varias o ninguna, no sirve y se
+  decide con el valor presente neto.
+tirm: >-
+  Tasa interna de retorno modificada: como la TIR, pero suponiendo que lo que
+  deja el proyecto se reinvierte a la tasa de oportunidad, que es más realista.
+recuperacion: >-
+  Recuperación descontada: cuántos años tarda el proyecto en devolver la
+  inversión, contando lo que esa plata habría rendido en la alternativa.
+indice_rentabilidad: >-
+  Índice de rentabilidad: cuántos pesos de hoy devuelve el proyecto por cada
+  peso invertido. Mayor que uno, crea valor; menor que uno, no.

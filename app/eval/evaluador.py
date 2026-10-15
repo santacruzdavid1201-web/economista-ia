@@ -272,8 +272,9 @@ class ClienteContado:
 
 
 def correr(casos: list[Caso], ctx: ContextoEmpresa, cliente, hoy: date | None = None,
-           al_terminar=None) -> list[Resultado]:
-    """Corre los casos en orden; `al_terminar(resultado)` sirve para mostrar avance."""
+           al_terminar=None, proyecto: dict | None = None) -> list[Resultado]:
+    """Corre los casos en orden; `al_terminar(resultado)` sirve para mostrar avance.
+    `proyecto`: el de la pestaña Su proyecto (el set usa el de ejemplo)."""
     previos: dict[str, Respuesta] = {}
     preguntas = {c.id: c.pregunta for c in casos}
     resultados: list[Resultado] = []
@@ -283,7 +284,8 @@ def correr(casos: list[Caso], ctx: ContextoEmpresa, cliente, hoy: date | None = 
         historial = ([(preguntas[caso.despues_de], previos[caso.despues_de])]
                      if caso.despues_de in previos else [])
         try:
-            respuesta = responder(caso.pregunta, ctx, contado, hoy, historial=historial)
+            respuesta = responder(caso.pregunta, ctx, contado, hoy, historial=historial,
+                                  proyecto=proyecto)
         except Exception as e:  # noqa: BLE001 — cualquier excepción es una falla a registrar
             resultado = Resultado(caso, None, perf_counter() - inicio, contado.llamadas,
                                   error=f"{type(e).__name__}: {e}")

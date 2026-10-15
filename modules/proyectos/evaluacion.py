@@ -44,10 +44,18 @@ def evaluar(flujo: Flujo, tasa: float) -> ResultadoModulo:
         + (f"crea valor: deja {formatear(valor, 'pesos')} más" if valor >= 0
            else f"no crea valor: deja {formatear(-valor, 'pesos')} menos")
         + ", en pesos de hoy, que invertir esa plata en la alternativa."]
-    if la_tir is not None:
-        hallazgos.append(f"La TIR es {formatear(la_tir, 'tasa')}, "
-                         f"{'mayor' if la_tir > tasa else 'menor'} que la tasa de oportunidad de "
-                         f"{escrita}.")
+    # "No crea valor" no es "no rinde": el 7B escribió "no es rentable en términos absolutos"
+    # con una TIR de 13,75 %. La distinción va aquí, en palabras.
+    if la_tir is not None and la_tir < 0:
+        hallazgos.append(f"La TIR es {formatear(la_tir, 'tasa')}: el proyecto no devuelve ni "
+                         "siquiera la inversión.")
+    elif la_tir is not None:
+        hallazgos.append(
+            f"La TIR es {formatear(la_tir, 'tasa')}, "
+            + (f"mayor que la tasa de oportunidad de {escrita}: el proyecto rinde más que la "
+               "alternativa." if la_tir > tasa else
+               f"menor que la tasa de oportunidad de {escrita}: el proyecto rinde, pero menos que "
+               "la alternativa."))
     hallazgos.append(
         f"Recupera la inversión, con su costo de oportunidad, en "
         f"{formatear(recuperacion, 'anios')} de {n}." if recuperacion is not None else

@@ -521,3 +521,47 @@ def test_sin_la_empresa_en_los_datos_de_lo_que_no_es_de_la_empresa(ctx):
     llm = LLMFalso(herramienta("convertir_tasa", tasa=2), texto("Equivale a 26,82 %."))
     responder("¿2 % mensual cuánto es en efectivo anual?", ctx, llm, HOY)
     assert ctx.historial.empresa.razon_social not in llm.llamadas[1]["usuario"]
+
+
+# --------------------------------------------------------------------------- #
+# Evaluación del proyecto de la sesión: sin empresa
+# --------------------------------------------------------------------------- #
+from app.orchestrator.orquestador import SIN_PROYECTO  # noqa: E402
+from app.orchestrator.proyecto import PROYECTO_EJEMPLO  # noqa: E402
+
+# Inflación fija: la herramienta no necesita la red
+PROYECTO_3 = {**PROYECTO_EJEMPLO, "inflacion": "3"}            # tasa de ejemplo: 15 %
+
+
+def test_evaluar_el_proyecto_de_la_sesion():
+    llm = LLMFalso(herramienta("evaluar_proyecto"), texto("Con 15 %, el proyecto no crea valor."))
+    r = responder("¿Me conviene el proyecto?", None, llm, HOY, proyecto=PROYECTO_3)
+    assert r.origen == "llm" and r.herramienta == "evaluar_proyecto" and r.periodo is None
+    assert r.argumentos == {}                                   # ni la pregunta ni el proyecto
+    assert r.resultados[0].valor("vpn") == pytest.approx(-4_174_372, abs=1)
+    assert any("Remodelación de 10 habitaciones" in n for n in r.notas)
+    assert "no crea valor" in llm.llamadas[1]["usuario"]
+
+
+def test_evaluar_con_la_tasa_de_la_pregunta():
+    llm = LLMFalso(herramienta("evaluar_proyecto", tasa=10), texto("Al 10 %, crea valor."))
+    r = responder("¿Y si mi tasa de oportunidad es 10 %?", None, llm, HOY,
+                  proyecto={**PROYECTO_EJEMPLO, "inflacion": "0"})
+    assert r.resultados[0].valor("vpn") == pytest.approx(3_109_400.13, abs=0.01)
+
+
+def test_evaluar_descarta_una_tasa_que_no_esta_en_la_pregunta():
+    llm = LLMFalso(herramienta("evaluar_proyecto", tasa=20), texto("No crea valor."))
+    r = responder("¿Me conviene el proyecto?", None, llm, HOY, proyecto=PROYECTO_3)
+    assert "tasa" not in r.argumentos
+    assert r.resultados[0].hallazgos[0].startswith("Con una tasa de oportunidad de 15 %")
+
+
+def test_evaluar_sin_proyecto_remite_a_la_pestana():
+    r = responder("¿Me conviene el proyecto?", None, LLMFalso(herramienta("evaluar_proyecto")), HOY)
+    assert r.origen == "sin_llm" and r.texto == SIN_PROYECTO and "Su proyecto" in r.texto
+
+
+def test_evaluar_proyecto_solo_pide_la_tasa():
+    e = next(e for e in esquema_openai() if e["function"]["name"] == "evaluar_proyecto")
+    assert set(e["function"]["parameters"]["properties"]) == {"tasa"}

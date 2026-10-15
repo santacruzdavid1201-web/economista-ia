@@ -35,9 +35,10 @@ def contexto_demo() -> ContextoEmpresa:
 
 if __name__ == "__main__":
     from app.orchestrator.orquestador import responder
+    from app.orchestrator.proyecto import PROYECTO_EJEMPLO
 
     pregunta = " ".join(sys.argv[1:]) or "¿Cómo está mi empresa?"
-    r = responder(pregunta, contexto_demo())
+    r = responder(pregunta, contexto_demo(), proyecto=PROYECTO_EJEMPLO)
     print(f"[{r.origen} · {r.herramienta} · {r.periodo}]\n")
     print(r.texto_completo)
     if r.eventos:
