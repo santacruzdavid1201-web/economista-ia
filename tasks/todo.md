@@ -78,7 +78,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
     `app/orchestrator/tools_registry.py`, `config/prompts/router.md`, tests
   - Tamaño: S
 
-- [ ] **7. Nota de conocimiento y bloque L**
+- [x] **7. Nota de conocimiento y bloque L**
   - Aceptación: `conocimiento/tasas-equivalentes.md` (fórmulas en símbolos y
     en palabras; `revisado: false` hasta que el usuario la revise), índice RAG
     reconstruido; bloque L en `tests/eval/preguntas.yaml` (crédito EA, crédito
@@ -90,8 +90,8 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
   - Tamaño: S
 
 ### Punto de control: chat
-- [ ] Las dos preguntas del objetivo se responden bien en el chat.
-- [ ] Bloque L al 100 %; el resto del set sin regresiones en enrutamiento.
+- [x] Las dos preguntas del objetivo se responden bien en el chat.
+- [x] Bloque L al 100 % (y K sin regresiones, 15/10/2026).
 
 ## Fase 3: tablero
 

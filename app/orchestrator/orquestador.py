@@ -382,7 +382,10 @@ def responder(pregunta: str, ctx: ContextoEmpresa | None, cliente: ClienteChat |
                      resultados=resultados, notas=_notas(resultados), eventos=eventos)
 
     # 3. Redactar y verificar
-    datos = json.dumps(datos_para_redactar(ctx, resultados), ensure_ascii=False, indent=1)
+    # Sin la empresa si el análisis no es de ella (crédito, tasas, economía): con el hotel
+    # cargado, el 7B escribió "similar al hallazgo de tu empresa" en una conversión de tasas
+    datos = json.dumps(datos_para_redactar(ctx if herramienta.usa_periodo else None, resultados),
+                       ensure_ascii=False, indent=1)
     con_sector = any(r.analisis == "benchmark" for r in resultados)
     texto = _redactar(cliente, _sistema("redaccion_calculo.md"),
                       f"PREGUNTA:\n{pregunta}\n\nDATOS:\n{datos}", [datos, pregunta], base,

@@ -514,3 +514,10 @@ def test_convertir_tasa_sin_destino_va_a_efectiva_anual_o_a_mensual():
     r = responder("¿A cuánto equivale el 18 % EA?", None,
                   LLMFalso(herramienta("convertir_tasa", tasa=18), texto("Equivale a 1,39 %.")), HOY)
     assert r.resultados[0].hallazgos[0].endswith("1,39 % mensual.")
+
+
+def test_sin_la_empresa_en_los_datos_de_lo_que_no_es_de_la_empresa(ctx):
+    # Con el hotel cargado, el 7B escribió "similar al hallazgo de tu empresa" en una conversión
+    llm = LLMFalso(herramienta("convertir_tasa", tasa=2), texto("Equivale a 26,82 %."))
+    responder("¿2 % mensual cuánto es en efectivo anual?", ctx, llm, HOY)
+    assert ctx.historial.empresa.razon_social not in llm.llamadas[1]["usuario"]

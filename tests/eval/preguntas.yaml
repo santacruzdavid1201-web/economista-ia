@@ -27,7 +27,7 @@
 
 criterios:
   # Reglas duras: deben pasar al 100 %
-  bloques_duros: [A, B, C, F, G, H, I, J, K]
+  bloques_duros: [A, B, C, F, G, H, I, J, K, L]
   # Si más de esta fracción de las respuestas redactables sale de respaldo,
   # hay que ajustar el prompt de redacción
   max_respaldo: 0.20
@@ -44,6 +44,7 @@ bloques:
   I: Tasas de interés
   J: Conversación
   K: Panorama macro
+  L: Matemática financiera
 
 casos:
   # ------------------------------------------------------------------------ #
@@ -507,3 +508,75 @@ casos:
     pregunta: ¿Cómo va el desempleo?
     espera: {herramienta: consultar_panorama_macro, origen: [llm, respaldo]}
     revisar: Compara con el mismo mes del año anterior, no con el mes previo.
+
+  # ------------------------------------------------------------------------ #
+  # L. Matemática financiera (15/10/2026): crédito y tasas, sin estados
+  # financieros. El tipo de tasa, el plazo y el sistema los lee Python.
+  # ------------------------------------------------------------------------ #
+  - id: "51"
+    bloque: L
+    pregunta: ¿Cuánto pago por un crédito de 200 millones al 18 % EA a 5 años?
+    espera:
+      herramienta: simular_credito
+      origen: [llm, respaldo]
+      cifra_de: [cuota]
+    revisar: Da la cuota fija y dice que la tasa es efectiva anual, sin confundirla con nominal.
+
+  - id: "52"
+    bloque: L
+    pregunta: Si me prestan 150 millones al 24 % NMV a 36 meses, ¿de cuánto es la cuota?
+    espera:
+      herramienta: simular_credito
+      origen: [llm, respaldo]
+      cifra_de: [cuota]
+    revisar: No presenta el 24 % NMV como si fuera la tasa efectiva anual.
+
+  - id: "53"
+    bloque: L
+    pregunta: ¿Cuánto pagaría de intereses por un préstamo de 80 millones al 16 % anual a 3 años con abono constante a capital?
+    # "Anual" sin más: efectiva anual, dicho como supuesto en las notas
+    espera:
+      herramienta: simular_credito
+      origen: [llm, respaldo]
+      cifra_de: [intereses_totales]
+      contiene: [se asumio que la tasa de 16 % anual es efectiva anual]
+
+  - id: "54"
+    bloque: L
+    pregunta: ¿2 % mensual cuánto es en efectivo anual?
+    # Con la primera versión el 7B agregó "cuánto ganaría la empresa": la pregunta no dice
+    # si la empresa presta o se endeuda
+    espera:
+      herramienta: convertir_tasa
+      origen: [llm, respaldo]
+      cifra_de: [tasa_convertida]
+      no_contiene: [ganaria, ganar]
+
+  - id: "55"
+    bloque: L
+    pregunta: ¿A cuánto equivale un 24 % NMV en efectivo anual?
+    espera:
+      herramienta: convertir_tasa
+      origen: [llm, respaldo]
+      cifra_de: [tasa_convertida]
+    revisar: Explica que la nominal no cuenta el interés sobre los intereses.
+
+  - id: "56"
+    bloque: L
+    pregunta: ¿Qué diferencia hay entre una tasa efectiva anual y una nominal?
+    espera:
+      herramienta: consulta_conceptual
+      fuentes: [Tasas de interés equivalentes y cuota de un crédito]
+
+  - id: "57"
+    bloque: L
+    pregunta: ¿Qué es mejor, un crédito con cuota fija o con abono constante?
+    espera:
+      herramienta: consulta_conceptual
+      fuentes: [Tasas de interés equivalentes y cuota de un crédito]
+    revisar: No recomienda uno; explica cuotas iguales frente a decrecientes y menos intereses con abono constante.
+
+  - id: "58"
+    bloque: L
+    pregunta: ¿En qué CDT me conviene invertir la caja de la empresa?
+    espera: {herramienta: fuera_de_alcance}

@@ -222,6 +222,12 @@ def _pesos(valor: float) -> str:
     return formatear(valor, "pesos")
 
 
+def _como_la_escribio(tasa: float) -> str:
+    """La tasa del usuario sin ceros de más ("24 %", "1,5 %"): el 7B la repite así, y con
+    "24,00 %" la cifra de la respuesta no estaría en el desplegable."""
+    return f"{round(tasa * 100, 6):g}".replace(".", ",") + " %"
+
+
 def simular_credito(monto: float, tasa: float, tipo: str, cuotas: int,
                     periodicidad: str = "mensual", sistema: str = "cuota_fija",
                     supuestos: list[str] | tuple[str, ...] = ()) -> ResultadoModulo:
@@ -242,11 +248,12 @@ def simular_credito(monto: float, tasa: float, tipo: str, cuotas: int,
 
     hallazgos = []
     if tipo != "EA":
-        hallazgos.append(f"La tasa de {formatear(tasa, 'tasa')} {nombre} equivale a "
+        hallazgos.append(f"La tasa de {_como_la_escribio(tasa)} {nombre} equivale a "
                          f"{formatear(ea, 'tasa')} efectiva anual"
                          + (": la nominal no cuenta el interés sobre los intereses." if nominal
                             else "."))
-    tasa_texto = f"{formatear(ea, 'tasa')} efectiva anual" + (
+    efectiva = _como_la_escribio(tasa) if tipo == "EA" else formatear(ea, "tasa")
+    tasa_texto = f"{efectiva} efectiva anual" + (
         "" if periodicidad == "anual" else f" ({formatear(i, 'tasa')} {periodicidad})")
     plazo = (f"{cuotas} cuotas {periodicidad}es" if cuotas > 1 else f"1 cuota {periodicidad}")
     base = f"Con una tasa de {tasa_texto}, un crédito de {_pesos(monto)} a {plazo}"
@@ -313,7 +320,7 @@ def convertir_tasa(tasa: float, desde: str, hacia: str,
     valor = convertir(tasa, desde, hacia)
     nombre1, _, nominal1, anticipada1 = TIPOS[desde]
     nombre2, _, nominal2, anticipada2 = TIPOS[hacia]
-    hallazgos = [f"Una tasa de {formatear(tasa, 'tasa')} {nombre1} equivale a "
+    hallazgos = [f"Una tasa de {_como_la_escribio(tasa)} {nombre1} equivale a "
                  f"{formatear(valor, 'tasa')} {nombre2}."]
     if nominal1 != nominal2:
         hallazgos.append("La diferencia es que la nominal no cuenta el interés sobre los "

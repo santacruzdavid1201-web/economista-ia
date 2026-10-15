@@ -170,7 +170,7 @@ def test_simular_credito_cuota_fija():
     assert r.valor("proporcion_intereses") == pytest.approx(0.4804, abs=1e-4)
     assert r.valor("tasa_periodica") == pytest.approx(MENSUAL_18_EA)
     assert r.hallazgos == [
-        "Con una tasa de 18,00 % efectiva anual (1,39 % mensual), un crédito de "
+        "Con una tasa de 18 % efectiva anual (1,39 % mensual), un crédito de "
         "$ 200.000.000 a 60 cuotas mensuales tiene una cuota fija de $ 4.934.680.",
         "En total pagaría $ 96.080.819 de intereses, el 48,0 % del monto prestado."]
     assert any("seguros" in s for s in r.supuestos)
@@ -178,7 +178,7 @@ def test_simular_credito_cuota_fija():
 
 def test_simular_credito_con_tasa_nominal_dice_su_equivalente_efectiva():
     r = simular_credito(200_000_000, 0.24, "NMV", 60)
-    assert r.hallazgos[0] == ("La tasa de 24,00 % nominal mes vencido equivale a 26,82 % "
+    assert r.hallazgos[0] == ("La tasa de 24 % nominal mes vencido equivale a 26,82 % "
                               "efectiva anual: la nominal no cuenta el interés sobre los intereses.")
     assert r.valor("tasa_periodica") == pytest.approx(0.02)
 
@@ -209,13 +209,13 @@ def test_convertir_tasa_mensual_a_efectiva():
     r = convertir_tasa(0.02, "MV", "EA")
     assert r.modulo == "proyectos" and r.analisis == "conversion_tasa"
     assert r.valor("tasa_convertida") == pytest.approx(0.2682417945625455)
-    assert r.hallazgos == ["Una tasa de 2,00 % mensual equivale a 26,82 % efectiva anual."]
+    assert r.hallazgos == ["Una tasa de 2 % mensual equivale a 26,82 % efectiva anual."]
     assert "(1 + i)^(12/1) − 1" in r.indicadores[0].formula
 
 
 def test_convertir_tasa_nominal_explica_la_diferencia():
     r = convertir_tasa(0.24, "NMV", "EA")
-    assert r.hallazgos[0] == "Una tasa de 24,00 % nominal mes vencido equivale a 26,82 % efectiva anual."
+    assert r.hallazgos[0] == "Una tasa de 24 % nominal mes vencido equivale a 26,82 % efectiva anual."
     assert "la nominal no cuenta el interés sobre los intereses" in r.hallazgos[1]
     assert r.indicadores[0].formula.startswith("periódica = nominal / 12")
 
@@ -224,3 +224,9 @@ def test_convertir_tasa_anticipada_explica_la_diferencia():
     r = convertir_tasa(0.02, "MA", "MV")
     assert r.valor("tasa_convertida") == pytest.approx(0.02 / 0.98)
     assert "al inicio del periodo" in r.hallazgos[1]
+
+
+def test_la_tasa_del_usuario_va_como_la_escribio():
+    # El 7B la repite así ("1,5 %"); con "1,50 %" no estaría en el desplegable
+    r = simular_credito(10_000_000, 0.015, "MV", 12)
+    assert r.hallazgos[0].startswith("La tasa de 1,5 % mensual equivale a ")
