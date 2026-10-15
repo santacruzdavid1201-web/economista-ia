@@ -85,17 +85,23 @@ def obtener(variable: str, geografia: str, hoy: date, directorio: Path = DIRECTO
         return guardada.model_copy(update={"advertencias": [
             f"No se pudo actualizar la serie {clave}; se usaron los datos consultados el "
             f"{guardada.consultada:%d/%m/%Y}."]})
-    # Atómico: quien lee mientras el actualizador escribe nunca ve un JSON a medias.
-    # Un temporal por hilo; si Windows niega el reemplazo porque alguien lee la
-    # copia en ese instante, se devuelve la serie igual y se guarda en la próxima.
+    guardar(archivo, serie.model_dump_json(indent=1))
+    return serie
+
+
+def guardar(archivo: Path, contenido: str) -> None:
+    """
+    Escritura atómica: quien lee mientras el actualizador escribe nunca ve un
+    JSON a medias. Un temporal por hilo; si Windows niega el reemplazo porque
+    alguien lee la copia en ese instante, no se guarda y se guarda en la próxima.
+    """
     temporal = archivo.with_name(f"{archivo.name}.{threading.get_ident()}.tmp")
     try:
-        directorio.mkdir(parents=True, exist_ok=True)
-        temporal.write_text(serie.model_dump_json(indent=1), encoding="utf-8")
+        archivo.parent.mkdir(parents=True, exist_ok=True)
+        temporal.write_text(contenido, encoding="utf-8")
         temporal.replace(archivo)
     except OSError:
         temporal.unlink(missing_ok=True)
-    return serie
 
 
 def actualizar(hoy: date | None = None, directorio: Path = DIRECTORIO) -> list[str]:

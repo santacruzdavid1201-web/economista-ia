@@ -13,17 +13,18 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
     `tests/data_sources/externos/test_series.py`
   - Tamaño: XS
 
-- [ ] **2. Pronóstico de inflación del Informe de Política Monetaria**
-  - Aceptación: transformación pura del Excel (hoja anual, fila "IPC total",
-    años) → {año: inflación} con fixture recortado del Excel real de julio de
-    2026 (2026: 6,9 %; 2027: 4,3 %); descarga del informe más reciente con el
-    patrón del DOI, del trimestre actual hacia atrás; copia del día en la
-    caché y respaldo versionado; formato desconocido o sin red → copia
-    guardada con advertencia; sin copia → error útil. El actualizador diario
-    lo revisa.
-  - Verificar: `python -m pytest tests/data_sources -v` + una descarga real
+- [x] **2. Pronóstico de inflación del Informe de Política Monetaria**
+  - Cambio del 15/10/2026: el repositorio del BanRep bloquea las descargas
+    automáticas (anti-bots), así que el Excel se carga a mano cada trimestre.
+  - Aceptación: lectura del Excel por etiquetas con fixture recortado del
+    real de julio de 2026 (2026: 6,9 %; 2027: 4,3 %); formato desconocido →
+    error útil; `python -m data_sources.externos.pronostico_banrep
+    <archivo>` guarda la copia versionada (mes y año desde el nombre del
+    archivo o con `--mes`/`--anio`); aviso si el informe tiene más de 4 meses;
+    sin copia → error con las instrucciones.
   - Archivos: `data_sources/externos/pronostico_banrep.py`,
-    `data/series/pronostico_inflacion.json`, `app/main.py`,
+    `data_sources/externos/series/catalogo.py` (escritura atómica
+    compartida), `data/series/pronostico_inflacion.json`,
     `tests/data_sources/externos/test_pronostico_banrep.py`,
     `tests/data_sources/externos/datos/ipm_julio_2026.xlsx`
   - Tamaño: M

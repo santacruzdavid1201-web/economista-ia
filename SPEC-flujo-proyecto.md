@@ -113,14 +113,15 @@ Para t = 1…n (con g el crecimiento real y π la inflación):
 - `config/series.yaml`: `meta_inflacion` (853). El actualizador diario la
   incluye solo, como las demás series nacionales.
 - `data_sources/externos/pronostico_banrep.py`: el Excel de variables del
-  pronóstico del Informe de Política Monetaria. Descarga separada de la
-  transformación (como `banrep.py`): busca el informe más reciente con el
-  patrón del DOI (`10.32468/INF-POL-MONT-SPA.EXCEL1.TR{trimestre}-{año}`,
-  del trimestre actual hacia atrás) y lee la fila "IPC total" de la hoja
-  anual. Copia versionada en `data/series/pronostico_inflacion.json` y copia
-  del día en la caché, como las series; el actualizador la revisa con las
-  demás. Si el formato cambia o no hay red, se usa la copia guardada con
-  advertencia, y sin copia, la meta sola con supuesto.
+  pronóstico del Informe de Política Monetaria, leído por etiquetas (hoja
+  anual, fila "IPC total" y fila de años). **Se carga a mano cada trimestre**
+  (cambio del 15/10/2026): el repositorio del BanRep tiene un sistema
+  anti-bots que bloquea las descargas automáticas, y no se le da la vuelta.
+  Se descarga el Excel en el navegador y `python -m
+  data_sources.externos.pronostico_banrep <archivo.xlsx>` guarda la copia
+  versionada en `data/series/pronostico_inflacion.json`. El tablero dice qué
+  informe se usa y, pasados 4 meses desde él, avisa que puede haber uno más
+  reciente. Sin copia, la meta sola con supuesto.
 - **Tablero de Proyectos en pestañas** (pedido del usuario el 15/10/2026,
   para que el módulo no quede muy largo): "Su proyecto" (abre por defecto:
   formulario con el ejemplo y tabla del flujo por año; después se suman la

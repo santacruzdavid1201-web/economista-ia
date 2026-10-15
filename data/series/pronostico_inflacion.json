@@ -1,0 +1,26 @@
+{
+ "informe": "Informe de Política Monetaria de julio de 2026",
+ "fecha_informe": "2026-07-01",
+ "fuente": "Banco de la República, Informe de Política Monetaria de julio de 2026: principales variables del pronóstico macroeconómico (IPC total, variación anual a fin de año)",
+ "consultada": "2026-10-15",
+ "inflacion": {
+  "2010": 0.032,
+  "2011": 0.037000000000000005,
+  "2012": 0.024,
+  "2013": 0.019,
+  "2014": 0.037000000000000005,
+  "2015": 0.068,
+  "2016": 0.057,
+  "2017": 0.040999999999999995,
+  "2018": 0.032,
+  "2019": 0.038,
+  "2020": 0.016,
+  "2021": 0.055999999999999994,
+  "2022": 0.131,
+  "2023": 0.09300000000000001,
+  "2024": 0.052000000000000005,
+  "2025": 0.051,
+  "2026": 0.069,
+  "2027": 0.043
+ }
+}
