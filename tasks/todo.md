@@ -40,7 +40,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
   - Archivos: `modules/proyectos/flujo.py`, `tests/modules/proyectos/test_flujo.py`
   - Tamaño: S
 
-- [ ] **4. Proyecto y flujo de caja libre**
+- [x] **4. Proyecto y flujo de caja libre**
   - Aceptación: `Proyecto` valida rangos (horizonte 1-30, vida útil 1-50,
     porcentajes 0-100, inversión > 0) con mensajes útiles;
     `flujo_caja(proyecto, senda)` da la tabla por año en pesos de hoy y en
@@ -54,7 +54,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
   - Tamaño: M
 
 ### Punto de control: cálculo
-- [ ] Suite completa en verde.
+- [x] Suite completa en verde.
 - [ ] Caso a mano listo para que el usuario lo concilie (no bloquea).
 
 ## Fase 3: tablero
