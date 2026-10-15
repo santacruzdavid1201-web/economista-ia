@@ -426,6 +426,15 @@ main { max-width: 74rem; margin: 0 auto; padding: 0 1.5rem 6rem; }   /* abajo: e
 .leyenda-interes { background: var(--coral); }
 .leyenda-abono { background: var(--menta); }
 .fila-origen td { background: var(--fondo); font-weight: 700; }
+.simulador .grupo { display: contents; }
+.simulador .grupo legend { grid-column: 1 / -1; font: 700 0.95rem var(--texto); color: var(--petroleo); margin: 0.5rem 0 0.6rem; }
+.simulador .ancho-completo { grid-column: 1 / -1; }
+.fila-total td { font-weight: 800; border-top: 1.5px solid var(--linea); }
+.flujo { font-size: 0.9rem; }
+/* La columna de etiquetas queda fija al desplazar los años hacia la derecha */
+.flujo td:first-child, .flujo th:first-child {
+  position: sticky; left: 0; z-index: 1; min-width: 9rem; max-width: 13rem; background: var(--lamina);
+}
 
 /* ------------------------------------------------------------ transiciones */
 ::view-transition-old(root) { animation: 160ms ease-in both salir; }

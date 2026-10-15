@@ -13,8 +13,7 @@
     {% if t.pestana == "credito" %}
       {% include "_pestana_credito.html" %}
     {% else %}
-      <p class="tablero-corte">Su proyecto a precios de hoy: no necesita estados financieros</p>
-      <p class="tablero-pendiente">Aquí irá el flujo de caja de su proyecto.</p>
+      {% include "_pestana_proyecto.html" %}
     {% endif %}
   </div>
 </div>

@@ -101,3 +101,33 @@ def test_conversor_de_tasas_con_el_ejemplo():
 def test_conversor_de_tasas_con_errores(campos, mensaje):
     c = tableros.conversor(campos)
     assert any(mensaje in e for e in c["errores"]) and "filas" not in c
+
+
+# --------------------------------------------------------------------------- #
+# Proyectos: pestaña "Su proyecto" (flujo de caja libre)
+# --------------------------------------------------------------------------- #
+def test_flujo_con_el_ejemplo_y_la_senda_del_banrep():
+    c = tableros.flujo()
+    assert c["errores"] == [] and c["v"]["inversion"] == "100 millones"
+    assert "Informe de Política Monetaria" in " ".join(c["fuentes"])
+    assert c["inflacion"].startswith(str(date.today().year + 1))
+
+
+def test_flujo_con_inflacion_fija_da_el_caso_a_mano():
+    c = tableros.flujo({**tableros.PROYECTO_EJEMPLO, "inflacion": "3"})
+    assert c["anios"] == [0, 1, 2, 3, 4, 5]
+    libre = next(f for f in c["filas"] if f["clave"] == "flujo_libre")
+    assert libre["valores"][:2] == ["$ -106.180.000", "$ 27.416.117"]
+    ingresos = next(f for f in c["filas"] if f["clave"] == "ingresos")
+    assert ingresos["valores"][0] == "—"                    # el año 0 no tiene ingresos
+    assert c["inflacion"] == "3,0 % fija todos los años"
+
+
+@pytest.mark.parametrize("campos, mensaje", [
+    ({"inversion": "mucho"}, "Escriba la inversión en pesos"),
+    ({"horizonte": "0"}, "El horizonte debe estar entre 1 y 30 años."),
+    ({"costos_variables": "abc"}, "Costos variables: escriba un porcentaje"),
+])
+def test_flujo_con_errores(campos, mensaje):
+    c = tableros.flujo({**tableros.PROYECTO_EJEMPLO, **campos})
+    assert any(mensaje in e for e in c["errores"]) and "filas" not in c

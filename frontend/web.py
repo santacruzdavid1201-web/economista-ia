@@ -113,6 +113,7 @@ class Sesion:
     archivos: list[Archivo] = field(default_factory=list)
     chat: list[Turno] = field(default_factory=list)
     pendientes: dict[str, Turno] = field(default_factory=dict)
+    proyecto: dict[str, str] | None = None   # lo que escribió en "Su proyecto" (válido)
 
 
 _SESIONES: OrderedDict[str, Sesion] = OrderedDict()
@@ -298,7 +299,7 @@ def modulo(request: Request, clave: str, pestana: str | None = None, s: Sesion =
         raise HTTPException(404, "Ese módulo no existe.")
     t = (tableros.balance(s.ctx) if clave == "balance" and s.ctx else
          tableros.macro(s.ctx) if clave == "macro" else
-         tableros.proyectos(pestana) if clave == "proyectos" else None)
+         tableros.proyectos(pestana, s.proyecto) if clave == "proyectos" else None)
     return _pagina(request, "modulo.html", _contexto(request, s, m=m, t=t))
 
 
@@ -306,6 +307,15 @@ def modulo(request: Request, clave: str, pestana: str | None = None, s: Sesion =
 async def credito(request: Request):
     """Solo el resultado: el formulario no se redibuja y conserva el foco."""
     return _pagina(request, "_credito.html", {"c": tableros.credito(await request.form())})
+
+
+@router.post("/proyectos/flujo", response_class=HTMLResponse)
+async def flujo(request: Request, s: Sesion = Depends(sesion)):
+    """Solo la tabla; el proyecto válido queda en la sesión para volver a la pestaña."""
+    c = tableros.flujo(await request.form())
+    if not c["errores"]:
+        s.proyecto = c["v"]
+    return _pagina(request, "_flujo.html", {"c": c})
 
 
 @router.post("/proyectos/tasas", response_class=HTMLResponse)

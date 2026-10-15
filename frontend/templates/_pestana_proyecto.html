@@ -1,0 +1,62 @@
+{#- Pestaña "Su proyecto": formulario a precios de hoy y su flujo de caja libre. Todo viene de tableros.py -#}
+<p class="tablero-corte">Su proyecto a precios de hoy: no necesita estados financieros</p>
+
+<section aria-labelledby="titulo-proyecto">
+  <h2 id="titulo-proyecto">Flujo de caja de su proyecto</h2>
+  <p class="bloque-nota">Escriba solo lo que el proyecto agrega frente a no hacerlo. Lo ya gastado
+    (estudios, diseños) no entra.</p>
+  {% with v = t.flujo.v %}
+  {#- Cada cambio recalcula solo la tabla (#flujo): el formulario conserva el foco -#}
+  <form class="formulario simulador" hx-post="/proyectos/flujo" hx-trigger="change delay:300ms, submit"
+        hx-target="#flujo" hx-swap="innerHTML" hx-sync="this:replace">
+    <label class="ancho-completo">Nombre del proyecto
+      <input name="nombre" value="{{ v.nombre }}" maxlength="120" autocomplete="off"></label>
+
+    <fieldset class="grupo">
+      <legend>Inversión</legend>
+      <label>Inversión inicial
+        <input name="inversion" value="{{ v.inversion }}" inputmode="decimal" autocomplete="off">
+        <span class="ayuda">Lo que se paga hoy en obra y equipos</span></label>
+      <label>Vida útil para depreciar (años)
+        <input name="vida_util" value="{{ v.vida_util }}" inputmode="numeric" autocomplete="off">
+        <span class="ayuda">Construcciones 45, maquinaria y muebles 10, cómputo 5; la define su contador</span></label>
+      <label>Horizonte de evaluación (años)
+        <input name="horizonte" value="{{ v.horizonte }}" inputmode="numeric" autocomplete="off">
+        <span class="ayuda">Máximo 30</span></label>
+    </fieldset>
+
+    <fieldset class="grupo">
+      <legend>Operación, a precios de hoy</legend>
+      <label>Ingresos adicionales del primer año
+        <input name="ingresos" value="{{ v.ingresos }}" inputmode="decimal" autocomplete="off"></label>
+      <label>Crecimiento real de los ingresos (% al año)
+        <input name="crecimiento_real" value="{{ v.crecimiento_real }}" inputmode="decimal" autocomplete="off">
+        <span class="ayuda">Por encima de la inflación</span></label>
+      <label>Costos variables (% de los ingresos)
+        <input name="costos_variables" value="{{ v.costos_variables }}" inputmode="decimal" autocomplete="off"></label>
+      <label>Costos fijos adicionales por año
+        <input name="costos_fijos" value="{{ v.costos_fijos }}" inputmode="decimal" autocomplete="off"></label>
+      <label>Capital de trabajo (% de los ingresos)
+        <input name="capital_trabajo" value="{{ v.capital_trabajo }}" inputmode="decimal" autocomplete="off">
+        <span class="ayuda">Plata que queda en cartera e inventarios</span></label>
+    </fieldset>
+
+    <fieldset class="grupo">
+      <legend>Supuestos</legend>
+      <label>Tarifa de impuesto de renta (%)
+        <input name="tarifa_renta" value="{{ v.tarifa_renta }}" inputmode="decimal" autocomplete="off">
+        <span class="ayuda">General 35 %; si el proyecto tiene una especial, la de su contador</span></label>
+      <label>Inflación esperada (% al año)
+        <input name="inflacion" value="{{ v.inflacion }}" inputmode="decimal" autocomplete="off"
+               placeholder="Senda del BanRep">
+        <span class="ayuda">Vacío: pronóstico del Banco de la República y meta después</span></label>
+      <label>Valor de salvamento al final
+        <input name="salvamento" value="{{ v.salvamento }}" inputmode="decimal" autocomplete="off"
+               placeholder="Valor en libros">
+        <span class="ayuda">A precios de hoy; vacío: el valor en libros</span></label>
+    </fieldset>
+    <button type="submit" class="boton">Calcular</button>
+  </form>
+  {% endwith %}
+  <div id="flujo" aria-live="polite">{% with c = t.flujo %}{% include "_flujo.html" %}{% endwith %}</div>
+</section>

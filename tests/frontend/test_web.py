@@ -343,3 +343,26 @@ def test_la_pestana_va_en_la_direccion(cliente, pestana, credito):
     r = cliente.get(f"/modulo/proyectos?pestana={pestana}").text
     assert ("Simulador de crédito" in r) is credito and ("Conversor de tasas" in r) is credito
     assert re.search(r'id="pestana-credito"[^>]*aria-selected="%s"' % str(credito).lower(), r)
+
+
+PROYECTO = {"nombre": "Hotel del lago", "inversion": "100 millones", "vida_util": "5",
+            "horizonte": "5", "ingresos": "60 millones", "crecimiento_real": "0",
+            "costos_variables": "30", "costos_fijos": "10 millones", "capital_trabajo": "10",
+            "tarifa_renta": "35", "inflacion": "3", "salvamento": ""}
+
+
+def test_pestana_de_su_proyecto_con_el_flujo(cliente):
+    r = cliente.get("/modulo/proyectos").text
+    assert 'hx-post="/proyectos/flujo"' in r and "Flujo de caja libre" in r
+
+
+def test_el_formulario_del_proyecto_recalcula_solo_la_tabla(cliente):
+    r = cliente.post("/proyectos/flujo", data=PROYECTO)
+    assert r.status_code == 200 and "$ 27.416.117" in r.text and "<form" not in r.text
+
+
+def test_la_sesion_recuerda_el_proyecto_al_volver_a_la_pestana(cliente):
+    cliente.post("/proyectos/flujo", data=PROYECTO)
+    assert 'value="Hotel del lago"' in cliente.get("/modulo/proyectos").text
+    cliente.post("/proyectos/flujo", data={**PROYECTO, "nombre": "Otro", "horizonte": "0"})
+    assert 'value="Hotel del lago"' in cliente.get("/modulo/proyectos").text    # el inválido no

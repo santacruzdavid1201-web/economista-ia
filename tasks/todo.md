@@ -70,7 +70,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
     `frontend/static/estilo.css`, `tests/frontend/test_web.py`
   - Tamaño: S
 
-- [ ] **6. Pestaña "Su proyecto": formulario y flujo**
+- [x] **6. Pestaña "Su proyecto": formulario y flujo**
   - Aceptación: formulario con el ejemplo de la especificación; la inflación
     por defecto es la senda del BanRep (se ve cuál se usó y su fuente) y se
     puede reemplazar por una fija; `POST /proyectos/flujo` recalcula solo la

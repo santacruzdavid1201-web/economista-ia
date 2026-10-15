@@ -1,0 +1,20 @@
+{#- Flujo de caja libre del proyecto: se incluye en la pestaña y es la respuesta del formulario -#}
+{% if c.errores %}
+  <ul class="errores">{% for e in c.errores %}<li>{{ e }}</li>{% endfor %}</ul>
+{% else %}
+  <p class="bloque-nota">{{ c.proyecto }}, en pesos de hoy. Inflación usada: {{ c.inflacion }}.</p>
+  <div class="tabla-desplazable">
+    <table class="libro anual flujo">
+      <tr><th>Año</th>{% for a in c.anios %}<th class="numero">{{ a }}</th>{% endfor %}</tr>
+      {% for f in c.filas %}
+        <tr{% if f.total %} class="fila-total"{% endif %}><td>{{ f.etiqueta }}</td>
+          {% for x in f.valores %}<td class="valor{% if x.startswith('$ -') %} negativa{% endif %}">{{ x }}</td>{% endfor %}</tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% if c.hallazgos %}<ul class="hallazgos">{% for h in c.hallazgos %}<li>{{ h }}</li>{% endfor %}</ul>{% endif %}
+  <ul class="bloque-avisos">
+    {% for a in c.avisos %}<li>{{ a }}</li>{% endfor %}
+    {% for f in c.fuentes %}<li>{{ f }}</li>{% endfor %}
+  </ul>
+{% endif %}
