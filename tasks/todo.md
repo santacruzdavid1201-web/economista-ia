@@ -5,7 +5,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
 
 ## Fase 1: cálculo
 
-- [ ] **1. Evaluación pura**
+- [x] **1. Evaluación pura**
   - Aceptación: `evaluar(flujo, tasa) -> ResultadoModulo` con VPN (pesos de
     hoy), TIR nominal, TIRM, recuperación descontada e índice de
     rentabilidad, cada uno con su fórmula; caso a mano (π = 0, 10 %): VPN

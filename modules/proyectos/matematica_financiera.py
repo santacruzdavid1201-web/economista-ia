@@ -246,7 +246,7 @@ def _pesos(valor: float) -> str:
     return formatear(valor, "pesos")
 
 
-def _como_la_escribio(tasa: float) -> str:
+def como_la_escribio(tasa: float) -> str:
     """La tasa del usuario sin ceros de más ("24 %", "1,5 %"): el 7B la repite así, y con
     "24,00 %" la cifra de la respuesta no estaría en el desplegable."""
     return f"{round(tasa * 100, 6):g}".replace(".", ",") + " %"
@@ -272,11 +272,11 @@ def simular_credito(monto: float, tasa: float, tipo: str, cuotas: int,
 
     hallazgos = []
     if tipo != "EA":
-        hallazgos.append(f"La tasa de {_como_la_escribio(tasa)} {nombre} equivale a "
+        hallazgos.append(f"La tasa de {como_la_escribio(tasa)} {nombre} equivale a "
                          f"{formatear(ea, 'tasa')} efectiva anual"
                          + (": la nominal no cuenta el interés sobre los intereses." if nominal
                             else "."))
-    efectiva = _como_la_escribio(tasa) if tipo == "EA" else formatear(ea, "tasa")
+    efectiva = como_la_escribio(tasa) if tipo == "EA" else formatear(ea, "tasa")
     tasa_texto = f"{efectiva} efectiva anual" + (
         "" if periodicidad == "anual" else f" ({formatear(i, 'tasa')} {periodicidad})")
     plazo = (f"{cuotas} cuotas {periodicidad}es" if cuotas > 1 else f"1 cuota {periodicidad}")
@@ -344,7 +344,7 @@ def convertir_tasa(tasa: float, desde: str, hacia: str,
     valor = convertir(tasa, desde, hacia)
     nombre1, _, nominal1, anticipada1 = TIPOS[desde]
     nombre2, _, nominal2, anticipada2 = TIPOS[hacia]
-    hallazgos = [f"Una tasa de {_como_la_escribio(tasa)} {nombre1} equivale a "
+    hallazgos = [f"Una tasa de {como_la_escribio(tasa)} {nombre1} equivale a "
                  f"{formatear(valor, 'tasa')} {nombre2}."]
     if nominal1 != nominal2:
         hallazgos.append("La diferencia es que la nominal no cuenta el interés sobre los "
