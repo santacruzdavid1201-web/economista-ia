@@ -3,6 +3,7 @@
 
 <section aria-labelledby="titulo-credito">
   <h2 id="titulo-credito">Simulador de crédito</h2>
+  <p class="nota-ejemplo">Los valores iniciales son un ejemplo: reemplácelos por los de su crédito.</p>
   {% with v = t.credito.v, o = t.opciones %}
   {#- Cada cambio recalcula solo el resultado (#credito): el formulario conserva el foco -#}
   <form class="formulario simulador" hx-post="/proyectos/credito" hx-trigger="change delay:300ms, submit"

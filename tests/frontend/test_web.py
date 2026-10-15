@@ -366,3 +366,29 @@ def test_la_sesion_recuerda_el_proyecto_al_volver_a_la_pestana(cliente):
     assert 'value="Hotel del lago"' in cliente.get("/modulo/proyectos").text
     cliente.post("/proyectos/flujo", data={**PROYECTO, "nombre": "Otro", "horizonte": "0"})
     assert 'value="Hotel del lago"' in cliente.get("/modulo/proyectos").text    # el inválido no
+
+
+def test_las_dos_pestanas_dicen_que_los_valores_son_un_ejemplo(cliente):
+    for url in ("/modulo/proyectos", "/modulo/proyectos?pestana=credito"):
+        assert "Los valores iniciales son un ejemplo" in cliente.get(url).text
+
+
+def test_la_pestana_de_su_proyecto_abre_evaluada(cliente):
+    r = cliente.get("/modulo/proyectos").text
+    assert 'name="tasa_oportunidad"' in r and "Valor presente neto (VPN)" in r
+
+
+def test_sin_tasa_de_oportunidad_pide_escribirla(cliente):
+    r = cliente.post("/proyectos/flujo", data={**PROYECTO, "tasa_oportunidad": ""}).text
+    assert "Escriba su tasa de oportunidad" in r and "Flujo de caja libre" in r
+
+
+def test_el_formulario_actualiza_tambien_la_evaluacion_de_arriba(cliente):
+    r = cliente.post("/proyectos/flujo", data=PROYECTO).text
+    assert 'id="evaluacion"' in r and 'hx-swap-oob="true"' in r and "Valor presente neto" in r
+    r = cliente.post("/proyectos/flujo", data={**PROYECTO, "horizonte": "0"}).text
+    assert "Corrija los datos del formulario" in r and "Valor presente neto" not in r
+
+
+def test_la_pagina_no_repite_el_bloque_de_evaluacion(cliente):
+    assert cliente.get("/modulo/proyectos").text.count('id="evaluacion"') == 1

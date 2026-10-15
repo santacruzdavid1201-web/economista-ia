@@ -32,7 +32,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
 
 ## Fase 2: tablero
 
-- [ ] **3. Evaluación en la pestaña "Su proyecto"**
+- [x] **3. Evaluación en la pestaña "Su proyecto"**
   - Aceptación: campo "Tasa de oportunidad (% efectiva anual)" en Supuestos
     (ejemplo 15); arriba de la tabla del flujo, tarjetas con VPN, TIR, TIRM,
     recuperación e índice y los hallazgos; el aviso "Los valores iniciales
@@ -45,8 +45,8 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
   - Tamaño: M
 
 ### Punto de control: tablero
-- [ ] Suite completa en verde y captura revisada.
-- [ ] Caso a mano listo para que el usuario lo concilie (no bloquea).
+- [x] Suite completa en verde y captura revisada.
+- [x] Caso a mano listo para que el usuario lo concilie (no bloquea).
 
 ## Fase 3: chat
 

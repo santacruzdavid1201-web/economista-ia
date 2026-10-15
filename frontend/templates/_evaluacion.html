@@ -1,0 +1,24 @@
+{#- Evaluación del proyecto (arriba del formulario): ¿crea valor? Todo viene de tableros.py -#}
+{% if c.errores %}
+  <h3 class="subtema">¿Crea valor?</h3>
+  <p class="bloque-nota" role="status">Corrija los datos del formulario para ver la evaluación.</p>
+{% else %}
+  <h3 class="subtema">¿Crea valor?</h3>
+  {% if c.evaluacion %}
+    <div class="tarjetas tarjetas-credito">
+      {% for k in c.evaluacion.tarjetas %}
+        <article class="tarjeta">
+          <h4 class="tarjeta-titulo">{{ k.titulo }}</h4>
+          <p class="tarjeta-valor">{{ k.valor }}</p>
+          <p class="tarjeta-nombre" title="{{ k.formula }}">{{ k.nombre }}</p>
+          {% if k.detalle %}<p class="tarjeta-cambio">{{ k.detalle }}</p>{% endif %}
+        </article>
+      {% endfor %}
+    </div>
+    <ul class="hallazgos">{% for h in c.evaluacion.hallazgos %}<li>{{ h }}</li>{% endfor %}</ul>
+    {% if c.evaluacion.avisos %}<ul class="bloque-avisos">{% for a in c.evaluacion.avisos %}<li>{{ a }}</li>{% endfor %}</ul>{% endif %}
+  {% else %}
+    <p class="bloque-nota" role="status">Escriba su tasa de oportunidad para saber si el proyecto crea
+      valor: la rentabilidad que le exigiría a otra inversión de riesgo parecido.</p>
+  {% endif %}
+{% endif %}

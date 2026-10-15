@@ -430,6 +430,10 @@ main { max-width: 74rem; margin: 0 auto; padding: 0 1.5rem 6rem; }   /* abajo: e
 .simulador .grupo legend { grid-column: 1 / -1; font: 700 0.95rem var(--texto); color: var(--petroleo); margin: 0.5rem 0 0.6rem; }
 .simulador .ancho-completo { grid-column: 1 / -1; }
 .fila-total td { font-weight: 800; border-top: 1.5px solid var(--linea); }
+.nota-ejemplo {
+  display: inline-block; margin: 0 0 1rem; padding: 0.4rem 0.75rem; border-radius: 0.6rem;
+  background: var(--menta-clara); color: var(--petroleo); font-size: 0.85rem; font-weight: 600;
+}
 .flujo { font-size: 0.9rem; }
 /* La columna de etiquetas queda fija al desplazar los años hacia la derecha */
 .flujo td:first-child, .flujo th:first-child {

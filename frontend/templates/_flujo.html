@@ -1,7 +1,9 @@
-{#- Flujo de caja libre del proyecto: se incluye en la pestaña y es la respuesta del formulario -#}
+{#- Flujo de caja libre del proyecto: se incluye en la pestaña y es la respuesta del formulario.
+    Como respuesta (oob), trae además la evaluación de arriba del formulario -#}
 {% if c.errores %}
   <ul class="errores">{% for e in c.errores %}<li>{{ e }}</li>{% endfor %}</ul>
 {% else %}
+  <h3 class="subtema">Flujo de caja libre, año por año</h3>
   <p class="bloque-nota">{{ c.proyecto }}, en pesos de hoy. Inflación usada: {{ c.inflacion }}.</p>
   <div class="tabla-desplazable">
     <table class="libro anual flujo">
@@ -18,3 +20,4 @@
     {% for f in c.fuentes %}<li>{{ f }}</li>{% endfor %}
   </ul>
 {% endif %}
+{% if oob %}<div id="evaluacion" aria-live="polite" hx-swap-oob="true">{% include "_evaluacion.html" %}</div>{% endif %}

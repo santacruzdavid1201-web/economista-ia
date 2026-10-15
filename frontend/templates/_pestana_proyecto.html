@@ -2,11 +2,15 @@
 <p class="tablero-corte">Su proyecto a precios de hoy: no necesita estados financieros</p>
 
 <section aria-labelledby="titulo-proyecto">
-  <h2 id="titulo-proyecto">Flujo de caja de su proyecto</h2>
+  <h2 id="titulo-proyecto">Evaluación de su proyecto</h2>
+  <p class="nota-ejemplo">Los valores iniciales son un ejemplo: reemplácelos por los de su proyecto.</p>
   <p class="bloque-nota">Escriba solo lo que el proyecto agrega frente a no hacerlo. Lo ya gastado
     (estudios, diseños) no entra.</p>
+  {#- La respuesta primero: la evaluación arriba del formulario, la tabla debajo -#}
+  <div id="evaluacion" aria-live="polite">{% with c = t.flujo %}{% include "_evaluacion.html" %}{% endwith %}</div>
   {% with v = t.flujo.v %}
-  {#- Cada cambio recalcula solo la tabla (#flujo): el formulario conserva el foco -#}
+  {#- Cada cambio recalcula la tabla (#flujo) y la evaluación (fuera de banda); el formulario
+      no se redibuja y conserva el foco -#}
   <form class="formulario simulador" hx-post="/proyectos/flujo" hx-trigger="change delay:300ms, submit"
         hx-target="#flujo" hx-swap="innerHTML" hx-sync="this:replace">
     <label class="ancho-completo">Nombre del proyecto
@@ -50,6 +54,9 @@
         <input name="inflacion" value="{{ v.inflacion }}" inputmode="decimal" autocomplete="off"
                placeholder="Senda del BanRep">
         <span class="ayuda">Vacío: pronóstico del Banco de la República y meta después</span></label>
+      <label>Tasa de oportunidad (% efectiva anual)
+        <input name="tasa_oportunidad" value="{{ v.tasa_oportunidad }}" inputmode="decimal" autocomplete="off">
+        <span class="ayuda">Lo que le exigiría a otra inversión de riesgo parecido</span></label>
       <label>Valor de salvamento al final
         <input name="salvamento" value="{{ v.salvamento }}" inputmode="decimal" autocomplete="off"
                placeholder="Valor en libros">

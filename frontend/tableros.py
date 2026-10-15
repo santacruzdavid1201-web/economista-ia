@@ -25,6 +25,7 @@ from modules.balance.dupont import variacion
 from modules.balance.razones import actividad, endeudamiento, liquidez, rentabilidad
 from modules.base import ResultadoModulo, formatear
 from modules.macro.panorama import inflacion_anual, panorama_macro
+from modules.proyectos.evaluacion import evaluar
 from modules.proyectos.flujo import ErrorProyecto, flujo_caja
 from modules.proyectos.matematica_financiera import (
     PERIODICIDADES,
@@ -32,6 +33,7 @@ from modules.proyectos.matematica_financiera import (
     ErrorCredito,
     ErrorTasa,
     amortizacion,
+    como_la_escribio,
     convertir_tasa,
     cuotas_del_plazo,
     simular_credito,
@@ -442,19 +444,48 @@ def flujo(formulario: Mapping[str, object] | None = None, hoy: date | None = Non
     except ErrorProyecto as e:
         return {"v": v, "errores": e.mensajes}
     f = flujo_caja(leido.proyecto, leido.senda)
+    r = evaluar(f, leido.tasa) if leido.tasa is not None else None
 
     def celda(valor: float) -> str:
         return "—" if abs(valor) < 0.5 else formatear(valor, "pesos")
 
     return {
         "v": v, "errores": [], "proyecto": leido.proyecto.nombre,
+        "evaluacion": _evaluacion(r, leido.tasa, leido.proyecto.horizonte) if r else None,
         "anios": [fila.anio for fila in f.real],
         "filas": [{"clave": clave, "etiqueta": etiqueta, "total": clave == "flujo_libre",
                    "valores": [celda(getattr(fila, clave)) for fila in f.real]}
                   for clave, etiqueta in PARTIDAS],
         "inflacion": _texto_senda(hoy.year + 1, f.inflacion, leido.fija),
-        "hallazgos": f.resultado.hallazgos, "avisos": leido.avisos + f.resultado.supuestos,
+        # Los supuestos de la evaluación ya traen los del flujo
+        "hallazgos": f.resultado.hallazgos,
+        "avisos": leido.avisos + (r.supuestos if r else f.resultado.supuestos),
         "fuentes": leido.fuentes,
+    }
+
+
+def _evaluacion(r: ResultadoModulo, tasa: float, horizonte: int) -> dict:
+    """Tarjetas de la evaluación. El resultado va en palabras, no solo en el color."""
+    ind = {i.clave: i for i in r.indicadores}
+
+    def tarjeta(clave: str, titulo: str, detalle: str | None = None) -> dict:
+        i = ind[clave]
+        valor = "—" if i.valor is None else formatear(i.valor, i.unidad).replace("$ ", "$ ")
+        return {"titulo": titulo, "valor": valor, "nombre": i.nombre, "formula": i.formula,
+                "detalle": detalle}
+
+    vpn, recuperacion = ind["vpn"].valor, ind["recuperacion"].valor
+    return {
+        "tarjetas": [
+            tarjeta("vpn", "VPN", "Crea valor" if vpn >= 0 else "No crea valor"),
+            tarjeta("tir", "TIR", f"Frente a {como_la_escribio(tasa)} de oportunidad"
+                    if ind["tir"].valor is not None else "No hay una TIR única"),
+            tarjeta("tirm", "TIRM", "Reinvierte a la tasa de oportunidad"),
+            tarjeta("recuperacion", "Recuperación", f"De {horizonte} años" if recuperacion
+                    is not None else f"No se recupera en {horizonte} años"),
+            tarjeta("indice_rentabilidad", "Índice de rentabilidad", "Pesos de hoy por peso invertido"),
+        ],
+        "hallazgos": r.hallazgos, "avisos": r.advertencias,
     }
 
 

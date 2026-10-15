@@ -315,7 +315,7 @@ async def flujo(request: Request, s: Sesion = Depends(sesion)):
     c = tableros.flujo(await request.form())
     if not c["errores"]:
         s.proyecto = c["v"]
-    return _pagina(request, "_flujo.html", {"c": c})
+    return _pagina(request, "_flujo.html", {"c": c, "oob": True})
 
 
 @router.post("/proyectos/tasas", response_class=HTMLResponse)

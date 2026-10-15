@@ -131,3 +131,25 @@ def test_flujo_con_inflacion_fija_da_el_caso_a_mano():
 def test_flujo_con_errores(campos, mensaje):
     c = tableros.flujo({**tableros.PROYECTO_EJEMPLO, **campos})
     assert any(mensaje in e for e in c["errores"]) and "filas" not in c
+
+
+def test_evaluacion_en_la_pestana_con_el_caso_a_mano():
+    c = tableros.flujo({**tableros.PROYECTO_EJEMPLO, "inflacion": "0", "tasa_oportunidad": "10"})
+    tarjetas = {t["titulo"]: t for t in c["evaluacion"]["tarjetas"]}
+    assert list(tarjetas) == ["VPN", "TIR", "TIRM", "Recuperación", "Índice de rentabilidad"]
+    assert tarjetas["VPN"]["valor"] == "$ 3.109.400" and tarjetas["VPN"]["detalle"] == "Crea valor"
+    assert tarjetas["TIR"]["valor"] == "11,11 %" and tarjetas["Recuperación"]["valor"] == "4,9 años"
+    assert c["evaluacion"]["hallazgos"][0].startswith("Con una tasa de oportunidad de 10 %")
+
+
+def test_evaluacion_que_no_crea_valor_lo_dice_en_palabras():
+    c = tableros.flujo({**tableros.PROYECTO_EJEMPLO, "inflacion": "3", "tasa_oportunidad": "15"})
+    vpn = c["evaluacion"]["tarjetas"][0]
+    assert vpn["detalle"] == "No crea valor" and vpn["valor"].startswith("$ -")
+    recuperacion = c["evaluacion"]["tarjetas"][3]
+    assert recuperacion["valor"] == "—" and recuperacion["detalle"] == "No se recupera en 5 años"
+
+
+def test_sin_tasa_de_oportunidad_hay_flujo_pero_no_evaluacion():
+    c = tableros.flujo({**tableros.PROYECTO_EJEMPLO, "tasa_oportunidad": ""})
+    assert c["errores"] == [] and c["evaluacion"] is None and c["filas"]
