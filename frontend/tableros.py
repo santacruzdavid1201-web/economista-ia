@@ -9,6 +9,7 @@ from collections.abc import Mapping
 from datetime import date
 
 from app.orchestrator.lectura import montos
+from app.orchestrator.proyecto import PROYECTO_EJEMPLO, leer_proyecto, numero
 from app.orchestrator.tools_registry import (
     PANORAMA,
     POR_NOMBRE,
@@ -16,7 +17,6 @@ from app.orchestrator.tools_registry import (
     ErrorHerramienta,
 )
 from data_sources.externos.referencia import homologar_empresa
-from data_sources.externos import pronostico_banrep
 from data_sources.externos.series import catalogo
 from data_sources.externos.series.modelo import Serie
 from modules.balance.altman import ZONA_RIESGO, ZONA_SEGURA, altman, calificacion_equivalente, zona
@@ -25,7 +25,7 @@ from modules.balance.dupont import variacion
 from modules.balance.razones import actividad, endeudamiento, liquidez, rentabilidad
 from modules.base import ResultadoModulo, formatear
 from modules.macro.panorama import inflacion_anual, panorama_macro
-from modules.proyectos.flujo import ErrorProyecto, crear_proyecto, flujo_caja, senda_inflacion
+from modules.proyectos.flujo import ErrorProyecto, flujo_caja
 from modules.proyectos.matematica_financiera import (
     PERIODICIDADES,
     TIPOS,
@@ -322,13 +322,6 @@ def _cero(valor: float) -> float:
     return 0.0 if abs(valor) < 0.5 else valor
 
 
-def _numero(texto: str) -> float | None:
-    try:
-        return float(texto.replace("%", "").replace(",", ".").strip())
-    except ValueError:
-        return None
-
-
 def credito(formulario: Mapping[str, object] | None = None) -> dict:
     """Simulador de crédito: los valores del formulario (o el ejemplo) y su resultado."""
     v = {k: str((formulario or {}).get(k, d)).strip() for k, d in CREDITO_EJEMPLO.items()}
@@ -338,10 +331,10 @@ def credito(formulario: Mapping[str, object] | None = None) -> dict:
     if not monto or monto <= 0:
         errores.append("Escriba el monto del crédito en pesos, por ejemplo 200 millones o "
                        "200.000.000.")
-    tasa = _numero(v["tasa"])
+    tasa = numero(v["tasa"])
     if tasa is None or not tasa >= 0:
         errores.append("La tasa debe ser un número positivo o cero, por ejemplo 18 o 1,5.")
-    plazo = _numero(v["plazo"])
+    plazo = numero(v["plazo"])
     if plazo is None:
         errores.append("El plazo debe ser un número, por ejemplo 5 años o 60 meses.")
     if errores:
@@ -400,7 +393,7 @@ CONVERSOR_EJEMPLO = {"tasa": "2", "tipo": "MV"}
 def conversor(formulario: Mapping[str, object] | None = None) -> dict:
     """Una tasa y su tipo → su equivalente en cada tipo, con la fórmula de cada conversión."""
     v = {k: str((formulario or {}).get(k, d)).strip() for k, d in CONVERSOR_EJEMPLO.items()}
-    tasa = _numero(v["tasa"])
+    tasa = numero(v["tasa"])
     if tasa is None or not tasa > -100:
         return {"v": v, "errores": ["La tasa debe ser un número, por ejemplo 2 o 1,5."]}
     try:
@@ -417,18 +410,6 @@ def conversor(formulario: Mapping[str, object] | None = None) -> dict:
 # --------------------------------------------------------------------------- #
 # Proyectos: flujo de caja libre del proyecto que escribe el usuario
 # --------------------------------------------------------------------------- #
-PROYECTO_EJEMPLO = {
-    "nombre": "Remodelación de 10 habitaciones", "inversion": "100 millones", "vida_util": "5",
-    "horizonte": "5", "ingresos": "60 millones", "crecimiento_real": "0",
-    "costos_variables": "30", "costos_fijos": "10 millones", "capital_trabajo": "10",
-    "tarifa_renta": "35", "inflacion": "", "salvamento": ""}
-# campo → etiqueta en los mensajes; montos en pesos, porcentajes y años
-MONTOS = {"inversion": "la inversión", "ingresos": "los ingresos del primer año",
-          "costos_fijos": "los costos fijos", "salvamento": "el valor de salvamento"}
-PORCENTAJES = {"crecimiento_real": "Crecimiento real", "costos_variables": "Costos variables",
-               "capital_trabajo": "Capital de trabajo", "tarifa_renta": "Tarifa de renta",
-               "inflacion": "Inflación esperada"}
-ANIOS = {"vida_util": "Vida útil", "horizonte": "Horizonte"}
 # (partida, etiqueta): las salidas se muestran en positivo; el capital de trabajo, con signo
 PARTIDAS = (("ingresos", "Ingresos"), ("costos_variables", "(−) Costos variables"),
             ("costos_fijos", "(−) Costos fijos"), ("depreciacion", "(−) Depreciación"),
@@ -456,67 +437,24 @@ def flujo(formulario: Mapping[str, object] | None = None, hoy: date | None = Non
     """Pestaña "Su proyecto": los valores del formulario (o el ejemplo) y su flujo en pesos de hoy."""
     hoy = hoy or date.today()
     v = {k: str((formulario or {}).get(k, d)).strip() for k, d in PROYECTO_EJEMPLO.items()}
-    errores, datos = [], {"nombre": v["nombre"] or "Su proyecto"}
-    for campo, etiqueta in MONTOS.items():
-        if campo == "salvamento" and not v[campo]:
-            continue
-        encontrados = montos(v[campo])
-        if len(encontrados) != 1:
-            errores.append(f"Escriba {etiqueta} en pesos, por ejemplo 100 millones o 100.000.000.")
-        else:
-            datos[campo] = encontrados[0]
-    for campo, etiqueta in PORCENTAJES.items():
-        if campo == "inflacion" and not v[campo]:
-            continue
-        if (valor := _numero(v[campo])) is None:
-            errores.append(f"{etiqueta}: escriba un porcentaje, por ejemplo 30.")
-        else:
-            datos[campo] = valor / 100
-    for campo, etiqueta in ANIOS.items():
-        if (valor := _numero(v[campo])) is None:
-            errores.append(f"{etiqueta}: escriba un número de años, por ejemplo 5.")
-        else:
-            datos[campo] = valor
-    if errores:
-        return {"v": v, "errores": errores}
-    fija = datos.pop("inflacion", None)
     try:
-        proyecto = crear_proyecto(**datos)
+        leido = leer_proyecto(v, hoy)
     except ErrorProyecto as e:
         return {"v": v, "errores": e.mensajes}
-
-    fuentes, avisos = [], []
-    if fija is None:
-        try:
-            meta = catalogo.serie("meta_inflacion", hoy=hoy)
-        except catalogo.ErrorSerie as e:
-            return {"v": v, "errores": [str(e)]}
-        fuentes.append(meta.fuente)
-        avisos += meta.advertencias
-        try:
-            p = pronostico_banrep.pronostico(hoy)
-            fuentes.insert(0, p.fuente)
-            avisos += p.advertencias
-            pronostico = p.inflacion
-        except pronostico_banrep.ErrorPronostico:
-            pronostico = None
-        senda = senda_inflacion(hoy, proyecto.horizonte, pronostico, meta.valor_al(hoy) / 100)
-    else:
-        senda = senda_inflacion(hoy, proyecto.horizonte, None, 0, fija=fija)
-    f = flujo_caja(proyecto, senda)
+    f = flujo_caja(leido.proyecto, leido.senda)
 
     def celda(valor: float) -> str:
         return "—" if abs(valor) < 0.5 else formatear(valor, "pesos")
 
     return {
-        "v": v, "errores": [], "proyecto": proyecto.nombre,
+        "v": v, "errores": [], "proyecto": leido.proyecto.nombre,
         "anios": [fila.anio for fila in f.real],
         "filas": [{"clave": clave, "etiqueta": etiqueta, "total": clave == "flujo_libre",
                    "valores": [celda(getattr(fila, clave)) for fila in f.real]}
                   for clave, etiqueta in PARTIDAS],
-        "inflacion": _texto_senda(hoy.year + 1, f.inflacion, fija is not None),
-        "hallazgos": f.resultado.hallazgos, "avisos": avisos + f.resultado.supuestos,
-        "fuentes": fuentes,
+        "inflacion": _texto_senda(hoy.year + 1, f.inflacion, leido.fija),
+        "hallazgos": f.resultado.hallazgos, "avisos": leido.avisos + f.resultado.supuestos,
+        "fuentes": leido.fuentes,
     }
 
 

@@ -18,7 +18,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
     `tests/modules/proyectos/test_evaluacion.py`
   - Tamaño: S
 
-- [ ] **2. Lectura compartida del proyecto**
+- [x] **2. Lectura compartida del proyecto**
   - Aceptación: `app/orchestrator/proyecto.py` convierte los valores del
     formulario (montos con palabras, porcentajes, años, inflación vacía o
     fija, tasa de oportunidad) en proyecto, senda, tasa, fuentes y avisos, o
