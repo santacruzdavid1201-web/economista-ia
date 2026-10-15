@@ -17,7 +17,7 @@ from typing import NamedTuple
 
 from modules.base import Indicador, ResultadoModulo, formatear
 from modules.proyectos.flujo import Proyecto, Senda, flujo_caja
-from modules.proyectos.matematica_financiera import biseccion, vpn
+from modules.proyectos.matematica_financiera import biseccion, como_la_escribio, vpn
 
 CAMBIOS = (-0.2, -0.1, 0.1, 0.2)
 RANGO = (0.01, 3.0)                    # factor sobre el valor actual: de −99 % a +200 %
@@ -82,13 +82,16 @@ def _nivel(variable: Variable, valor: float) -> str:
     return f"{formatear(valor, 'tasa')} {unidad}".strip()
 
 
-def movimiento(variable: Variable, cambio: float, valor: float | None = None) -> str:
-    """'los ingresos caen 3,1 %', 'la tasa de oportunidad sube a 11,11 %'."""
+def movimiento(variable: Variable, cambio: float, valor: float | None = None,
+               exacto: bool = False) -> str:
+    """'los ingresos caen 3,1 %', 'la tasa de oportunidad sube a 11,11 %'. `exacto`: el cambio
+    como lo escribió el usuario ("10 %"), que es como el 7B lo repite."""
     verbo = ("suben" if variable.plural else "sube") if cambio > 0 else \
         ("caen" if variable.plural else "baja")
     if variable.en_nivel and valor is not None:
         return f"{variable.sujeto} {verbo} a {_nivel(variable, valor)}"
-    return f"{variable.sujeto} {verbo} {formatear(abs(cambio), 'proporcion')}"
+    texto = como_la_escribio(abs(cambio)) if exacto else formatear(abs(cambio), "proporcion")
+    return f"{variable.sujeto} {verbo} {texto}"
 
 
 def sensibilidad(proyecto: Proyecto, senda: Senda, tasa: float) -> Sensibilidad:
@@ -136,3 +139,28 @@ def sensibilidad(proyecto: Proyecto, senda: Senda, tasa: float) -> Sensibilidad:
                                                        "cambios")],
         hallazgos=hallazgos, supuestos=[SUPUESTO])
     return Sensibilidad(base, filas, resultado)
+
+
+def escenario(proyecto: Proyecto, senda: Senda, tasa: float, variable: str,
+              cambio: float) -> ResultadoModulo:
+    """Un cambio puntual ("¿y si vendo 10 % menos?"), dicho en palabras."""
+    v = POR_CLAVE[variable]
+    base = vpn_con(proyecto, senda, tasa, "tasa", 1)
+    nuevo = vpn_con(proyecto, senda, tasa, variable, 1 + cambio)
+    actual = tasa if variable == "tasa" else getattr(proyecto, variable)
+    if base >= 0:
+        estado = "sigue creando valor" if nuevo >= 0 else "deja de crear valor"
+    else:
+        estado = "pasa a crear valor" if nuevo >= 0 else "sigue sin crear valor"
+    cambio_texto = movimiento(v, cambio, actual * (1 + cambio), exacto=True)
+    hoy = f"{formatear(abs(base), 'pesos')} {'más' if base >= 0 else 'menos'}"
+    return ResultadoModulo(
+        modulo="proyectos", analisis="escenario",
+        indicadores=[
+            Indicador(clave="vpn", nombre="Valor presente neto (VPN)", valor=base, unidad="pesos",
+                      formula="VPN con los datos del proyecto, sin cambios"),
+            Indicador(clave="vpn_escenario", nombre=f"VPN si {cambio_texto}", valor=nuevo,
+                      unidad="pesos", formula="VPN con ese cambio y todo lo demás igual")],
+        hallazgos=[f"Si {cambio_texto}, el proyecto {estado}: {deja(nuevo)} (con los datos "
+                   f"actuales, {hoy})."],
+        supuestos=[SUPUESTO])

@@ -150,3 +150,34 @@ def sistema(pregunta: str) -> str:
     texto = sin_tildes(pregunta)
     constante = r"abono (?:constante|fijo|igual)|capital (?:constante|fijo)|cuotas? decrecientes?"
     return "abono_constante" if re.search(constante, texto) else "cuota_fija"
+
+
+# Variable del proyecto y dirección del cambio ("¿y si vendo 10 % menos?"); de la más
+# específica a la más general. "Costos" sin más: costos variables, con supuesto.
+VARIABLES_PROYECTO = [
+    ("costos_fijos", r"(?:costos?|gastos?) fij"),
+    ("costos_variables", r"(?:costos?|gastos?) variab|costos? de (?:venta|produccion)"),
+    ("ingresos", r"ingres|venta|vend|factur"),
+    ("inversion", r"inversi|invert|\bobra\b"),
+    ("tasa", r"\btasa|oportunidad|descuento"),
+]
+BAJA = r"\b(?:menos|baj\w*|ca[ey]\w*|caig\w*|disminu\w*|reduc\w*|descien\w*|pierd\w*|peor)\b"
+SUBE = r"\b(?:mas|sub\w*|aument\w*|crec\w*|increment\w*|mayor\w*|car[oa]s?|encarec\w*)\b"
+
+
+def variable_del_proyecto(pregunta: str) -> tuple[str | None, bool]:
+    """(variable, asumida): qué dato del proyecto cambia en la pregunta."""
+    texto = sin_tildes(pregunta)
+    for clave, patron in VARIABLES_PROYECTO:
+        if re.search(patron, texto):
+            return clave, False
+    if re.search(r"\b(?:costos?|gastos?)\b", texto):
+        return "costos_variables", True
+    return None, False
+
+
+def direccion(pregunta: str) -> int | None:
+    """1 si el dato sube, -1 si baja, None si la pregunta no lo dice (o dice las dos cosas)."""
+    texto = sin_tildes(pregunta)
+    baja, sube = bool(re.search(BAJA, texto)), bool(re.search(SUBE, texto))
+    return None if baja == sube else (1 if sube else -1)

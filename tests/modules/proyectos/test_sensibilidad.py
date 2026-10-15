@@ -3,7 +3,7 @@ import pytest
 
 from modules.proyectos.flujo import Senda, crear_proyecto, flujo_caja
 from modules.proyectos.matematica_financiera import tir
-from modules.proyectos.sensibilidad import POR_CLAVE, movimiento, sensibilidad
+from modules.proyectos.sensibilidad import POR_CLAVE, escenario, movimiento, sensibilidad
 
 EJEMPLO = dict(nombre="Remodelación", inversion=100_000_000, vida_util=5, horizonte=5,
                ingresos=60_000_000, crecimiento_real=0, costos_variables=0.30,
@@ -67,3 +67,30 @@ def test_sin_cruce_en_el_rango_no_hay_valor_critico():
 
 def test_supuesto_de_una_variable_a_la_vez():
     assert any("Cada variable se mueve sola" in s for s in tornado().resultado.supuestos)
+
+
+# --------------------------------------------------------------------------- #
+# Escenario puntual (el chat: "¿y si vendo 10 % menos?")
+# --------------------------------------------------------------------------- #
+def test_escenario_que_deja_de_crear_valor():
+    r = escenario(crear_proyecto(**EJEMPLO), SIN_INFLACION, 0.10, "ingresos", -0.10)
+    assert r.valor("vpn") == pytest.approx(3_109_400.13, abs=0.01)
+    assert r.valor("vpn_escenario") == pytest.approx(-7_012_001, abs=1)
+    assert r.hallazgos[0] == ("Si los ingresos caen 10 %, el proyecto deja de crear valor: "
+                              "dejaría $ 7.012.001 menos que la alternativa (con los datos "
+                              "actuales, $ 3.109.400 más).")
+
+
+@pytest.mark.parametrize("variable, cambio, estado", [
+    ("costos_fijos", 0.10, "sigue creando valor"),
+    ("ingresos", 0.10, "sigue creando valor"),
+])
+def test_escenario_que_sigue_creando_valor(variable, cambio, estado):
+    r = escenario(crear_proyecto(**EJEMPLO), SIN_INFLACION, 0.10, variable, cambio)
+    assert f"el proyecto {estado}" in r.hallazgos[0]
+
+
+def test_escenario_desde_un_vpn_negativo():
+    p = crear_proyecto(**EJEMPLO)
+    assert "pasa a crear valor" in escenario(p, SIN_INFLACION, 0.15, "ingresos", 0.20).hallazgos[0]
+    assert "sigue sin crear valor" in escenario(p, SIN_INFLACION, 0.15, "ingresos", -0.10).hallazgos[0]

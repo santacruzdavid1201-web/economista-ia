@@ -2,6 +2,7 @@
 import pytest
 
 from app.orchestrator.lectura import (
+    direccion,
     monto_en_pesos,
     montos,
     periodicidad,
@@ -9,6 +10,7 @@ from app.orchestrator.lectura import (
     tipo_de_tasa,
     tipo_destino,
     unidad_plazo,
+    variable_del_proyecto,
 )
 
 
@@ -110,3 +112,29 @@ def test_monto_en_pesos(valor, esperado):
 ])
 def test_tipo_destino(pregunta, tasa, esperado):
     assert tipo_destino(pregunta, tasa) == esperado
+
+
+@pytest.mark.parametrize("pregunta, esperado", [
+    ("¿Y si vendo 10 % menos?", ("ingresos", False)),
+    ("¿Y si las ventas caen 20 %?", ("ingresos", False)),
+    ("¿Y si los costos fijos suben 20 %?", ("costos_fijos", False)),
+    ("¿Y si los costos variables suben 10 %?", ("costos_variables", False)),
+    ("¿Y si los costos suben 10 %?", ("costos_variables", True)),     # "costos" sin más: supuesto
+    ("¿Y si la inversión sale 15 % más cara?", ("inversion", False)),
+    ("¿Y si mi tasa de oportunidad sube 20 %?", ("tasa", False)),
+    ("¿Qué variable pesa más en mi proyecto?", (None, False)),
+])
+def test_variable_del_proyecto(pregunta, esperado):
+    assert variable_del_proyecto(pregunta) == esperado
+
+
+@pytest.mark.parametrize("pregunta, esperado", [
+    ("¿Y si vendo 10 % menos?", -1),
+    ("¿Y si las ventas caen 20 %?", -1),
+    ("¿Y si bajan los ingresos un 5 %?", -1),
+    ("¿Y si los costos fijos suben 20 %?", 1),
+    ("¿Y si la inversión sale 15 % más cara?", 1),
+    ("¿Y si los ingresos cambian 10 %?", None),
+])
+def test_direccion(pregunta, esperado):
+    assert direccion(pregunta) == esperado
