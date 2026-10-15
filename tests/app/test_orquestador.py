@@ -491,3 +491,26 @@ def test_simular_credito_sin_unidad_de_plazo_la_pide():
 def test_simular_credito_no_pide_periodo():
     credito = next(e for e in esquema_openai() if e["function"]["name"] == "simular_credito")
     assert set(credito["function"]["parameters"]["properties"]) == {"monto", "tasa", "plazo"}
+
+
+def test_convertir_tasa_sin_empresa():
+    llm = LLMFalso(herramienta("convertir_tasa", tasa=2),
+                   texto("Un 2 % mensual equivale a 26,82 % efectiva anual."))
+    r = responder("¿2 % mensual cuánto es en efectivo anual?", None, llm, HOY)
+    assert r.origen == "llm" and r.herramienta == "convertir_tasa"
+    assert r.resultados[0].valor("tasa_convertida") == pytest.approx(0.2682417945625455)
+
+
+def test_convertir_tasa_sin_tipo_lo_pide():
+    r = responder("¿A cuánto equivale el 2 %?", None,
+                  LLMFalso(herramienta("convertir_tasa", tasa=2)), HOY)
+    assert r.origen == "sin_llm" and "¿Qué tipo de tasa es el 2 %?" in r.texto
+
+
+def test_convertir_tasa_sin_destino_va_a_efectiva_anual_o_a_mensual():
+    r = responder("¿A cuánto equivale el 24 % NMV?", None,
+                  LLMFalso(herramienta("convertir_tasa", tasa=24), texto("Equivale a 26,82 %.")), HOY)
+    assert r.resultados[0].hallazgos[0].endswith("26,82 % efectiva anual.")
+    r = responder("¿A cuánto equivale el 18 % EA?", None,
+                  LLMFalso(herramienta("convertir_tasa", tasa=18), texto("Equivale a 1,39 %.")), HOY)
+    assert r.resultados[0].hallazgos[0].endswith("1,39 % mensual.")

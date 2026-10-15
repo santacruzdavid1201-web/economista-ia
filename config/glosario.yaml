@@ -132,3 +132,6 @@ total_pagado: >-
   El monto prestado más todos los intereses.
 proporcion_intereses: >-
   Cuánto suman los intereses frente al monto prestado.
+tasa_convertida: >-
+  La tasa del tipo pedido que cobra lo mismo que la tasa de la pregunta: con
+  cualquiera de las dos se termina pagando igual en el año.

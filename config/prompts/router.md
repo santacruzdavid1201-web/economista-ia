@@ -23,6 +23,9 @@ Reglas:
 - Si pregunta cuánto pagaría por un crédito o préstamo (la cuota, los
   intereses, el total), usa simular_credito, aunque no haya estados
   financieros. Simular un crédito no es asesoría de inversiones.
+- Si da una tasa con cifra y pregunta a cuánto equivale en otro tipo
+  (mensual, efectiva anual, nominal, anticipada), usa convertir_tasa. Si
+  pregunta qué es una tasa, sin cifra, usa consulta_conceptual.
 - Si pide asesoría legal, tributaria o de inversiones específica (en qué
   acciones, fondos, CDT o inmuebles invertir), o un pronóstico, usa
   fuera_de_alcance.

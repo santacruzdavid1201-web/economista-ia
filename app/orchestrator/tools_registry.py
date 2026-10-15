@@ -16,6 +16,7 @@ from app.orchestrator.lectura import (
     periodicidad,
     sistema,
     tipo_de_tasa,
+    tipo_destino,
     unidad_plazo,
 )
 from data_sources.externos.referencia import homologar_empresa
@@ -35,6 +36,7 @@ from modules.proyectos.matematica_financiera import (
     TIPOS,
     ErrorCredito,
     ErrorTasa,
+    convertir_tasa,
     simular_credito,
 )
 
@@ -190,6 +192,29 @@ def _credito(ctx: ContextoEmpresa | None, i: int | None, argumentos: dict) -> li
         raise ErrorHerramienta(str(e)) from e
 
 
+def _convertir(ctx: ContextoEmpresa | None, i: int | None, argumentos: dict) -> list[ResultadoModulo]:
+    """Sin empresa. El modelo da la cifra; el tipo de origen y el de destino los lee Python."""
+    pregunta = argumentos.get("pregunta", "")
+    try:
+        tasa = float(argumentos.get("tasa"))
+    except (TypeError, ValueError):
+        raise ErrorHerramienta("¿Qué tasa quiere convertir? Escríbala con su tipo, por ejemplo: "
+                               "2 % mensual o 24 % NMV.") from None
+    desde, asumido = tipo_de_tasa(pregunta, tasa)
+    if desde is None:
+        raise ErrorHerramienta(f"¿Qué tipo de tasa es el {_decimal(tasa)} %? Por ejemplo: 2 % "
+                               "mensual, 24 % NMV o 18 % EA. Según el tipo, la equivalencia cambia.")
+    supuestos = [f"Se asumió que la tasa de {_decimal(tasa)} % anual es efectiva anual."] \
+        if asumido else []
+    hacia = tipo_destino(pregunta, tasa)
+    if hacia in (None, desde):
+        hacia = "MV" if desde == "EA" else "EA"
+    try:
+        return [convertir_tasa(tasa / 100, desde, hacia, supuestos)]
+    except ErrorTasa as e:
+        raise ErrorHerramienta(str(e)) from e
+
+
 PANORAMA = ("ipc", "tasa_politica", "ibr_3m", "trm", "pib", "desempleo")
 
 
@@ -272,6 +297,16 @@ HERRAMIENTAS: list[Herramienta] = [
             "plazo": {"type": "number",
                       "description": "Plazo como aparece en la pregunta, sin convertirlo; p. ej. "
                                      "5 si dice 5 años."}}),
+    Herramienta(
+        "convertir_tasa",
+        "¿A cuánto equivale una tasa de interés en otro tipo? Pasa la tasa que da la pregunta "
+        "de mensual a efectiva anual, de nominal (NMV, NTV) a efectiva, de anticipada a vencida, "
+        "o al revés. No necesita los estados financieros.",
+        _convertir, usa_periodo=False,
+        parametros={"tasa": {
+            "type": "number",
+            "description": "Tasa en porcentaje, como aparece en la pregunta; p. ej. 2 si dice "
+                           "2 % mensual."}}),
     Herramienta(
         "comparar_con_sector",
         "¿Cómo está la empresa frente a empresas similares de su sector? Ubica cada "

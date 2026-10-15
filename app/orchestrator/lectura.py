@@ -44,10 +44,32 @@ def _numero(texto: str) -> float:
     return float(texto)
 
 
-def _pegado(patron: str, antes: str, despues: str) -> bool:
-    """El patrón va justo después del número o justo antes ("tasa mensual del 2 %")."""
-    return bool(re.match(ANTES_DEL_TIPO + f"(?:{patron})", despues)
-                or re.search(f"(?:{patron})" + DESPUES_DEL_TIPO, antes))
+def _pegado(patron: str, antes: str, despues: str) -> str | None:
+    """
+    Si el patrón va justo después del número o justo antes ("tasa mensual del
+    2 %"), el texto sin el número ni su tipo; si no, None.
+    """
+    if m := re.match(ANTES_DEL_TIPO + f"(?:{patron})", despues):
+        return antes + " " + despues[m.end():]
+    if m := re.search(f"(?:{patron})" + DESPUES_DEL_TIPO, antes):
+        return antes[:m.start()] + " " + despues
+    return None
+
+
+def _leer(pregunta: str, tasa: float) -> tuple[str | None, bool, str]:
+    """(tipo, asumido, resto de la pregunta sin la tasa ni su tipo)."""
+    texto = sin_tildes(pregunta)
+    for m in re.finditer(rf"({NUMERO})\s*%", texto):
+        if _numero(m.group(1)) != tasa:
+            continue
+        antes, despues = texto[:m.start()], texto[m.end():]
+        for tipo, patron in TIPOS:
+            if (resto := _pegado(patron, antes, despues)) is not None:
+                return tipo, False, resto
+        if (resto := _pegado(ANUAL, antes, despues)) is not None:
+            return "EA", True, resto
+        return None, False, antes + " " + despues
+    return None, False, texto
 
 
 def tipo_de_tasa(pregunta: str, tasa: float) -> tuple[str | None, bool]:
@@ -56,16 +78,20 @@ def tipo_de_tasa(pregunta: str, tasa: float) -> tuple[str | None, bool]:
     es efectiva anual, como deben informarla los bancos en Colombia: asumido.
     Sin tipo reconocible, (None, False): no se adivina.
     """
-    texto = sin_tildes(pregunta)
-    for m in re.finditer(rf"({NUMERO})\s*%", texto):
-        if _numero(m.group(1)) != tasa:
-            continue
-        antes, despues = texto[:m.start()], texto[m.end():]
-        for tipo, patron in TIPOS:
-            if _pegado(patron, antes, despues):
-                return tipo, False
-        return ("EA", True) if _pegado(ANUAL, antes, despues) else (None, False)
-    return None, False
+    tipo, asumido, _ = _leer(pregunta, tasa)
+    return tipo, asumido
+
+
+def tipo_destino(pregunta: str, tasa: float) -> str | None:
+    """
+    El tipo al que se quiere convertir la tasa: el que la pregunta nombra
+    aparte del suyo ("¿2 % mensual cuánto es en efectivo anual?" → EA).
+    """
+    _, _, resto = _leer(pregunta, tasa)
+    for tipo, patron in [*TIPOS, ("EA", ANUAL)]:
+        if re.search(rf"\b(?:{patron})", resto):
+            return tipo
+    return None
 
 
 def _montos(pregunta: str) -> list[tuple[float, float]]:

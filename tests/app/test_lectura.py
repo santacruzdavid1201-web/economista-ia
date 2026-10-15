@@ -7,6 +7,7 @@ from app.orchestrator.lectura import (
     periodicidad,
     sistema,
     tipo_de_tasa,
+    tipo_destino,
     unidad_plazo,
 )
 
@@ -95,3 +96,17 @@ def test_sistema(pregunta, esperado):
 def test_monto_en_pesos(valor, esperado):
     pregunta = "¿Cuánto pago por un crédito de 200 millones al 18 % EA a 5 años?"
     assert monto_en_pesos(pregunta, valor) == esperado
+
+
+@pytest.mark.parametrize("pregunta, tasa, esperado", [
+    ("¿2 % mensual cuánto es en efectivo anual?", 2, "EA"),
+    ("¿A cuánto equivale una tasa del 24 % NMV en efectiva anual?", 24, "EA"),
+    ("¿Cuánto es 18 % EA mensual?", 18, "MV"),
+    ("Una tasa efectiva anual del 18 %, ¿cuánto es mensual?", 18, "MV"),
+    ("¿Cuánto es 18 % EA en nominal mes vencido?", 18, "NMV"),
+    ("¿A cuánto equivale el 2 % mes anticipado?", 2, None),        # sin destino
+    ("¿2 % mensual cuánta plata es al año?", 2, "EA"),
+    ("¿Con 2 % mensual cuánta plata pago?", 2, None),               # "cuanta" no es TA
+])
+def test_tipo_destino(pregunta, tasa, esperado):
+    assert tipo_destino(pregunta, tasa) == esperado

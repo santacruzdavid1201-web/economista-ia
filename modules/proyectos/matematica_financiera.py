@@ -287,3 +287,42 @@ def simular_credito(monto: float, tasa: float, tipo: str, cuotas: int,
     ]
     return ResultadoModulo(modulo="proyectos", analisis="credito", indicadores=indicadores,
                            hallazgos=hallazgos, supuestos=[*supuestos, SUPUESTO_COSTOS])
+
+
+# --------------------------------------------------------------------------- #
+# Conversor de tasas
+# --------------------------------------------------------------------------- #
+def _formula(desde: str, hacia: str) -> str:
+    """Los pasos de la conversión, en el orden en que se hacen."""
+    _, m1, nominal1, anticipada1 = TIPOS[desde]
+    _, m2, nominal2, anticipada2 = TIPOS[hacia]
+    pasos = [f"periódica = nominal / {m1}"] if nominal1 else []
+    if anticipada1:
+        pasos.append("vencida = anticipada / (1 − anticipada)")
+    pasos.append(f"equivalente = (1 + i)^({m1}/{m2}) − 1")
+    if anticipada2:
+        pasos.append("anticipada = vencida / (1 + vencida)")
+    if nominal2:
+        pasos.append(f"nominal = periódica × {m2}")
+    return "; ".join(pasos)
+
+
+def convertir_tasa(tasa: float, desde: str, hacia: str,
+                   supuestos: list[str] | tuple[str, ...] = ()) -> ResultadoModulo:
+    """Una tasa en otro tipo, con la diferencia de sentido dicha en un hallazgo."""
+    valor = convertir(tasa, desde, hacia)
+    nombre1, _, nominal1, anticipada1 = TIPOS[desde]
+    nombre2, _, nominal2, anticipada2 = TIPOS[hacia]
+    hallazgos = [f"Una tasa de {formatear(tasa, 'tasa')} {nombre1} equivale a "
+                 f"{formatear(valor, 'tasa')} {nombre2}."]
+    if nominal1 != nominal2:
+        hallazgos.append("La diferencia es que la nominal no cuenta el interés sobre los "
+                         "intereses; la efectiva sí.")
+    if anticipada1 != anticipada2:
+        hallazgos.append("En la anticipada los intereses se pagan al inicio del periodo; por eso "
+                         "equivale a una tasa vencida mayor.")
+    return ResultadoModulo(
+        modulo="proyectos", analisis="conversion_tasa",
+        indicadores=[Indicador(clave="tasa_convertida", nombre=f"Tasa {nombre2}", valor=valor,
+                               unidad="tasa", formula=_formula(desde, hacia))],
+        hallazgos=hallazgos, supuestos=list(supuestos))

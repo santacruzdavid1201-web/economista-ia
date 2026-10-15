@@ -68,7 +68,7 @@ Plan: [plan.md](plan.md). Verificación común de cada tarea:
     `config/prompts/router.md`, tests de orquestador
   - Tamaño: M
 
-- [ ] **6. Herramienta `convertir_tasa` de punta a punta**
+- [x] **6. Herramienta `convertir_tasa` de punta a punta**
   - Aceptación: "¿2 % mensual cuánto es en efectivo anual?" → 26,82 % EA con
     hallazgo que nombra los dos tipos; `hacia` por defecto EA (o mensual si la
     tasa ya es EA); sin tipo reconocible → mensaje que pide aclararlo.

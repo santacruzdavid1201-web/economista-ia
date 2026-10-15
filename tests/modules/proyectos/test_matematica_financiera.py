@@ -7,6 +7,7 @@ from modules.proyectos.matematica_financiera import (
     ErrorTasa,
     a_periodica,
     amortizacion,
+    convertir_tasa,
     convertir,
     indice_rentabilidad,
     recuperacion_descontada,
@@ -199,3 +200,27 @@ def test_simular_credito_trimestral():
 def test_simular_credito_pasa_los_supuestos_de_la_lectura():
     r = simular_credito(1_000_000, 0.18, "EA", 12, supuestos=["Se asumió algo."])
     assert r.supuestos[0] == "Se asumió algo."
+
+
+# --------------------------------------------------------------------------- #
+# Conversor de tasas
+# --------------------------------------------------------------------------- #
+def test_convertir_tasa_mensual_a_efectiva():
+    r = convertir_tasa(0.02, "MV", "EA")
+    assert r.modulo == "proyectos" and r.analisis == "conversion_tasa"
+    assert r.valor("tasa_convertida") == pytest.approx(0.2682417945625455)
+    assert r.hallazgos == ["Una tasa de 2,00 % mensual equivale a 26,82 % efectiva anual."]
+    assert "(1 + i)^(12/1) − 1" in r.indicadores[0].formula
+
+
+def test_convertir_tasa_nominal_explica_la_diferencia():
+    r = convertir_tasa(0.24, "NMV", "EA")
+    assert r.hallazgos[0] == "Una tasa de 24,00 % nominal mes vencido equivale a 26,82 % efectiva anual."
+    assert "la nominal no cuenta el interés sobre los intereses" in r.hallazgos[1]
+    assert r.indicadores[0].formula.startswith("periódica = nominal / 12")
+
+
+def test_convertir_tasa_anticipada_explica_la_diferencia():
+    r = convertir_tasa(0.02, "MA", "MV")
+    assert r.valor("tasa_convertida") == pytest.approx(0.02 / 0.98)
+    assert "al inicio del periodo" in r.hallazgos[1]
