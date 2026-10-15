@@ -1,7 +1,7 @@
 # Spec: sensibilidad-proyecto
 
 Módulo del [mapa de proyectos](SPEC-mapa-proyectos.md). Estado: aprobada y
-construida el 15/10/2026 (falta la conciliación a mano del usuario). Orden acordado: sensibilidad →
+construida y conciliada a mano por el usuario el 15/10/2026. Orden acordado: sensibilidad →
 costo de capital; el Monte Carlo queda para después del módulo 2.
 
 ## Objetivo
