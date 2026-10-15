@@ -6,6 +6,12 @@ from modules.proyectos.matematica_financiera import (
     ErrorTasa,
     a_periodica,
     convertir,
+    indice_rentabilidad,
+    recuperacion_descontada,
+    tir,
+    tirm,
+    valor_anual_equivalente,
+    vpn,
 )
 
 
@@ -51,3 +57,54 @@ def test_anticipada_de_100_por_ciento_en_el_periodo_no_tiene_equivalente(tasa, t
 def test_tasa_de_menos_100_por_ciento_no_es_valida():
     with pytest.raises(ErrorTasa, match="mayor que -100"):
         a_periodica(-1.0, "EA")
+
+
+# --------------------------------------------------------------------------- #
+# Indicadores de proyectos
+# --------------------------------------------------------------------------- #
+FLUJOS = [-1000, 300, 400, 500, 200]
+
+
+def test_vpn():
+    assert vpn(0.10, FLUJOS) == pytest.approx(115.56587664776976, abs=1e-9)
+
+
+def test_tir_unica():
+    valor, avisos = tir(FLUJOS)
+    assert valor == pytest.approx(0.15322137877181538, abs=1e-9)
+    assert avisos == [] and vpn(valor, FLUJOS) == pytest.approx(0, abs=1e-6)
+
+
+def test_dos_tir_no_dan_un_numero_y_las_nombra():
+    valor, avisos = tir([-100, 230, -132])          # VPN = 0 al 10 % y al 20 %
+    assert valor is None
+    assert "10,00 %" in avisos[0] and "20,00 %" in avisos[0] and "TIRM" in avisos[0]
+
+
+def test_sin_cambio_de_signo_no_hay_tir():
+    valor, avisos = tir([100, 50, 20])
+    assert valor is None and "no hay TIR" in avisos[0]
+
+
+def test_tirm_reinvierte_a_la_tasa_de_descuento():
+    vf = 300 * 1.1 ** 3 + 400 * 1.1 ** 2 + 500 * 1.1 + 200      # 1.633,3
+    assert tirm(0.10, FLUJOS) == pytest.approx((vf / 1000) ** 0.25 - 1, abs=1e-12)
+    assert tirm(0.10, [100, 50]) is None                         # sin inversión
+
+
+def test_recuperacion_descontada_interpola_dentro_del_anio():
+    acumulado_3 = -1000 + 300 / 1.1 + 400 / 1.1 ** 2 + 500 / 1.1 ** 3      # -21,04
+    assert recuperacion_descontada(0.10, FLUJOS) == pytest.approx(
+        3 + -acumulado_3 / (200 / 1.1 ** 4), abs=1e-12)                      # 3,15 años
+    assert recuperacion_descontada(0.10, [-1000, 100, 100]) is None
+
+
+def test_indice_de_rentabilidad():
+    assert indice_rentabilidad(0.10, FLUJOS) == pytest.approx(1 + 115.56587664776976 / 1000)
+    assert indice_rentabilidad(0.10, [0, 100]) is None
+
+
+def test_valor_anual_equivalente():
+    assert valor_anual_equivalente(0.10, FLUJOS) == pytest.approx(
+        115.56587664776976 * 0.10 / (1 - 1.1 ** -4))
+    assert valor_anual_equivalente(0, FLUJOS) == pytest.approx(400 / 4)
