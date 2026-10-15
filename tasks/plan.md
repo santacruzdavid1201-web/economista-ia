@@ -1,47 +1,44 @@
-# Plan: flujo-proyecto
+# Plan: evaluacion-proyecto
 
-Especificación: [SPEC-flujo-proyecto.md](../SPEC-flujo-proyecto.md) (aprobada
-el 15/10/2026). Tareas en [todo.md](todo.md). El plan anterior
-(`matematica-financiera`, completo) queda en la historia de Git.
+Especificación: [SPEC-evaluacion-proyecto.md](../SPEC-evaluacion-proyecto.md)
+(aprobada el 15/10/2026). Tareas en [todo.md](todo.md). Los planes anteriores
+(`matematica-financiera`, `flujo-proyecto`, completos) quedan en Git.
 
 ## Resumen
 
-El gerente escribe su proyecto a precios de hoy y Python arma el flujo de
-caja libre año por año: en pesos corrientes por dentro (impuestos,
-depreciación, capital de trabajo) y en pesos de hoy en la pantalla, con la
-senda de inflación del BanRep (pronóstico del Informe de Política Monetaria y
-meta de 3 % después). El tablero de Proyectos pasa a dos pestañas.
+Con el flujo de caja libre y la tasa de oportunidad del usuario: VPN (primero),
+TIR nominal, TIRM, recuperación descontada e índice de rentabilidad, con
+hallazgos que dicen si el proyecto crea valor. En la pestaña "Su proyecto" y en
+el chat, sobre el último proyecto válido de la sesión.
 
 ## Decisiones de arquitectura
 
-- La senda de inflación es una función pura (`senda_inflacion`) que recibe el
-  pronóstico y la meta ya cargados: el flujo no sabe de dónde vienen, y los
-  tests no tocan la red.
-- El pronóstico del BanRep es una fuente nueva con el mismo patrón de las
-  series: descarga separada de la transformación, copia del día en la caché,
-  copia versionada de respaldo y caída a la meta si todo falla. El
-  actualizador diario lo revisa junto con las series.
-- `Proyecto` es un modelo pydantic: la validación de rangos vive en un solo
-  lugar y el formulario solo traduce sus errores a mensajes.
-- Las pestañas son enlaces con `?pestana=` que HTMX carga sin recargar la
-  página; sin HTMX funcionan como enlaces normales.
+- `evaluar(flujo, tasa)` es pura y usa las funciones ya conciliadas de
+  `matematica_financiera`; descuenta los flujos corrientes con la tasa nominal.
+- La lectura del formulario (montos con palabras, porcentajes, senda de
+  inflación) pasa de `frontend/tableros.py` a `app/orchestrator/proyecto.py`:
+  el tablero y la herramienta del chat leen el proyecto de la misma forma, y
+  el orquestador no depende de la interfaz.
+- El proyecto llega al chat como la pregunta: `responder(..., proyecto=...)`
+  lo pasa a las herramientas en sus argumentos (sin entrar en `Respuesta`).
+  La web pasa el de la sesión; el set de evaluación, el de ejemplo.
 
 ## Grafo de dependencias
 
 ```
-meta de inflación (853) ──┐
-pronóstico del BanRep ────┼── senda_inflacion ──┐
-                          │                     ├── formulario y tabla del flujo
-Proyecto + flujo_caja ────┼─────────────────────┘           │
-pestañas del tablero ─────┴─────────────────────────────────┘
+evaluar (puro) ─────────────┬── tablero: tarjetas y hallazgos ── aviso de ejemplo
+lectura del proyecto ───────┤
+                            └── herramienta evaluar_proyecto ── nota + bloque M
 ```
 
 ## Fases
 
-1. **Datos de inflación (tareas 1-2):** la meta en el catálogo y el
-   pronóstico del informe, con fixture del Excel real.
-2. **Cálculo (tareas 3-4):** senda y flujo de caja con los casos a mano.
-3. **Tablero (tareas 5-6):** pestañas y la pestaña "Su proyecto".
+1. **Cálculo (tareas 1-2):** evaluación pura con el caso a mano y la lectura
+   compartida del proyecto.
+2. **Tablero (tarea 3):** tasa en el formulario, tarjetas, hallazgos y aviso de
+   valores de ejemplo en las dos pestañas.
+3. **Chat (tareas 4-5):** herramienta, reglas del enrutador, nota de
+   conocimiento y bloque M con el modelo real.
 
 Cada tarea: tests primero (verlos fallar), implementación, suite completa,
 revisión del diff, commit y push.
@@ -50,10 +47,10 @@ revisión del diff, commit y push.
 
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
-| Errores de nominal contra real en el flujo | Alto | Casos a mano con π = 0 y π fija; propiedad: con π > 0 el flujo en pesos de hoy es menor; conciliación del usuario. |
-| El BanRep cambia el formato del Excel o el patrón del DOI | Medio | Lectura por la etiqueta "IPC total" y la fila de años, no por posición; error útil; copia guardada; caída a la meta con supuesto. |
-| El informe de octubre sale y el año en curso queda casi cumplido | Bajo | El año t del proyecto usa el año calendario actual + t: el pronóstico del año en curso no se usa. |
-| Mover el simulador a una pestaña rompe sus pruebas o enlaces | Bajo | Los tests de la página cubren las dos pestañas; las rutas POST no cambian. |
+| El 7B lee mal un VPN negativo (pierde el signo o dice que crea valor) | Alto | El hallazgo lo dice en palabras ("no crea valor: deja $ X menos que la alternativa"), con la cifra en positivo; regla del bloque M. |
+| El 7B califica ("buen proyecto", "rentable", "le conviene") | Medio | Hallazgo que dice que crear valor es un criterio y no una recomendación; reglas `no_contiene` en el bloque M. |
+| "¿Me conviene el proyecto?" va a la ruta conceptual (criterio) | Medio | Regla del enrutador: si habla de "mi proyecto" o "el proyecto", `evaluar_proyecto`; casos de enrutamiento en el bloque M. |
+| Mover la lectura del formulario rompe el tablero del flujo | Bajo | Los tests del tablero y de la web ya cubren el flujo; se mueven sin cambiar su comportamiento. |
 
 ## Preguntas abiertas
 
