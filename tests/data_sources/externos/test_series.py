@@ -142,6 +142,12 @@ def test_verificar():
 # --------------------------------------------------------------------------- #
 # Catálogo
 # --------------------------------------------------------------------------- #
+@pytest.fixture(autouse=True)
+def respaldo_vacio(monkeypatch, tmp_path):
+    """Ningún test lee las copias versionadas de data/series/."""
+    monkeypatch.setattr(catalogo, "RESPALDO", tmp_path / "respaldo")
+
+
 @pytest.fixture
 def descargas(monkeypatch):
     """SUAMECA falso: responde con los fixtures y anota cada id pedido."""
@@ -151,7 +157,11 @@ def descargas(monkeypatch):
 
     def descargar(id_serie):
         pedidas.append(id_serie)
-        return suameca_tasa(tasas[id_serie]) if id_serie in tasas             else suameca(respuestas[id_serie])
+        if id_serie in tasas:
+            return suameca_tasa(tasas[id_serie])
+        if id_serie in respuestas:
+            return suameca(respuestas[id_serie])
+        return {**suameca_tasa("ibr_3m"), "id": id_serie}   # TRM, PIB, desempleo: basta la forma
 
     monkeypatch.setattr(banrep, "descargar", descargar)
     return pedidas
@@ -192,12 +202,44 @@ def test_nacional_pedido_no_lleva_supuesto(tmp_path, descargas):
     assert serie("ipc", "Nacional", hoy=HOY, directorio=tmp_path).supuestos == []
 
 
-def test_copia_vigente_no_descarga(tmp_path, descargas):
+def test_copia_del_dia_no_descarga(tmp_path, descargas):
     serie("ipc", "Pasto", hoy=HOY, directorio=tmp_path)
-    serie("ipc", "Pasto", hoy=date(2026, 10, 17), directorio=tmp_path)
+    serie("ipc", "Pasto", hoy=HOY, directorio=tmp_path)
     assert descargas == [15026]
-    serie("ipc", "Pasto", hoy=date(2026, 10, 18), directorio=tmp_path)
+    serie("ipc", "Pasto", hoy=date(2026, 10, 12), directorio=tmp_path)
     assert descargas == [15026, 15026]
+
+
+def test_la_descarga_va_a_la_copia_del_dia_y_no_al_respaldo(tmp_path, descargas):
+    serie("ipc", "Pasto", hoy=HOY, directorio=catalogo.RESPALDO)
+    serie("ipc", "Pasto", hoy=date(2026, 10, 15), directorio=tmp_path)
+    assert descargas == [15026, 15026]
+    assert Serie.model_validate_json((tmp_path / "ipc_pasto.json").read_text(
+        encoding="utf-8")).consultada == date(2026, 10, 15)
+    assert Serie.model_validate_json((catalogo.RESPALDO / "ipc_pasto.json").read_text(
+        encoding="utf-8")).consultada == HOY
+
+
+def test_sin_copia_del_dia_y_sin_red_usa_el_respaldo(tmp_path, descargas, monkeypatch):
+    serie("ipc", "Pasto", hoy=HOY, directorio=catalogo.RESPALDO)
+    sin_red(monkeypatch)
+    s = serie("ipc", "Pasto", hoy=date(2026, 10, 15), directorio=tmp_path)
+    assert len(s.observaciones) == 26
+    assert s.advertencias == ["No se pudo actualizar la serie ipc_pasto; se usaron los datos "
+                              "consultados el 11/10/2026."]
+
+
+def test_actualizar_descarga_todas_las_nacionales_aunque_esten_vigentes(tmp_path, descargas):
+    serie("tasa_politica", hoy=HOY, directorio=tmp_path)
+    assert catalogo.actualizar(hoy=HOY, directorio=tmp_path) == []
+    assert descargas == [59, 15000, 59, 243, 1, 15271, 15312]
+
+
+def test_actualizar_sin_red_dice_que_no_pudo(tmp_path, descargas, monkeypatch):
+    serie("tasa_politica", hoy=HOY, directorio=tmp_path)
+    sin_red(monkeypatch)
+    problemas = catalogo.actualizar(hoy=HOY, directorio=tmp_path)
+    assert len(problemas) == 6 and all(p.startswith("No se pudo") for p in problemas)
 
 
 def test_la_copia_no_guarda_supuestos(tmp_path, descargas):

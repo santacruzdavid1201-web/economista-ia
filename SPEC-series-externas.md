@@ -2,7 +2,8 @@
 
 Módulo del [mapa macro](SPEC-mapa-macro.md). Estado: aprobado el 11/10/2026;
 primer tramo (IPC) construido el 11/10/2026; segundo tramo (tasas) construido el
-12/10/2026 (detalle en [sensibilidad-tasas](SPEC-sensibilidad-tasas.md)).
+12/10/2026 (detalle en [sensibilidad-tasas](SPEC-sensibilidad-tasas.md)); tercer
+tramo (actualización diaria) aprobado el 15/10/2026, al final.
 
 ## Objetivo
 
@@ -148,3 +149,42 @@ def desde_suameca(respuesta: dict, clave: str, geografia: str, consultada: date)
 Ninguna. Los ids del IPC nacional y de Pasto quedaron resueltos el 11/10/2026
 (sección Fuentes): SUAMECA publica las 23 ciudades, así que no hace falta el
 anexo por ciudad del DANE.
+
+## Tercer tramo: actualización diaria (aprobado el 15/10/2026)
+
+Pedido del usuario el 13/10/2026: el entorno macro "lo más al día posible", en
+el tablero y en el chat. Razón económica: la tasa de política cambia tras cada
+reunión del BanRep y la TRM a diario; con 7 días de vigencia, un análisis de
+sensibilidad podía usar una tasa vieja justo la semana en que más importa. El
+IPC, el PIB y el desempleo salen cada mes o trimestre: revisarlos a diario no
+cuesta nada (llega el mismo dato).
+
+**Diseño.**
+- Copias del día en `data/cache/series/` (ignorada por Git). `data/series/`
+  queda como respaldo versionado: tests, demo y primer arranque sin red. Se lee
+  la copia del día y, si no existe, la del respaldo.
+- Vigencia de 1 día (antes 7): si el actualizador falla, la consulta descarga
+  por su cuenta.
+- Actualizador dentro de la interfaz (`app/main.py`): al arrancar y cada 6
+  horas descarga de nuevo todas las series nacionales del catálogo, una tras
+  otra. El IPC de las ciudades no entra: es mensual y la vigencia de 1 día lo
+  renueva cuando alguien lo pide.
+- Descargas en serie también entre el actualizador y las consultas (un
+  candado), y escritura atómica de la copia (archivo temporal y reemplazo):
+  quien lee nunca ve un JSON a medias.
+- El tablero macro dice "Datos consultados el <fecha>" (la consulta más vieja
+  de las seis series). El chat usa las mismas copias.
+- La línea de comandos escribe en la copia del día, como todo lo demás.
+
+**Criterios de aceptación.**
+1. Con la copia del día de hoy, `serie()` no descarga; con la de ayer, descarga
+   y escribe en `data/cache/series/`, nunca en `data/series/`.
+2. Sin copia del día y sin red, se usa el respaldo con la advertencia "se
+   usaron los datos consultados el <fecha>"; sin ninguno de los dos, el error
+   útil de siempre.
+3. `actualizar()` descarga todas las series nacionales en el orden del
+   catálogo aunque la copia esté vigente, y devuelve las que no pudo
+   actualizar.
+4. El tablero macro muestra "Datos consultados el …".
+5. Los tests no tocan la red ni arrancan el actualizador; la suite sigue en
+   verde.

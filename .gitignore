@@ -28,3 +28,6 @@ data/eval/
 # Configuración local de Obsidian e informe de graphify (se regenera)
 docs/.obsidian/
 docs/GRAPH_REPORT.md
+
+# Copias del día de las series macro (el respaldo versionado está en data/series/)
+data/cache/

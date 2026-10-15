@@ -14,6 +14,7 @@ tags: [economista-ia, modulo]
 - 11/10/2026: construido el análisis de crecimiento real y conectado al orquestador; el cálculo a mano del economista coincidió con el módulo; con el modelo local pasó las reglas automáticas, con dos errores de sentido por corregir.
 - 12/10/2026: sensibilidad a tasas de interés (tasa de política e IBR), conciliada después con el cálculo a mano del economista.
 - 13/10/2026: panorama macro (inflación, tasas, TRM, PIB y desempleo) como herramienta del chat, sin necesidad de empresa, y tablero del módulo con líneas de tendencia y la sección de la empresa. Con eso se cierra el módulo 4; `sector-hotelero` pasa al módulo 2.
+- 15/10/2026: actualización automática de las series (al arrancar la interfaz y cada 6 horas); el tablero dice la fecha de consulta.
 
 ---
 Vuelve a [[resumen]]

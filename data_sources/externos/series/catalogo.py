@@ -2,12 +2,13 @@
 Catálogo de series externas: `serie("ipc", "Pasto")` y nada más.
 
 El análisis pide variable y geografía; el catálogo resuelve el id
-(`config/series.yaml`), usa la copia guardada si tiene menos de 7 días,
-descarga si no, y cae a la serie nacional con un supuesto cuando la ciudad no
-tiene serie o la suya no cubre las fechas pedidas.
+(`config/series.yaml`), usa la copia de hoy si existe, descarga si no, y cae a
+la serie nacional con un supuesto cuando la ciudad no tiene serie o la suya no
+cubre las fechas pedidas.
 
-Las copias se guardan en `data/series/` y se versionan: la demo y los tests
-de punta a punta no dependen de la red.
+Las descargas van a `data/cache/series/` (sin versionar); `data/series/` es el
+respaldo versionado para los tests, la demo y el primer arranque sin red. La
+interfaz llama a `actualizar()` al arrancar y cada 6 horas.
 
     python -m data_sources.externos.series.catalogo Pasto   # refresca y verifica
     python -m data_sources.externos.series.catalogo --tasas # tasa de política e IBR
@@ -16,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import threading
 import unicodedata
 from datetime import date, timedelta
 from pathlib import Path
@@ -28,8 +30,12 @@ from data_sources.externos.series.modelo import Serie
 
 RAIZ = Path(__file__).resolve().parents[3]
 CATALOGO = RAIZ / "config" / "series.yaml"
-DIRECTORIO = RAIZ / "data" / "series"
-VIGENCIA = timedelta(days=7)
+DIRECTORIO = RAIZ / "data" / "cache" / "series"
+RESPALDO = RAIZ / "data" / "series"
+VIGENCIA = timedelta(days=1)
+# Una descarga a la vez, también entre el actualizador y las consultas: en
+# paralelo SUAMECA rechaza las conexiones.
+_DESCARGA = threading.Lock()
 TASAS = ["tasa_politica", "ibr_3m"]
 MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
          "septiembre", "octubre", "noviembre", "diciembre"]
@@ -57,16 +63,20 @@ def _buscar(variable: str, geografia: str) -> tuple[str, int] | None:
 
 def obtener(variable: str, geografia: str, hoy: date, directorio: Path = DIRECTORIO,
             forzar: bool = False) -> Serie:
-    """Copia guardada si está vigente; si no, descarga. Sin red, la copia vieja con advertencia."""
+    """
+    Copia de hoy si existe; si no, descarga. Sin red, la copia vieja (o la del
+    respaldo versionado) con advertencia.
+    """
     nombre, id_serie = _buscar(variable, geografia)
     clave = f"{variable}_{sin_tildes(nombre).replace(' ', '_')}"
     archivo = directorio / f"{clave}.json"
-    guardada = Serie.model_validate_json(archivo.read_text(encoding="utf-8")) \
-        if archivo.exists() else None
+    copia = next((a for a in (archivo, RESPALDO / archivo.name) if a.exists()), None)
+    guardada = Serie.model_validate_json(copia.read_text(encoding="utf-8")) if copia else None
     if guardada and not forzar and hoy - guardada.consultada < VIGENCIA:
         return guardada
     try:
-        serie = banrep.desde_suameca(banrep.descargar(id_serie), clave, nombre, hoy)
+        with _DESCARGA:
+            serie = banrep.desde_suameca(banrep.descargar(id_serie), clave, nombre, hoy)
     except (requests.RequestException, ValueError, KeyError) as e:
         if guardada is None:
             raise ErrorSerie(
@@ -75,9 +85,33 @@ def obtener(variable: str, geografia: str, hoy: date, directorio: Path = DIRECTO
         return guardada.model_copy(update={"advertencias": [
             f"No se pudo actualizar la serie {clave}; se usaron los datos consultados el "
             f"{guardada.consultada:%d/%m/%Y}."]})
-    directorio.mkdir(parents=True, exist_ok=True)
-    archivo.write_text(serie.model_dump_json(indent=1), encoding="utf-8")
+    # Atómico: quien lee mientras el actualizador escribe nunca ve un JSON a medias.
+    # Un temporal por hilo; si Windows niega el reemplazo porque alguien lee la
+    # copia en ese instante, se devuelve la serie igual y se guarda en la próxima.
+    temporal = archivo.with_name(f"{archivo.name}.{threading.get_ident()}.tmp")
+    try:
+        directorio.mkdir(parents=True, exist_ok=True)
+        temporal.write_text(serie.model_dump_json(indent=1), encoding="utf-8")
+        temporal.replace(archivo)
+    except OSError:
+        temporal.unlink(missing_ok=True)
     return serie
+
+
+def actualizar(hoy: date | None = None, directorio: Path = DIRECTORIO) -> list[str]:
+    """
+    Descarga de nuevo todas las series nacionales, una tras otra, aunque la
+    copia esté vigente. Devuelve lo que no se pudo actualizar. El IPC de las
+    ciudades no entra: es mensual y la vigencia de un día lo renueva al pedirlo.
+    """
+    problemas = []
+    for variable in _catalogo():
+        try:
+            problemas += obtener(variable, "nacional", hoy or date.today(), directorio,
+                                 forzar=True).advertencias
+        except ErrorSerie as e:
+            problemas.append(str(e))
+    return problemas
 
 
 def serie(variable: str, geografia: str | None = "nacional", desde: date | None = None,

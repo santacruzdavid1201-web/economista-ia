@@ -241,6 +241,7 @@ def _economia(ctx: ContextoEmpresa | None) -> dict:
                     _linea(_mensual_reciente(s["desempleo"]))),
         ],
         "hallazgos": r.hallazgos, "fuentes": r.fuentes, "advertencias": r.advertencias,
+        "consultada": min(x.consultada for x in s.values()),   # la más vieja: no prometer de más
     }
 
 

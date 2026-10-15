@@ -1,7 +1,7 @@
 {#- Tablero macro: la economía siempre; la empresa, si está cargada. Todo viene de tableros.py -#}
 {% from "_macros.html" import enlace %}
 {% with e = t.economia %}
-<p class="tablero-corte">La economía colombiana: últimos datos publicados</p>
+<p class="tablero-corte">La economía colombiana: últimos datos publicados{% if e.consultada %}. Datos consultados el {{ e.consultada.strftime('%d/%m/%Y') }}{% endif %}</p>
 {% if e.error %}
   <p class="aviso">{{ e.error }}</p>
 {% else %}

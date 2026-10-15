@@ -39,5 +39,6 @@ tags: [economista-ia, bitacora]
 - El panorama macro compara cada variable con **la misma fecha de un año antes**: el desempleo del DANE no viene ajustado por estacionalidad, y compararlo con el mes anterior confundiría la temporada con la tendencia. Las líneas de tendencia del tablero son un SVG simple (una polilínea calculada en Python), la única excepción a las gráficas en HTML y CSS.
 - `sector-hotelero` pasó al módulo 2 y el módulo 4 se cerró con el panorama macro: el análisis sectorial es un panel, como la econometría, y hacerlo ahora obligaba a montar PostgreSQL antes de tener un motivo real.
 
+- Las series macro se actualizan solas: la interfaz las descarga al arrancar y cada 6 horas, y la vigencia de las copias bajó de 7 días a 1. La tasa de política cambia tras cada reunión del BanRep y la TRM a diario: con una semana de vigencia, la sensibilidad a tasas podía usar una tasa vieja justo cuando más importa. Las copias del día no se versionan; las de `data/series/` quedan como respaldo sin red.
 ---
 Vuelve a [[resumen]]

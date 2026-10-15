@@ -117,6 +117,7 @@ def test_tablero_macro_sin_empresa(cliente):
     r = cliente.get("/modulo/macro").text
     assert "Inflación anual" in r and "Dólar (TRM)" in r and "<polyline" in r
     assert "Subir estados financieros" in r
+    assert "Datos consultados el 11/10/2026" in r
 
 
 def test_modulo_inactivo_en_construccion(cliente):

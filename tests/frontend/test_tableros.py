@@ -1,4 +1,6 @@
 """Tablero del balance: cifras calculadas con Python a partir del hotel de demostración."""
+from datetime import date
+
 from app.demo import contexto_demo
 from app.orchestrator.tools_registry import ContextoEmpresa
 from frontend import tableros
@@ -38,6 +40,7 @@ def test_tablero_macro_con_y_sin_empresa():
     assert titulos == ["Inflación anual", "Tasa del Banco de la República", "Dólar (TRM)",
                        "Crecimiento del PIB", "Desempleo"]
     assert all(c["linea"] for c in t["economia"]["tarjetas"])
+    assert t["economia"]["consultada"] == date(2026, 10, 11)      # la serie más vieja del respaldo
     cifras = dict(t["empresa"]["crecimiento"]["cifras"])
     assert cifras["Crecimiento real de los ingresos (descontada la inflación)"] == "9,3 %"
     filas = {f["escenario"]: f for f in t["empresa"]["tasas"]["filas"]}

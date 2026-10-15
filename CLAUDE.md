@@ -193,8 +193,9 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    Hecho: `series-externas` con el IPC (`data_sources/externos/series/`):
    SUAMECA del BanRep (nacional 15000 desde 1954; 23 ciudades 15013-15035
    desde 2017, Pasto 15026), verificado contra el anexo del DANE, copias
-   versionadas en `data/series/` (vigencia 7 días; sin red usa la copia con
-   advertencia). La ciudad sin serie o sin cobertura cae al nacional con
+   de respaldo versionadas en `data/series/` (desde el 15/10/2026 la copia del
+   día va a `data/cache/series/`, vigencia 1 día; sin red usa la copia más
+   reciente con advertencia). La ciudad sin serie o sin cobertura cae al nacional con
    supuesto. SUAMECA no envía el certificado intermedio: se usa la cadena de
    DigiCert en `suameca_cadena.pem`. Refrescar: `python -m
    data_sources.externos.series.catalogo Pasto`.
@@ -255,15 +256,19 @@ Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
    escribió "depreciación del peso"; ahora Python dice si el peso se revaluó
    o se devaluó. `sector-hotelero` (MMH + panel de Supersociedades + SQL)
    pasa al módulo 2, que usa la misma infraestructura.
-   Siguiente (sesión del 14/10/2026), antes del módulo 3: actualización
-   diaria del entorno macro, pedida por el usuario. Propuesta presentada el
-   13/10 (falta su visto bueno final): actualizador en segundo plano dentro
-   de la interfaz (al arrancar y cada 6 horas, series en serie), copias del
-   día en `data/cache/series/` (ignorada por Git; `data/series/` queda como
-   respaldo de tests, demo y trabajo sin red), vigencia de 1 día como red de
-   seguridad y "Datos consultados el …" en el tablero. El chat usa las mismas
-   copias, así que queda al día solo. Después: módulo 3 (evaluación de
-   proyectos: VPN, TIR, WACC, sensibilidad), con su tablero desde el inicio.
+   Actualización diaria del entorno macro (hecha el 15/10/2026, tercer tramo
+   de `SPEC-series-externas.md`): `app/main.py` llama a
+   `catalogo.actualizar()` al arrancar y cada 6 horas, en un hilo y una serie
+   tras otra (un candado también la separa de las consultas). Copias del día
+   en `data/cache/series/` (ignorada por Git, escritura atómica);
+   `data/series/` queda como respaldo de tests, demo y arranque sin red;
+   vigencia de 1 día como red de seguridad; el tablero dice "Datos
+   consultados el …" (la serie más vieja). El chat lee las mismas copias. El
+   IPC de las ciudades no entra en el actualizador: la vigencia lo renueva al
+   pedirlo. Probado con la interfaz real: 6 series del 15/10/2026.
+   Siguiente: módulo 3 (evaluación de proyectos: VPN, TIR, WACC,
+   sensibilidad), con su tablero desde el inicio y el flujo de agent-skills
+   (spec → plan → tests primero → revisión).
    Pendiente menor: bajar el contexto del modelo en LM Studio a 8.192 si
    vuelve a caerse.
    Sensibilidad-tasas conciliada con el cálculo a mano del usuario (demo 2024,
