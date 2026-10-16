@@ -13,7 +13,7 @@ Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del 
   inglés, números de los dos formatos, errores con la fila; ida y vuelta con el
   simulado.
   Archivos: `data_sources/empresa/pms.py`, `tests/data_sources/empresa/test_pms.py`.
-- [ ] **3. Indicadores**: agregación diaria, semanal y mensual con ocupación ponderada,
+- [x] **3. Indicadores**: agregación diaria, semanal y mensual con ocupación ponderada,
   ADR y RevPAR; periodos incompletos marcados; caso a mano de una semana.
   Archivos: `modules/econometria/indicadores.py`, `tests/modules/econometria/test_indicadores.py`.
 
