@@ -2,7 +2,7 @@
 
 Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del commit.
 
-- [ ] **1. Festivos**: `config/calendario.yaml` con las reglas y su vigencia (Ley 2578
+- [x] **1. Festivos**: `config/calendario.yaml` con las reglas y su vigencia (Ley 2578
   desde 2026) y `festivos(anio)`: los 19 de 2026 conciliados; 2025 con 18 festivos en
   17 días (30/6 con los dos nombres) y Reyes que ya cae en lunes; error fuera de
   1984-2100.

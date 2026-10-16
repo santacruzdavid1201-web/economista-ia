@@ -1,0 +1,42 @@
+# Calendario de la demanda hotelera (SPEC-calendario.md).
+#
+# Reglas de los festivos de Colombia con su vigencia (`desde` y `hasta`, años
+# incluidos): una ley nueva o una decisión de la Corte es una línea nueva o un
+# `hasta`, sin tocar el código. Fechas como "mes-día".
+
+festivos:
+  fijos:
+    - {fecha: "01-01", nombre: Año Nuevo}
+    - {fecha: "05-01", nombre: Día del Trabajo}
+    - {fecha: "07-20", nombre: Día de la Independencia}
+    - {fecha: "08-07", nombre: Batalla de Boyacá}
+    - {fecha: "12-08", nombre: Inmaculada Concepción}
+    - {fecha: "12-25", nombre: Navidad}
+
+  # Ley 51 de 1983 (Ley Emiliani): si no caen en lunes, se corren al lunes siguiente
+  trasladables:
+    - {fecha: "01-06", nombre: Reyes Magos}
+    - {fecha: "03-19", nombre: San José}
+    - {fecha: "06-29", nombre: San Pedro y San Pablo}
+    # Ley 2578 de 2026 (promulgada el 1/6/2026). Hay una demanda en la Corte
+    # Constitucional que, si prospera, regiría desde 2027: revisar antes de ese año
+    - {fecha: "07-09", nombre: Virgen de Chiquinquirá, desde: 2026}
+    - {fecha: "08-15", nombre: Asunción de la Virgen}
+    - {fecha: "10-12", nombre: Día de la Raza}
+    - {fecha: "11-01", nombre: Todos los Santos}
+    - {fecha: "11-11", nombre: Independencia de Cartagena}
+
+  # Días desde el Domingo de Pascua
+  pascua:
+    - {dias: -3, nombre: Jueves Santo}
+    - {dias: -2, nombre: Viernes Santo}
+    - {dias: 39, nombre: Ascensión del Señor, trasladable: true}
+    - {dias: 60, nombre: Corpus Christi, trasladable: true}
+    - {dias: 68, nombre: Sagrado Corazón de Jesús, trasladable: true}
+
+# Eventos locales por ciudad: cada uno es una variable `evento_<clave>`, con las
+# mismas fechas todos los años. Si un evento no está aquí, no existe.
+eventos:
+  Pasto:
+    - {clave: carnaval, nombre: Carnaval de Negros y Blancos, desde: "01-02", hasta: "01-07"}
+    - {clave: carnaval_central, nombre: Días de Negros y de Blancos, desde: "01-05", hasta: "01-06"}
