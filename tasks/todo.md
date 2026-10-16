@@ -9,7 +9,7 @@ Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del 
   promociones 8 % ± 2; CSV de la demostración con su comando.
   Archivos: `config/pms_simulado.yaml`, `data_sources/empresa/pms_simulado.py`,
   `data/demo/pms_hotel_demo_andino.csv`, `tests/data_sources/empresa/test_pms_simulado.py`.
-- [ ] **2. Cargador del PMS**: CSV y Excel con el lector del PUC, alias en español e
+- [x] **2. Cargador del PMS**: CSV y Excel con el lector del PUC, alias en español e
   inglés, números de los dos formatos, errores con la fila; ida y vuelta con el
   simulado.
   Archivos: `data_sources/empresa/pms.py`, `tests/data_sources/empresa/test_pms.py`.
