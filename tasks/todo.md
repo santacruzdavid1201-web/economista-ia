@@ -8,11 +8,11 @@ Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del 
   1984-2100.
   Archivos: `config/calendario.yaml`, `modules/econometria/calendario.py`,
   `tests/modules/econometria/test_calendario.py`.
-- [ ] **2. Calendario diario**: `calendario(desde, hasta, ciudad)` con día de la
+- [x] **2. Calendario diario**: `calendario(desde, hasta, ciudad)` con día de la
   semana, festivo, víspera, puente, Semana Santa y eventos de la ciudad (Carnaval en
   Pasto, sin tildes ni mayúsculas); rango invertido con error claro; bordes del rango.
   Archivos: `config/calendario.yaml`, `modules/econometria/calendario.py`,
   `tests/modules/econometria/test_calendario.py`.
 
 ### Punto de control: completo
-- [ ] Criterios de éxito de la especificación; suite en verde; documentación de cierre.
+- [x] Criterios de éxito de la especificación; suite en verde; documentación de cierre (16/10/2026).

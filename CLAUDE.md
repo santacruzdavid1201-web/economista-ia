@@ -189,7 +189,10 @@ Se reemplaza al cerrar cada pieza; no se acumula (la historia va en
 - En curso: módulo 2 (econometría), mapa aprobado el 16/10/2026 en
   `SPEC-mapa-econometria.md`. Hecho `almacen-datos` (16/10/2026, revisado por
   el usuario en pgAdmin; queda un "Hotel de prueba (borrar)", NIT 900000001:
-  preguntar antes de borrarlo). Sigue `calendario`.
+  preguntar antes de borrarlo) y `calendario` (16/10/2026; festivos con reglas
+  y vigencia en `config/calendario.yaml`, Ley 2578 de 2026 incluida y conciliada
+  por el usuario; Carnaval de Pasto; revisar la decisión de la Corte sobre la
+  Ley 2578 antes de 2027). Sigue `series-empresa`.
 - Pendientes: cargar el Informe de Política Monetaria de octubre (sale a fin
   de mes); bajar el contexto de LM Studio a 8.192 si vuelve a caerse; validar
   la referencia contra el SIIS y revisar valores extremos; plantilla Excel
