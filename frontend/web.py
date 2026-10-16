@@ -299,7 +299,7 @@ def modulo(request: Request, clave: str, pestana: str | None = None, s: Sesion =
         raise HTTPException(404, "Ese módulo no existe.")
     t = (tableros.balance(s.ctx) if clave == "balance" and s.ctx else
          tableros.macro(s.ctx) if clave == "macro" else
-         tableros.proyectos(pestana, s.proyecto) if clave == "proyectos" else None)
+         tableros.proyectos(pestana, s.proyecto, s.ctx) if clave == "proyectos" else None)
     return _pagina(request, "modulo.html", _contexto(request, s, m=m, t=t))
 
 
@@ -311,11 +311,13 @@ async def credito(request: Request):
 
 @router.post("/proyectos/flujo", response_class=HTMLResponse)
 async def flujo(request: Request, s: Sesion = Depends(sesion)):
-    """Solo la tabla; el proyecto válido queda en la sesión para volver a la pestaña."""
+    """Solo la tabla, más la evaluación y la tasa de referencia fuera de banda (la tarifa de
+    renta cambia el WACC); el proyecto válido queda en la sesión para volver a la pestaña."""
     c = tableros.flujo(await request.form())
     if not c["errores"]:
         s.proyecto = c["v"]
-    return _pagina(request, "_flujo.html", {"c": c, "oob": True})
+    return _pagina(request, "_flujo.html",
+                   {"c": c, "oob": True, "r": tableros.referencia(s.ctx, c["v"])})
 
 
 @router.post("/proyectos/tasas", response_class=HTMLResponse)

@@ -20,4 +20,5 @@
     {% for f in c.fuentes %}<li>{{ f }}</li>{% endfor %}
   </ul>
 {% endif %}
-{% if oob %}<div id="evaluacion" aria-live="polite" hx-swap-oob="true">{% include "_evaluacion.html" %}</div>{% endif %}
+{% if oob %}<div id="evaluacion" aria-live="polite" hx-swap-oob="true">{% include "_evaluacion.html" %}</div>
+<div id="referencia" hx-swap-oob="true">{% include "_referencia.html" %}</div>{% endif %}

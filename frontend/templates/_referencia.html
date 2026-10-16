@@ -1,0 +1,36 @@
+{#- Tasa de referencia (Su proyecto): el WACC de la empresa o, sin estados financieros, el costo
+    de los activos. Todo viene de tableros.py; el botón copia la tasa y su tipo al formulario -#}
+<h3 class="subtema">Tasa de referencia{% if not r.errores %}: {{ r.titulo }}{% endif %}</h3>
+{% if r.errores %}
+  <ul class="bloque-avisos">{% for e in r.errores %}<li>{{ e }}</li>{% endfor %}</ul>
+{% else %}
+  <div class="tarjetas tarjetas-credito">
+    {% for k in r.tarjetas %}
+      <article class="tarjeta">
+        <h4 class="tarjeta-titulo">{{ k.titulo }}</h4>
+        <p class="tarjeta-valor">{{ k.valor }}</p>
+        <p class="tarjeta-nombre" title="{{ k.formula }}">{{ k.nombre }}</p>
+        {% if k.detalle %}<p class="tarjeta-cambio">{{ k.detalle }}</p>{% endif %}
+      </article>
+    {% endfor %}
+  </div>
+  <ul class="hallazgos">{% for h in r.hallazgos %}<li>{{ h }}</li>{% endfor %}</ul>
+  {% if r.sin_empresa %}<p class="bloque-nota">Para calcular el WACC de su empresa, suba sus estados
+    financieros en la portada.</p>{% endif %}
+  {% if r.avisos %}<ul class="bloque-avisos">{% for a in r.avisos %}<li>{{ a }}</li>{% endfor %}</ul>{% endif %}
+  {% if r.boton %}
+    <button type="button" class="boton secundario"
+            hx-on:click="const f = document.getElementById('form-proyecto'); f.tasa_oportunidad.value = '{{ r.boton.tasa }}'; f.tasa_tipo.value = '{{ r.boton.tipo }}'; f.requestSubmit()">
+      Evaluar el proyecto con {{ 'el WACC' if r.boton.tipo == 'wacc' else 'esta tasa' }} ({{ r.boton.tasa }} % real)</button>
+  {% endif %}
+  <details class="desplegable">
+    <summary>Cómo se calcula</summary>
+    <div class="tabla-desplazable">
+      <table class="libro">
+        <tr><th>Concepto</th><th class="numero">Valor</th><th>Fórmula</th></tr>
+        {% for d in r.desglose %}<tr><td>{{ d.nombre }}</td><td class="valor">{{ d.valor }}</td><td>{{ d.formula }}</td></tr>{% endfor %}
+      </table>
+    </div>
+    <ul>{% for s in r.supuestos %}<li>{{ s }}</li>{% endfor %}{% for f in r.fuentes %}<li>{{ f }}</li>{% endfor %}</ul>
+  </details>
+{% endif %}

@@ -206,3 +206,31 @@ def test_sensibilidad_con_tasa_real():
     tasa = next(f for f in c["filas"] if f["nombre"] == "Tasa de oportunidad real")
     assert tasa["critico"] == "la tasa de oportunidad real sube a 11,11 %"
     assert c["tasa"] == "10 % real"
+
+
+# --------------------------------------------------------------------------- #
+# Proyectos: bloque "Tasa de referencia" (costo de capital)
+# --------------------------------------------------------------------------- #
+def test_referencia_con_la_empresa_es_el_wacc_con_su_desglose():
+    r = tableros.referencia(contexto_demo(), tableros.PROYECTO_EJEMPLO)
+    assert r["titulo"] == "WACC de su empresa" and r["errores"] == []
+    assert [t["titulo"] for t in r["tarjetas"]] == ["WACC real", "Equivalente nominal"]
+    assert r["boton"]["tipo"] == "wacc"
+    assert r["boton"]["tasa"] + " %" == r["tarjetas"][0]["valor"]        # "8,17" y "8,17 %"
+    conceptos = [d["nombre"] for d in r["desglose"]]
+    assert "Costo del patrimonio (real)" in conceptos and "Beta de la empresa (con su deuda)" in conceptos
+    assert not any(d["valor"].endswith("veces") for d in r["desglose"] if "Beta" in d["nombre"])
+    assert any("referencia, no una regla" in h for h in r["hallazgos"])
+
+
+def test_referencia_sin_empresa_es_el_costo_de_los_activos_como_tasa_real():
+    r = tableros.referencia(None, tableros.PROYECTO_EJEMPLO)
+    assert r["titulo"] == "Costo de capital de los activos"
+    assert r["boton"]["tipo"] == "real"                  # no es el WACC de la empresa
+    assert any("Sin estados financieros" in h for h in r["hallazgos"])
+
+
+def test_referencia_usa_la_tarifa_de_renta_del_formulario():
+    general = tableros.referencia(contexto_demo(), tableros.PROYECTO_EJEMPLO)
+    especial = tableros.referencia(contexto_demo(), {**tableros.PROYECTO_EJEMPLO, "tarifa_renta": "9"})
+    assert general["boton"]["tasa"] != especial["boton"]["tasa"]

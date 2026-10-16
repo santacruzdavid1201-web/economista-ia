@@ -8,10 +8,11 @@
     (estudios, diseños) no entra.</p>
   {#- La respuesta primero: la evaluación arriba del formulario, la tabla debajo -#}
   <div id="evaluacion" aria-live="polite">{% with c = t.flujo %}{% include "_evaluacion.html" %}{% endwith %}</div>
+  <div id="referencia">{% with r = t.referencia %}{% include "_referencia.html" %}{% endwith %}</div>
   {% with v = t.flujo.v %}
   {#- Cada cambio recalcula la tabla (#flujo) y la evaluación (fuera de banda); el formulario
       no se redibuja y conserva el foco -#}
-  <form class="formulario simulador" hx-post="/proyectos/flujo" hx-trigger="change delay:300ms, submit"
+  <form id="form-proyecto" class="formulario simulador" hx-post="/proyectos/flujo" hx-trigger="change delay:300ms, submit"
         hx-target="#flujo" hx-swap="innerHTML" hx-sync="this:replace">
     <label class="ancho-completo">Nombre del proyecto
       <input name="nombre" value="{{ v.nombre }}" maxlength="120" autocomplete="off"></label>

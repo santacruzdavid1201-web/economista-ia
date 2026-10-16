@@ -377,6 +377,13 @@ def test_la_pestana_de_su_proyecto_abre_evaluada(cliente):
     r = cliente.get("/modulo/proyectos").text
     assert 'name="tasa_oportunidad"' in r and "Valor presente neto (VPN)" in r
     assert 'name="tasa_tipo"' in r and 'value="wacc"' in r
+    assert "Tasa de referencia" in r and "Costo de capital de los activos" in r
+    assert "requestSubmit()" in r                     # el botón lleva la tasa al formulario
+
+
+def test_cambiar_el_proyecto_actualiza_la_tasa_de_referencia(cliente):
+    r = cliente.post("/proyectos/flujo", data={**PROYECTO, "tarifa_renta": "9"}).text
+    assert 'id="referencia"' in r and 'hx-swap-oob="true"' in r
 
 
 def test_sin_tasa_de_oportunidad_pide_escribirla(cliente):
@@ -406,3 +413,14 @@ def test_la_sensibilidad_usa_el_proyecto_de_la_sesion(cliente):
     cliente.post("/proyectos/flujo", data=PROYECTO)
     r = cliente.get("/modulo/proyectos?pestana=sensibilidad").text
     assert "Hotel del lago" in r and "Es el proyecto de ejemplo" not in r
+
+
+def test_con_la_empresa_la_pestana_muestra_el_wacc_y_evalua_con_el(cliente, empresa):
+    r = cliente.get("/modulo/proyectos").text
+    assert "WACC de su empresa" in r and "Evaluar el proyecto con el WACC" in r
+    tasa = re.search(r"f\.tasa_oportunidad\.value = '([\d,]+)'", r)[1]
+    # Lo que envía el botón: la tasa del WACC y su tipo
+    evaluado = cliente.post("/proyectos/flujo",
+                            data={**PROYECTO, "tasa_oportunidad": tasa, "tasa_tipo": "wacc"}).text
+    assert f"Con el costo de capital de la empresa (WACC) de {tasa} % real" in evaluado
+    assert sesion_unica().proyecto["tasa_tipo"] == "wacc"

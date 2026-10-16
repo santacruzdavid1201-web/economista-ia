@@ -26,7 +26,7 @@ Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del 
   el tablero y el chat (sin red en los tests).
   Archivos: `config/series.yaml`, `data/series/tes_uvr_10_nacional.json`,
   `config/costo_capital.yaml`, `app/orchestrator/proyecto.py`, `tests/app/test_proyecto.py`.
-- [ ] **4. Bloque "Tasa de referencia" en Su proyecto**: con el hotel de demostración,
+- [x] **4. Bloque "Tasa de referencia" en Su proyecto**: con el hotel de demostración,
   el WACC con su desglose; sin empresa, Ku dicho como referencia; un botón pone la
   tasa real en el formulario y evalúa con ella.
   Archivos: `frontend/tableros.py`, `frontend/web.py`,

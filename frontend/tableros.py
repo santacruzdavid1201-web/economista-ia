@@ -9,7 +9,7 @@ from collections.abc import Mapping
 from datetime import date
 
 from app.orchestrator.lectura import montos
-from app.orchestrator.proyecto import PROYECTO_EJEMPLO, leer_proyecto, numero
+from app.orchestrator.proyecto import PROYECTO_EJEMPLO, costo_capital_de, leer_proyecto, numero
 from app.orchestrator.tools_registry import (
     PANORAMA,
     POR_NOMBRE,
@@ -501,6 +501,55 @@ def _evaluacion(r: ResultadoModulo, tasa: float, tipo: str, horizonte: int) -> d
     }
 
 
+# Del dato de mercado al resultado: así se lee el cálculo de arriba abajo
+DESGLOSE = ("tasa_sin_riesgo", "prima_riesgo", "beta_sin_deuda", "deuda_patrimonio",
+            "beta_apalancada", "costo_patrimonio", "costo_deuda_nominal", "inflacion_balance",
+            "costo_deuda_real", "peso_deuda")
+
+
+def referencia(ctx: ContextoEmpresa | None, valores: Mapping[str, object],
+               hoy: date | None = None) -> dict:
+    """
+    Bloque "Tasa de referencia" de Su proyecto: el WACC de la empresa con su desglose o, sin
+    estados financieros (o con patrimonio negativo), el costo de los activos. El botón copia la
+    tasa al formulario: el WACC como "wacc"; el costo de los activos como tasa "real", porque no
+    es el WACC de la empresa. Usa la tarifa de renta del formulario (35 % si no es válida).
+    """
+    tarifa = numero(str(valores.get("tarifa_renta", "")))
+    tarifa = tarifa / 100 if tarifa is not None and 0 <= tarifa <= 100 else 0.35
+    try:
+        r = costo_capital_de(ctx.historial if ctx else None, hoy or date.today(), tarifa,
+                             serie=ctx.serie if ctx else catalogo.serie)
+    except ErrorProyecto as e:
+        return {"errores": e.mensajes}
+    except catalogo.ErrorSerie as e:
+        return {"errores": [str(e)]}
+    ind = {i.clave: i for i in r.indicadores}
+    activos = "costo_activos" in ind
+    real, nominal = ((ind["costo_activos"], ind["costo_activos_nominal"]) if activos
+                     else (ind["wacc"], ind["wacc_nominal"]))
+
+    def valor(i: Indicador) -> str:
+        texto = "—" if i.valor is None else formatear(i.valor, i.unidad)
+        return texto.removesuffix(" veces") if i.clave.startswith("beta") else texto
+
+    return {
+        "errores": [], "sin_empresa": ctx is None,
+        "titulo": "Costo de capital de los activos" if activos else "WACC de su empresa",
+        "tarjetas": [_tarjeta(real, "Costo real" if activos else "WACC real",
+                              "Para los flujos en pesos de hoy"),
+                     _tarjeta(nominal, "Equivalente nominal",
+                              "Primer año, con la inflación esperada")],
+        "boton": None if real.valor is None else {
+            "tasa": f"{real.valor * 100:.2f}".replace(".", ","),
+            "tipo": "real" if activos else "wacc"},
+        "desglose": [{"nombre": ind[k].nombre, "valor": valor(ind[k]), "formula": ind[k].formula}
+                     for k in DESGLOSE if k in ind],
+        "hallazgos": r.hallazgos, "avisos": r.advertencias,
+        "supuestos": r.supuestos, "fuentes": r.fuentes,
+    }
+
+
 def _critico(fila: FilaTornado, real: bool) -> str:
     """En palabras, como los hallazgos: 'los ingresos caen 3,1 % (a $ 58.157.973)'."""
     return texto_critico(fila, real) or "no llega a cero aunque el dato se mueva entre −99 % y +200 %"
@@ -551,9 +600,10 @@ PESTANAS = (("proyecto", "Su proyecto"), ("sensibilidad", "Sensibilidad"),
             ("credito", "Crédito y tasas"))
 
 
-def proyectos(pestana: str | None = None, proyecto: Mapping[str, object] | None = None) -> dict:
+def proyectos(pestana: str | None = None, proyecto: Mapping[str, object] | None = None,
+              ctx: ContextoEmpresa | None = None) -> dict:
     """Tablero de proyectos en pestañas; solo se calcula la que se ve. `proyecto`: lo que el
-    usuario escribió (de la sesión), o el ejemplo."""
+    usuario escribió (de la sesión), o el ejemplo; `ctx`: la empresa, para el WACC."""
     pestana = pestana if pestana in dict(PESTANAS) else "proyecto"
     tablero = {"pestana": pestana, "pestanas": PESTANAS, "opciones": OPCIONES}
     if pestana == "credito":
@@ -562,4 +612,5 @@ def proyectos(pestana: str | None = None, proyecto: Mapping[str, object] | None 
         tablero["sensibilidad"] = sensibilidad_tab(proyecto)
     else:
         tablero["flujo"] = flujo(proyecto)
+        tablero["referencia"] = referencia(ctx, tablero["flujo"]["v"])
     return tablero
