@@ -1,54 +1,25 @@
-# Tareas: costo-capital
+# Tareas: almacen-datos
 
-Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del commit.
+Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del commit,
+con y sin `TEST_DATABASE_URL`.
 
-- [x] **1. Costo de capital (puro)**: el caso a mano de la especificación (β apalancada
-  1,325; Ke 14,25 %; Kd real 3,81 %; WACC real 10,77 %; equivalente nominal 15,53 %;
-  Ku 11,95 %); sin deuda, WACC = Ke = Ku; deuda sin gastos financieros → Kd y WACC
-  `None` con advertencia; patrimonio ≤ 0 → WACC `None`. La tasa implícita queda en
-  una función compartida y los tests de sensibilidad-tasas siguen en verde.
-  Archivos: `modules/proyectos/wacc.py`, `modules/balance/comun.py`,
-  `modules/macro/sensibilidad_tasas.py`, `tests/modules/proyectos/test_wacc.py`.
-- [x] **2. Evaluación y sensibilidad con tasa real**: `tasa_tipo` en el formulario y
-  en `ProyectoLeido`; con tasa real r, el VPN de los flujos en pesos de hoy es igual
-  al de los flujos corrientes descontados con (1 + r)(1 + π_t) − 1 de cada año
-  (test de consistencia); TIR real; los hallazgos dicen "real"; una tasa escrita en
-  la pregunta vuelve a nominal.
-  Archivos: `app/orchestrator/proyecto.py`, `modules/proyectos/evaluacion.py`,
-  `modules/proyectos/sensibilidad.py`, `app/orchestrator/tools_registry.py`, tests.
-
-### Punto de control: cálculos
-- [x] El usuario concilia el ejemplo a mano (criterio de éxito 1): conciliado el 16/10/2026.
-
-- [x] **3. Datos del costo de capital** (necesita la beta): `tes_uvr_10` en el catálogo
-  con su copia de respaldo; `config/costo_capital.yaml` con fuente y fecha; la senda
-  del BanRep extraída de `leer_proyecto`; una función arma el costo de capital para
-  el tablero y el chat (sin red en los tests).
-  Archivos: `config/series.yaml`, `data/series/tes_uvr_10_nacional.json`,
-  `config/costo_capital.yaml`, `app/orchestrator/proyecto.py`, `tests/app/test_proyecto.py`.
-- [x] **4. Bloque "Tasa de referencia" en Su proyecto**: con el hotel de demostración,
-  el WACC con su desglose; sin empresa, Ku dicho como referencia; un botón pone la
-  tasa real en el formulario y evalúa con ella.
-  Archivos: `frontend/tableros.py`, `frontend/web.py`,
-  `frontend/templates/_pestana_proyecto.html`, `frontend/static/estilo.css`,
-  `tests/frontend/test_tableros.py`.
-
-### Punto de control: tablero
-- [x] Criterio de éxito 2 con la interfaz real: revisado por el usuario el 16/10/2026.
-
-- [x] **5. Chat, glosario, nota y bloque O**: herramienta `calcular_costo_capital`;
-  si una pregunta de evaluación o de sensibilidad dice "WACC" o "costo de capital",
-  Python calcula el WACC de la empresa y evalúa con él (tipo "wacc"; sin empresa, el
-  costo de los activos como tasa real, dicho), sin importar la tasa del formulario;
-  reglas del enrutador, glosario (WACC, costo del patrimonio, costo de la deuda,
-  beta, costo de los activos, prima de riesgo país), nota
-  `conocimiento/costo-de-capital.md` para revisión del usuario, índice RAG, casos 70
-  en adelante.
-  Archivos: `app/orchestrator/tools_registry.py`, `config/prompts/router.md`,
-  `config/glosario.yaml`, `conocimiento/costo-de-capital.md`,
-  `tests/eval/preguntas.yaml`, tests.
+- [ ] **0. Requisito previo (usuario)**: usuario `economista`, bases `economista_ia` y
+  `economista_ia_test`, y las dos variables en `.env` (SQL en el plan).
+- [ ] **1. Esquema y conexión**: `db/init.sql` con las tres tablas y sus
+  restricciones; `conectar`, `crear_esquema` (idempotente) y `guardar_empresa`;
+  `python -m data_sources.almacen`; `DATABASE_URL` en la configuración; fixture de
+  la base de prueba que se salta sin la variable y se niega con una base que no
+  termine en `_test` (criterio 1).
+  Archivos: `db/init.sql`, `data_sources/almacen.py`, `app/config.py`, `.env.example`,
+  `requirements.txt`, `tests/data_sources/test_almacen.py`.
+- [ ] **2. Carga incremental**: `cargar_pms` con upsert por tabla temporal, conteo de
+  nuevas, actualizadas e iguales, registro en `carga`, atomicidad con el error en
+  español (fecha y regla) y huecos (criterios 2 a 4).
+  Archivos: `data_sources/almacen.py`, `tests/data_sources/test_almacen.py`.
+- [ ] **3. Lectura**: `leer_pms` con índice de fechas, rango opcional y tipos
+  convertidos (criterio 5).
+  Archivos: `data_sources/almacen.py`, `tests/data_sources/test_almacen.py`.
 
 ### Punto de control: completo
-- [x] Bloque O al 100 % con el modelo real; set completo; suite en verde;
-  documentación de cierre (criterios 3 y 4): set completo (77 casos) el 16/10/2026,
-  todos los bloques al 100 %, respaldo 1 %.
+- [ ] El usuario ve las tablas y una carga de prueba en pgAdmin; suite en verde con y
+  sin `TEST_DATABASE_URL` (criterio 6); documentación de cierre.
