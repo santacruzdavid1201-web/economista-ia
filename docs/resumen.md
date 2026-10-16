@@ -31,4 +31,4 @@ LLM local (LM Studio + Qwen, runtime Vulkan) para desarrollo; modelo por API par
 
 ## Estado actual
 
-Ver [[decisiones]] para la bitácora de decisiones y avances.
+Ver [[decisiones]] para la bitácora de decisiones y avances, y [[bitacora]] para la historia detallada hasta el 16/10/2026.

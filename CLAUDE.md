@@ -14,26 +14,63 @@ y redacta el resultado. Todo número sale de funciones de Python probadas.
 - `modules/`: cálculos puros, sin LLM. Cada análisis devuelve un
   `ResultadoModulo` (`modules/base.py`) con: indicadores (valor, unidad,
   fórmula), hallazgos (conclusiones ya redactadas por Python para que el LLM
-  no compare números), supuestos, fuentes y advertencias.
+  no compare números), supuestos, fuentes y advertencias. Subcarpetas
+  `balance/`, `macro/` y `proyectos/`.
 - `modules/esquema_financiero.py`: esquema canónico de estados financieros
   (presentación NIIF corriente / no corriente). Toda fuente (PUC, Excel,
   Supersociedades) se traduce a este esquema; las fórmulas solo lo conocen.
-- `config/`: mapeos y configuración (PUC → esquema, grupos CIIU, prompts).
 - `data_sources/`: cargadores de datos de empresa (`empresa/puc.py`) y fuentes
-  externas (`externos/supersociedades.py`, `externos/referencia.py`).
+  externas (`externos/`: Supersociedades, referencia sectorial, `series/` del
+  BanRep y el DANE, pronóstico del BanRep).
+- `config/`: mapeos (PUC y NIIF → esquema), grupos CIIU, catálogo de series,
+  glosario y prompts (`config/prompts/`).
+- `conocimiento/*.md`: notas revisadas por el usuario para el RAG (`app/rag/`).
+- `app/`: `config.py` (variables de entorno), `llm/client.py` (API compatible
+  con OpenAI), `orchestrator/` (enrutador, registro de herramientas, lectura
+  de la pregunta, verificador de cifras), `eval/` (set de evaluación) y
+  `main.py` (FastAPI; actualiza las series al arrancar y cada 6 horas).
+- `frontend/`: interfaz Jinja + HTMX (`SPEC-interfaz.md`); `tableros.py` arma
+  un tablero por módulo calculado solo con Python.
+- `SPEC-*.md`: especificación de cada pieza; `tasks/`: plan de la pieza en curso.
 - `exploracion/`: scripts exploratorios, no forman parte del sistema.
-- `app/main.py` (FastAPI) sirve la interfaz web de `frontend/` (plantillas
-  Jinja + HTMX, ver `SPEC-interfaz.md`).
-- Futuro: PostgreSQL + pgvector, Docker.
+- Los archivos vacíos (`docker-compose.yml`, `db/`, `modules/econometria/`,
+  `proyectos/wacc.py`...) son la arquitectura planeada: se llenan o se borran
+  cuando llegue su pieza (decisión del usuario).
+- Futuro: PostgreSQL + pgvector cuando haya un disparador real (panel de
+  econometría, multiusuario), Docker.
+
+## Cómo responde el chat
+
+Chat global, una conversación por sesión con memoria de 3 turnos. Cuatro tipos
+de pregunta:
+
+1. **Cálculo**: el enrutador elige una herramienta, Python calcula, el LLM
+   redacta y el verificador revisa las cifras (un reintento; si falla, sale una
+   respuesta de respaldo armada en Python). Supuestos y advertencias los agrega
+   Python al final.
+2. **Criterio o teoría**: RAG híbrido sobre `conocimiento/` (embeddings +
+   palabras clave); sin nota pertinente responde en general con el aviso
+   "Respuesta general". El rol (`config/prompts/rol.md`) es común a 1 y 2.
+3. **Conversar**: saludos, comentarios sobre la respuesta anterior y temas
+   ajenos (una o dos frases y reconduce).
+4. **Fuera de alcance** (legal, tributario, en qué invertir, pronósticos):
+   remite al profesional.
+
+Sin empresa cargada (se sube en la portada) el chat no calcula sobre la
+empresa; el panorama macro, el crédito y las tasas no la necesitan.
 
 ## Módulos del MVP
 
-1. Balance financiero empresarial (funcionando)
-2. Econometría aplicada (pronóstico, demanda/precios, evaluación de impacto
-   con Double ML / Causal Forest)
-3. Evaluación de proyectos (VPN, TIR, WACC, sensibilidad, Monte Carlo) ← en construcción
-4. Entorno macro y sectorial
-5. Después: carteras de inversión (Black-Litterman)
+Orden de construcción: 1 → 4 → 3 → 2.
+
+1. Balance financiero: funcionando, probado con datos reales.
+2. Econometría aplicada (pronóstico, demanda/precios, impacto con Double ML /
+   Causal Forest): sin iniciar. Primero la capa de datos: los estados anuales
+   dan 2 a 5 puntos; hacen falta series propias de mayor frecuencia (ventas,
+   precios, ocupación) y externas. Incluye `sector-hotelero`.
+3. Evaluación de proyectos: en construcción (`SPEC-mapa-proyectos.md`).
+4. Entorno macro: funcionando (`SPEC-mapa-macro.md`).
+5. Después: carteras de inversión (Black-Litterman).
 
 ## Convenciones
 
@@ -47,6 +84,9 @@ y redacta el resultado. Todo número sale de funciones de Python probadas.
 - Sin umbrales genéricos de "bueno/malo": eso lo da el benchmark sectorial.
 - Cada función nueva lleva tests en `tests/` con la misma estructura de
   carpetas. Correr `python -m pytest -v` antes de cada commit.
+- Cada pieza nueva sigue el flujo de agent-skills: spec → plan en `tasks/` →
+  tests primero → revisión del diff → commit por tarea. Los cálculos nuevos
+  traen un caso a mano que el usuario concilia.
 - Robustez por fases (definido por el usuario el 5/10/2026). En el MVP:
   variables de entorno para claves y configuración (nunca en el código),
   validación básica de toda entrada del usuario, separación de roles
@@ -54,320 +94,90 @@ y redacta el resultado. Todo número sale de funciones de Python probadas.
   y manejo de errores con try/except y mensajes útiles. Rate limiting fino y
   monitoreo con dashboard se agregan cuando el producto tenga uso real.
 
-## Estado actual
+## Reglas de redacción con el 7B
 
-Hecho y probado (179 tests): esquema canónico, mapeo PUC, razones de liquidez,
-endeudamiento, rentabilidad y actividad, ciclo de conversión de efectivo,
-DuPont (con descomposición logarítmica de la variación del ROE), Z'' de
-Altman para mercados emergentes (zonas 4,35 / 5,85 y equivalencia de
-calificación de Altman y Hotchkiss 2005) y motor de benchmark
-(`modules/balance/benchmark.py`: percentil de rango medio, dirección por
-indicador, muestra mínima 10 / adecuada 30). El EBITDA es `None` si no se
-reportó la depreciación; el impuesto admite negativos (beneficio). Con deuda
-financiera y sin gastos financieros identificados, la carga financiera y la
-cobertura son `None` (los intereses quedaron en otra cuenta).
+Lecciones de las corridas del set de evaluación (`tests/eval/preguntas.yaml`).
 
-## Siguiente paso: datos de Supersociedades para el benchmark
+- Las distinciones de sentido van en hallazgos redactados por Python, no en el
+  prompt: con el 7B la regla del prompt no basta. Ejemplos: el EBITDA en pesos
+  "no se compara con el sector"; con la TRM, Python dice si el peso se revaluó
+  o se devaluó; un escenario dice primero el estado actual ("sigue sin crear
+  valor").
+- Cada error de sentido nuevo se vuelve una regla del YAML del set.
+- Menos cifras parecidas en los datos: se quitan las que no responden la
+  pregunta, porque el 7B las mezcla.
+- Valores formateados por unidad ("2,4 %", "53 días"); la tasa del usuario
+  como la escribió ("24 %", no "24,00 %"); montos también con palabras
+  ("$ 150.000.000 (150 millones)").
+- Nominal y real en paralelo, sin compararlos con la inflación.
+- Los análisis que no son de la empresa (crédito, tasas, panorama) se redactan
+  sin su nombre.
+- El benchmark es "empresas reportantes a Supersociedades", nunca el sector
+  completo.
+- Nunca recomendar. "Conviene", "rentable" y los calificativos sin comparación
+  sectorial están en `CALIFICATIVOS` (`verificador.py`): se pide reescribir y,
+  si insiste, sale el respaldo.
+- Ninguna cifra de memoria. El verificador acepta cifras de la pregunta, salvo
+  en la charla, donde solo valen las de la conversación previa (los años son
+  libres). Los enteros 0-10 con % o $ no quedan libres.
+- El modelo solo da los números de la pregunta; su sentido (tipo de tasa,
+  plazo, periodicidad, sistema, variable, dirección) lo lee Python
+  (`app/orchestrator/lectura.py`). Se descartan argumentos numéricos que no
+  están en la pregunta.
+- Sin glosario el 7B inventa definiciones: todo indicador nuevo va en
+  `config/glosario.yaml`. Las notas dan las fórmulas en símbolos y en palabras
+  (el 7B copia la versión en palabras).
+- LM Studio 1.1.8 no obliga a elegir herramienta: si el 7B contesta con texto,
+  nota pertinente → conceptual, si no → charla. La cortesía se salta el
+  enrutador. Hay tope de tokens.
 
-Datasets en datos.gov.co (formato largo: nit, concepto, valor, periodo,
-fecha_corte, punto_entrada, taxonomia):
-- `6hqw-m3dm` Carátula (verificar si el CIIU viene como concepto)
-- `pfdp-zks5` Estado de Situación Financiera
-- `prwj-nzxa` Estado de Resultado Integral
-- `ctcp-462n` Flujo de Efectivo (más adelante)
+## Comandos
 
-Pasos 1-3 resueltos (detalle en `exploracion/hallazgos_supersociedades.md`):
-CIIU como concepto de la carátula (`I5511 - ...`), cruce por NIT + fecha;
-punto_entrada 10/20/40/50, solo cortes 31-dic, `Periodo Actual`; valores en
-miles de pesos; ~300 hoteles por año a nivel nacional.
+- `.\iniciar.ps1`: arranque completo (abre la API de LM Studio y la interfaz).
+  Solo la interfaz: `python -m uvicorn app.main:app --port 8000`.
+- `python -m pytest -v`: tests.
+- `python -m app.eval [--casos 13,14] [--bloques D,E]`: set de evaluación con
+  el modelo real; informe en `data/eval/` (no versionado). Criterios: bloques
+  A, B, C, F y G al 100 %; respaldo ≤ 20 %.
+- `python -m app.demo "pregunta"`: una pregunta con el hotel ficticio
+  (`data/demo/`, generado con `data/demo/generar_demo.py`).
+- `python -m app.rag.ingest`: reconstruye el índice tras editar `conocimiento/`.
+- `python -m data_sources.externos.series.catalogo Pasto`: refresca las series.
+- `python -m data_sources.externos.pronostico_banrep <archivo.xlsx>`: carga el
+  pronóstico del Informe de Política Monetaria.
 
-Paso 4 resuelto: `config/mapeo_niif.yaml` + cargador
-`data_sources/externos/supersociedades.py` (descarga SoQL + transformación
-pura con exclusiones motivadas). Carga 303 de 305 hoteles 2024. Ver sección 6
-de los hallazgos. Todos los conceptos de un año salen de un solo reporte (el
-propio antes que el comparativo; la retransmisión más reciente antes que la
-original): mezclarlos duplicaba partidas. Acepta los reportes antiguos (hasta
-2017), cuyo periodo viene como fecha ("2016-dic-31") o como año.
+## Fuentes externas
 
-Paso 5 resuelto: `data_sources/externos/referencia.py`
-(`referencia_supersociedades("hoteles", 2024)`): 303 hoteles, 19 indicadores
-comparables, caché en `data/raw/supersociedades/` y referencia versionada en
-`data/referencias/hoteles_2024.json`. La empresa se compara con
-`homologar_empresa` (cartera y proveedores agregados como la taxonomía) y nunca
-es su propio par. Días de proveedores y ciclo de conversión no se comparan en
-servicios (`no_comparables` en `ciiu_sectores.yaml`). Los hallazgos formatean
-valores por unidad ("2,4 %", "53 días") para que el 8B no los malinterprete.
+| Dato | Fuente | Actualización |
+|---|---|---|
+| IPC nacional y 23 ciudades | SUAMECA 15000; 15013-15035 (Pasto 15026) | Nacional cada 6 h; ciudades al pedirlas |
+| Tasa de política, IBR 3 meses, TRM | SUAMECA 59, 243, 1 | Cada 6 h |
+| PIB (trimestral), desempleo (mensual, sin ajuste estacional) | SUAMECA 15271, 15312 | Cada 6 h |
+| Meta de inflación | SUAMECA 853 | Cada 6 h |
+| Pronóstico de inflación | Excel del Informe de Política Monetaria | A mano cada trimestre (el BanRep bloquea descargas automáticas); aviso a los 4 meses |
+| Estados financieros de pares | datos.gov.co: carátula `6hqw-m3dm`, situación financiera `pfdp-zks5`, resultados `prwj-nzxa`, flujo `ctcp-462n` | Por año |
 
-Pendiente, en orden (acordado el 5/10/2026, ajustado el 7/10/2026):
-1. ~~Cargador PUC~~ hecho: `data_sources/empresa/puc.py` lee el balance de
-   prueba (Excel/CSV, saldo con signo o débito/crédito), suma solo cuentas
-   hoja, exige que las clases 1-7 sumen cero, rechaza balances posteriores al
-   cierre y acepta reclasificaciones de corto a largo plazo. Lee formatos
-   reales de exportación: filas de título antes del encabezado, CSV con ";"
-   o ",", UTF-8 o Windows-1252, números colombianos o ingleses (el formato se
-   decide con toda la columna) y negativos con "-" o paréntesis; si "Cuenta"
-   trae nombres, elige la columna que contiene códigos. El impuesto diferido
-   (2725) es no corriente (NIC 1.56). Reclasificaciones permitidas en
-   `RECLASIFICACIONES` (deuda, inversiones, deudores y otros pasivos a largo
-   plazo; diferidos a corto plazo; PPE a propiedades de inversión). La
-   interfaz pide la unidad del archivo (pesos o miles) y propone la fecha de
-   corte a partir del nombre. Conciliado al peso contra Supersociedades con
-   los CSV de prueba del usuario (SECOLINSA, NIT 830010665, 2015-2016; copia
-   local en `data/raw/prueba/`, no versionada). Falta: plantilla
-   Excel propia para empresas sin software contable.
-   Caso de demostración: `data/demo/hotel_demo_andino_{2023,2024}.csv`
-   (empresa ficticia, generada con `data/demo/generar_demo.py`).
-2. Versión delgada de punta a punta (en curso). Hecho: `app/config.py`
-   (variables de entorno, `.env.example`), `app/llm/client.py` (API compatible
-   con OpenAI; LM Studio con qwen2.5-7b-instruct; desde su actualización a
-   1.1.8 "Bionic" del 12/10/2026 la API está en localhost:1235, fijado en
-   `.env`, y el CLI `lms` ya no la enciende: la abre `iniciar.ps1`),
-   `app/orchestrator/` (registro de herramientas, orquestador, verificador de
-   cifras con un reintento y respuesta de respaldo armada en Python),
-   `config/prompts/`, `config/glosario.yaml` y `app/demo.py`
-   (`python -m app.demo "pregunta"`). Supuestos y advertencias los agrega
-   Python al final; el LLM solo redacta. Lecciones con el modelo real: 8/8 en
-   enrutamiento; inventó una definición sin glosario; el verificador atrapa
-   cifras inventadas, pero no errores de sentido (p. ej. confundir "mejor que
-   el 78 % de los pares" con un margen de 78 %). Interfaz web (12/10/2026,
-   reemplazó a Streamlit por su parpadeo al recargar y sus límites de diseño):
-   `python -m uvicorn app.main:app --port 8000`, o arranque completo con
-   `.\iniciar.ps1`. FastAPI + Jinja + HTMX (vendorizado en
-   `frontend/static/`): portada con módulos ilustrados (Balance y Entorno
-   macro activos; Proyectos y Econometría "próximamente"), navegación sin
-   recargar (View Transitions) y la respuesta pedida en un segundo paso
-   porque el modelo tarda. Desde el 13/10/2026 el chat es global (burbuja
-   flotante fuera de `#pagina`, una conversación por sesión con memoria de 3
-   turnos) y cada módulo será un tablero calculado solo con Python. Paleta menta y coral
-   sobre gris azulado, Outfit y Manrope, ilustraciones SVG propias en
-   `frontend/static/ilustraciones/`. Cada cifra de la respuesta muestra su
-   indicador y fórmula (`frontend/cifras.py`, que escapa el HTML del modelo).
-   Sesiones en memoria. Desde el 13/10/2026 la sesión empieza sin empresa:
-   los balances se suben en la tarjeta "Su empresa" de la portada y cada
-   archivo se lee al momento (activo, pasivo y patrimonio, o su error); sin
-   empresa el chat conversa pero no calcula. El hotel ficticio queda solo
-   para el set de evaluación y `app/demo.py`.
-   Tipos de pregunta (acordado el 6/10/2026, ampliado el 13/10/2026): (1)
-   cálculo con herramientas de Python; (2) criterio o teoría con la base de
-   conocimiento `conocimiento/*.md` (RAG híbrido: embeddings nomic de LM
-   Studio + palabras clave; índice en `data/conocimiento/indice.json`, se
-   reconstruye con `python -m app.rag.ingest`); sin nota pertinente responde
-   en general con el aviso "Respuesta general"; (3) `conversar`: saludos,
-   charla, comentarios sobre la respuesta anterior y temas ajenos (una o dos
-   frases y reconduce), con `config/prompts/conversacion.md`; (4) fuera de
-   alcance (legal, tributario, en qué invertir, pronósticos) con remisión al
-   profesional. Ninguna cifra de memoria: en la charla solo valen las de la
-   conversación previa, ni siquiera las de la pregunta. El rol del
-   economista está en `config/prompts/rol.md`, común a la redacción de los
-   tipos 1 y 2. Los análisis temáticos incluyen la comparación sectorial
-   cuando hay referencia. Las 9 notas fueron revisadas por el usuario el
-   7/10/2026 (`revisado: true`), con ajustes para Colombia (tarifa general de
-   renta, tasa de usura, indexación al IPC y al salario mínimo, MMH del DANE).
-   Set de evaluación (hecho el 7/10/2026): `tests/eval/preguntas.yaml` (las 28
-   preguntas del guion de prueba en 7 bloques A-G; 9 y 10 son pares de
-   consistencia) y `app/eval/` (`python -m app.eval`, con `--casos` o
-   `--bloques`; informe en `data/eval/`, no versionado). Python comprueba
-   herramienta, periodo, origen, fuentes, frases y que toda cifra redactada
-   esté en el desplegable (más estricto que el verificador, que acepta cifras
-   de la pregunta). El sentido lo revisa el usuario en la sección "Respuestas
-   para revisar" del informe. Criterios: bloques A, B, C, F y G al 100 %;
-   respaldo ≤ 20 %. Primera corrida con qwen 7B: 30/30 en reglas automáticas,
-   0 % respaldo, pero un error de sentido (presentó el margen EBITDA como "el
-   EBITDA"); se agregó el EBITDA en pesos como indicador. Después le pegó al
-   monto el percentil del margen: la regla en el prompt no bastó, sí un
-   hallazgo redactado en Python ("no se compara con el sector"). Lección:
-   con el 7B, las distinciones de sentido van en hallazgos, no en el prompt.
-   Cuando se encuentre un error de sentido nuevo, convertirlo en regla del YAML.
-3. ~~Revisar las 9 notas de conocimiento~~ hecho el 7/10/2026.
-4. Validar la referencia contra los indicadores que publica el SIIS, y
-   revisar valores extremos (p. ej. hoteles con depreciación > ingresos).
-5. Plantilla Excel para empresas sin software contable.
-   Pendiente para el módulo 2 (pedido del usuario el 13/10/2026): definir la
-   capa de datos de econometría. Los estados financieros anuales dan muy
-   pocas observaciones para estimar (2 a 5 puntos); los modelos necesitan
-   series propias de mayor frecuencia (ventas, precios, ocupación,
-   promociones; p. ej. del software del hotel) más series externas, y una
-   forma de cargarlas y guardarlas (probable disparador de PostgreSQL).
-6. Módulos 4 → 3 → 2 (macro, proyectos, econometría). El 4 se adelantó a los
-   pasos 4 y 5 (decidido el 11/10/2026). Mapa en `SPEC-mapa-macro.md`.
-   Hecho: `series-externas` con el IPC (`data_sources/externos/series/`):
-   SUAMECA del BanRep (nacional 15000 desde 1954; 23 ciudades 15013-15035
-   desde 2017, Pasto 15026), verificado contra el anexo del DANE, copias
-   de respaldo versionadas en `data/series/` (desde el 15/10/2026 la copia del
-   día va a `data/cache/series/`, vigencia 1 día; sin red usa la copia más
-   reciente con advertencia). La ciudad sin serie o sin cobertura cae al nacional con
-   supuesto. SUAMECA no envía el certificado intermedio: se usa la cadena de
-   DigiCert en `suameca_cadena.pem`. Refrescar: `python -m
-   data_sources.externos.series.catalogo Pasto`.
-   Hecho `crecimiento-real` (`modules/macro/crecimiento_real.py`, herramienta
-   `analizar_crecimiento_real`, IPC de `municipio` de la empresa, bloque H del
-   set de evaluación, casos 29-32). Conciliado con el cálculo a mano del
-   usuario (11/10/2026). Errores de sentido corregidos el 12/10/2026: el
-   hallazgo de Python ya no dice "vendió más" (con el IPC general, crecer en
-   términos reales es subir más que los precios al consumidor, no vender más
-   cantidad) y un segundo hallazgo lo advierte. El hallazgo da nominal y real
-   en paralelo, sin compararlos con la inflación: cuando lo hacía, el 7B decía
-   que "el crecimiento real superó la inflación". Nota nueva
-   `conocimiento/crecimiento-real.md` con la fórmula exacta en símbolos y en
-   palabras (el 7B copia la versión en palabras); revisada por el usuario el
-   13/10/2026, que pidió precisar que la resta solo sirve con tasas bajas y
-   agregar la ecuación de Fisher. El verificador ya no deja libres los
-   enteros 0-10 cuando llevan % o $ (así pasó un ejemplo inventado). Bloque
-   H: 4/4 en dos corridas con reglas nuevas (sin "volumen"; nominal y real
-   en 30; "1 más el crecimiento nominal" en 32).
-   Hecho `sensibilidad-tasas` (12/10/2026, `modules/macro/sensibilidad_tasas.py`,
-   herramienta `analizar_sensibilidad_tasas` con argumento opcional `puntos`,
-   bloque I, casos 33-39): tasa de política (SUAMECA 59) e IBR a 3 meses (243)
-   en series-externas; exposición máxima; escenarios ±1/±2/±3, el pedido (solo
-   ese) y el histórico de la IBR (+8,24 puntos en 2022). El orquestador descarta
-   argumentos numéricos que no están en la pregunta. Lección: con el 7B, menos
-   cifras parecidas en DATOS (quitar las que no responden la pregunta) evita
-   que las mezcle. Los calificativos sin comparación sectorial
-   ("significativo", "preocupante"...) los atrapa el verificador con un
-   reintento que nombra las palabras (`CALIFICATIVOS` en `verificador.py`); si
-   el modelo insiste, sale el respaldo. El caso 18 ("¿cómo me afecta que el
-   BanRep suba las tasas?") acepta la herramienta o la nota. Set completo (41
-   casos) el 12/10/2026: todos los bloques al 100 %, respaldo 3 %. El
-   13/10/2026 se agregó el bloque J (conversación, casos 40-45; `despues_de`
-   da a un caso la conversación de otro) y se ajustaron los casos 20, 27, 28
-   y 38. Set completo (47 casos) con el modelo real el 13/10/2026, tras la
-   actualización de LM Studio: cálculo y macro al 100 %, respaldo 3 %; de 5
-   fallas, 2 fueron caídas de LM Studio ("Channel Error", probable falta de
-   VRAM con contexto de 32.768) y 3 se corrigieron (19, 26, 42); la corrida
-   de los casos afectados pasó completa. Lecciones: LM Studio 1.1.8 no obliga
-   a elegir herramienta y el 7B contesta saludos con texto y puede desbordarse
-   (tope de tokens; si contesta con texto, nota pertinente → conceptual, si no
-   → charla; la cortesía se salta el enrutador); en la charla los años son
-   libres, pero no porcentajes ni montos de la pregunta.
-   Rediseño de la interfaz antes del módulo 3 (decidido el 13/10/2026; el
-   módulo 3 se corre unos días y nace con el patrón nuevo): (a) chat global
-   y conversacional, hecho; (b) tablero de Balance, hecho el 13/10/2026
-   (`frontend/tableros.py` + `_tablero_balance.html`: tarjetas con cambio
-   anual y posición sectorial, franja p25-p75 con mediana y empresa por
-   indicador, palancas DuPont y tabla por año; gráficas en HTML y CSS); (c)
-   tablero Macro, hecho el 13/10/2026: `panorama-macro`
-   (`modules/macro/panorama.py`, herramienta `consultar_panorama_macro`, que
-   no necesita empresa; bloque K, casos 46-50) con inflación (IPC 15000), tasa
-   de política (59), IBR (243), TRM (1), crecimiento del PIB (15271,
-   trimestral) y desempleo (15312, mensual, sin ajuste estacional: se compara
-   con el mismo mes del año anterior); tarjetas con línea de tendencia de 3
-   años (SVG simple) y, con empresa, crecimiento real y escenarios de tasas.
-   Error de sentido corregido con un hallazgo: con la TRM a la baja el 7B
-   escribió "depreciación del peso"; ahora Python dice si el peso se revaluó
-   o se devaluó. `sector-hotelero` (MMH + panel de Supersociedades + SQL)
-   pasa al módulo 2, que usa la misma infraestructura.
-   Actualización diaria del entorno macro (hecha el 15/10/2026, tercer tramo
-   de `SPEC-series-externas.md`): `app/main.py` llama a
-   `catalogo.actualizar()` al arrancar y cada 6 horas, en un hilo y una serie
-   tras otra (un candado también la separa de las consultas). Copias del día
-   en `data/cache/series/` (ignorada por Git, escritura atómica);
-   `data/series/` queda como respaldo de tests, demo y arranque sin red;
-   vigencia de 1 día como red de seguridad; el tablero dice "Datos
-   consultados el …" (la serie más vieja). El chat lee las mismas copias. El
-   IPC de las ciudades no entra en el actualizador: la vigencia lo renueva al
-   pedirlo. Probado con la interfaz real: 6 series del 15/10/2026.
-   Módulo 3 (desde el 15/10/2026), con el flujo de agent-skills (spec → plan
-   en `tasks/` → tests primero → revisión del diff → commit por tarea). Mapa
-   aprobado en `SPEC-mapa-proyectos.md`: matematica-financiera →
-   flujo-proyecto → evaluacion-proyecto → costo-capital →
-   sensibilidad-proyecto → montecarlo-proyecto. Decisiones: el proyecto entra
-   por formulario del tablero; flujos a precios de hoy con tasa real (Fisher
-   con la expectativa de inflación de la encuesta del BanRep); costo del
-   patrimonio por CAPM en pesos (TES 10 años + beta de Damodaran) o la tasa de
-   oportunidad del dueño. Hecho `matematica-financiera`
-   (`modules/proyectos/matematica_financiera.py`, conciliado a mano por el
-   usuario el 15/10/2026): tasas equivalentes en 11 tipos, VPN, TIR (única o
-   `None` con aviso si hay varias o ninguna; malla y bisección, sin scipy),
-   TIRM, recuperación descontada, índice de rentabilidad, VAE y amortización
-   (cuota fija y abono constante). En el chat, `simular_credito` y
-   `convertir_tasa`, sin empresa: el modelo solo da los números de la
-   pregunta; el tipo de tasa (pegado al número), la unidad del plazo, la
-   periodicidad, el sistema y el destino de la conversión los lee Python
-   (`app/orchestrator/lectura.py`); "200 millones" vale como 200 o 200000000;
-   "anual" sin más es EA con supuesto. La pregunta llega a la herramienta en
-   sus argumentos. Bloque L del set (casos 51-58): 8/8 con el modelo real.
-   Lecciones: la tasa del usuario va en los hallazgos como la escribió ("24 %",
-   no "24,00 %"), porque el 7B la repite así; los análisis que no son de la
-   empresa (crédito, tasas, panorama) se redactan sin su nombre (lo mezcló en
-   una conversión). Tablero de Proyectos activo: simulador de crédito y
-   conversor de tasas (HTMX que recalcula solo el resultado). Nota
-   `conocimiento/tasas-equivalentes.md` revisada por el usuario.
-   Hecho `flujo-proyecto` (15/10/2026, `modules/proyectos/flujo.py`): flujo
-   de caja libre sin la financiación, incremental, a precios de hoy por fuera
-   y en pesos corrientes por dentro (la inflación le quita valor al ahorro de
-   impuestos de la depreciación y el capital de trabajo crece con los
-   precios); pérdidas que ahorran impuestos (supuesto), valor en libros al
-   salvamento y salvamento de mercado que tributa (aproximación). Inflación:
-   senda del BanRep = pronóstico del IPC total del último Informe de Política
-   Monetaria (`data_sources/externos/pronostico_banrep.py`) y meta de 3 %
-   (SUAMECA 853, `meta_inflacion`) después; el año t del proyecto es el año
-   calendario actual + t. El repositorio del BanRep bloquea las descargas
-   automáticas (anti-bots): el Excel "principales variables del pronóstico"
-   se descarga en el navegador cada trimestre y se carga con `python -m
-   data_sources.externos.pronostico_banrep <archivo.xlsx>` (copia versionada
-   en `data/series/pronostico_inflacion.json`; aviso a los 4 meses). Cargado
-   el de julio de 2026 (6,9 % en 2026, 4,3 % en 2027); el de octubre sale a
-   fin de mes. Tablero de Proyectos en pestañas (pedido del usuario): "Su
-   proyecto" (formulario agrupado y tabla del flujo con la columna de
-   etiquetas fija; la sesión recuerda el último proyecto válido) y "Crédito
-   y tasas". Sin herramienta de chat todavía: llega con la evaluación.
-   Hecho `evaluacion-proyecto` (15/10/2026, `modules/proyectos/evaluacion.py`):
-   con la tasa de oportunidad del usuario (nominal EA; el formulario abre con
-   un ejemplo de 15 % marcado "valores de ejemplo"), VPN primero (flujos
-   corrientes a tasa nominal = flujos de hoy a tasa real), TIR nominal, TIRM,
-   recuperación descontada e índice de rentabilidad. Hallazgos en palabras y
-   con cifras en positivo ("no crea valor: deja $ X menos"); "rinde, pero
-   menos que la alternativa" (el 7B dijo "no es rentable en términos
-   absolutos" con TIR de 13,75 %); el índice en palabras. "Conviene" y
-   "rentable" pasaron a CALIFICATIVOS (el 7B escribió "el proyecto no
-   conviene"). La lectura del formulario se volvió compartida
-   (`app/orchestrator/proyecto.py`) y el proyecto llega al chat como la
-   pregunta (`responder(..., proyecto=...)`; la web pasa el de la sesión, el
-   set y la demo el de ejemplo). Pestaña "Su proyecto": la evaluación arriba
-   del formulario (se actualiza fuera de banda con cada cambio). Bloque M
-   (59-64). Hecho `sensibilidad-proyecto` (15/10/2026,
-   `modules/proyectos/sensibilidad.py`): una variable a la vez, ±10/±20 % en
-   ingresos, costos variables, costos fijos, inversión y tasa; tornado y
-   valor crítico por bisección (la tasa crítica es la TIR; tasas y costos
-   variables en nivel). Pestaña "Sensibilidad" (tercera) y herramienta
-   `analizar_sensibilidad_proyecto` (la variable y la dirección las lee
-   Python; "costos" sin más = variables con supuesto). Error de sentido
-   corregido: con "sigue sin crear valor" el 7B escribió "dejaría de crear
-   valor"; el escenario dice primero el estado actual. Bloque N (65-69).
-   Set completo (71 casos) el 15/10/2026: todos los bloques al 100 % salvo
-   caídas de LM Studio ("Model is unloaded", 500), respaldo 9 %. Correcciones
-   de enrutamiento: regla para "¿cuánto me ahorro si bajan las tasas?" y una
-   red de seguridad en Python (simulador o conversor sin cifras ni
-   "¿cuánto?" → nota pertinente); el buscador ignora verbos auxiliares
-   ("¿qué puedes hacer?" coincidía con la nota nueva). Montos del crédito
-   también con palabras ("$ 150.000.000 (150 millones)").
-   Siguiente: `costo-capital`. Borrador de la especificación (15/10/2026,
-   `SPEC-costo-capital.md`), pendiente de dos respuestas del usuario: cómo
-   obtener la beta del sector (Damodaran la publica solo en .xls; propuesta:
-   escribirla a mano una vez al año en `config/costo_capital.yaml`) y si sin
-   estados financieros se muestra solo el costo del patrimonio. Fuentes
-   verificadas: TES cero cupón UVR 10 años (SUAMECA 15277, real, 6,74 %) y
-   pesos (15274, 13,05 %; la diferencia implica 5,9 % de inflación esperada
-   por el mercado), prima de mercado madura de Damodaran (4,23 %,
-   `ctryprem.xlsx`). Propuesta: WACC en términos reales con el TES UVR, para
-   no mezclar la inflación del mercado con la senda del BanRep de los flujos. El
-   Monte Carlo queda para después del módulo 2 (decidido el 15/10/2026).
-   Pendientes del usuario: conciliar los casos a mano de evaluación y
-   sensibilidad, revisar `conocimiento/evaluacion-de-proyectos.md`, cargar el
-   Informe de Política Monetaria de octubre y bajar el contexto del modelo en
-   LM Studio a 8.192 (se cayó tres veces en el set completo).
-   Pendiente menor: bajar el contexto del modelo en LM Studio a 8.192 si
-   vuelve a caerse.
-   Sensibilidad-tasas conciliada con el cálculo a mano del usuario (demo 2024,
-   13/10/2026): tasa implícita, aumento por punto, coberturas y escenarios; el
-   alza de 2022 es 8,242 puntos (se muestra 8,24). La tasa de política
-   (12,25 %) y la IBR (11,70 %) las confirmó contra la última reunión del
-   BanRep el 13/10/2026.
+- Series: copias del día en `data/cache/series/` (no versionada, vigencia 1
+  día); `data/series/` es el respaldo versionado para tests, demo y arranque
+  sin red. SUAMECA no envía el certificado intermedio: `suameca_cadena.pem`.
+- Supersociedades: valores en miles de pesos, solo cortes 31-dic; caché en
+  `data/raw/supersociedades/`, referencia en `data/referencias/`; grupos en
+  `config/ciiu_sectores.yaml`. Detalle en `exploracion/hallazgos_supersociedades.md`.
 
-Grupos de comparación en `config/ciiu_sectores.yaml` (alojamiento / hoteles).
-El benchmark se describe siempre como "empresas reportantes a
-Supersociedades", nunca como el sector completo. Probablemente será nacional:
-Nariño tendrá muy pocas empresas.
+## Estado y siguiente paso
+
+Se reemplaza al cerrar cada pieza; no se acumula (la historia va en
+`docs/decisiones.md` y en git; la anterior al 16/10/2026, en `docs/bitacora.md`).
+
+- Módulo 3 hecho: matemática financiera, flujo, evaluación y sensibilidad del
+  proyecto, conciliados a mano por el usuario.
+- Siguiente: `costo-capital`. `SPEC-costo-capital.md` en borrador, pendiente
+  de dos respuestas del usuario (beta del sector; qué mostrar sin estados
+  financieros). Monte Carlo después del módulo 2.
+- Pendientes: cargar el Informe de Política Monetaria de octubre (sale a fin
+  de mes); bajar el contexto de LM Studio a 8.192 si vuelve a caerse; validar
+  la referencia contra el SIIS y revisar valores extremos; plantilla Excel
+  para empresas sin software contable.
 
 ## Documentación del proyecto (Obsidian)
 
@@ -387,13 +197,17 @@ No se documentan fixes menores, cambios de redacción, ajustes de formato ni
 iteraciones de prueba y error que no cambiaron una decisión final. Si se
 actualizó la documentación, decirlo en una línea al final de la respuesta.
 
+Este archivo solo lleva instrucciones y el mapa del proyecto: lo que pasó va
+en `docs/`, no aquí.
+
 ## Entorno
 
 Windows, proyecto en `D:\economista-ia`, entorno virtual `.venv` con
 Python 3.14 (si alguna librería no instala, usar 3.12). GPU AMD RX 6600 XT
-(8 GB VRAM): el LLM local será un modelo 7-8B (Qwen) vía Ollama con Vulkan o
-LM Studio, corriendo fuera de Docker. Demo pública futura en Hugging Face
-Spaces con LLM por API.
+(8 GB VRAM): LLM local qwen2.5-7b-instruct en LM Studio 1.1.8, fuera de
+Docker; su API está en localhost:1235 (fijada en `.env`) y la abre
+`iniciar.ps1`, no el CLI `lms`. Demo pública futura en Hugging Face Spaces
+con LLM por API.
 
 ## Cómo trabajar conmigo
 
