@@ -36,8 +36,9 @@ y redacta el resultado. Todo número sale de funciones de Python probadas.
 - Los archivos vacíos (`docker-compose.yml`, `db/`, `modules/econometria/`,
   `proyectos/wacc.py`...) son la arquitectura planeada: se llenan o se borran
   cuando llegue su pieza (decisión del usuario).
-- Futuro: PostgreSQL + pgvector cuando haya un disparador real (panel de
-  econometría, multiusuario), Docker.
+- PostgreSQL (desde el módulo 2, servidor local del usuario) para las series
+  del PMS y el panel sectorial, confinado a `data_sources/`. Futuro: Docker
+  para empaquetar la app y la base; pgvector si la base de conocimiento crece.
 
 ## Cómo responde el chat
 
@@ -181,9 +182,9 @@ Se reemplaza al cerrar cada pieza; no se acumula (la historia va en
   Monte Carlo después del módulo 2. Opción abierta: beta total (Damodaran)
   para el dueño de pyme no diversificado. Set completo (77 casos, bloques
   A-O) el 16/10/2026: todos al 100 %, respaldo 1 %.
-- Siguiente: módulo 2 (econometría), empezando por la capa de datos: series
-  propias de mayor frecuencia (ventas, precios, ocupación) y externas; probable
-  disparador de PostgreSQL. Incluye `sector-hotelero`.
+- En curso: módulo 2 (econometría), mapa aprobado el 16/10/2026 en
+  `SPEC-mapa-econometria.md`; sigue la especificación de `almacen-datos`
+  (PostgreSQL 18 local del usuario, NIT como llave, carga incremental).
 - Pendientes: cargar el Informe de Política Monetaria de octubre (sale a fin
   de mes); bajar el contexto de LM Studio a 8.192 si vuelve a caerse; validar
   la referencia contra el SIIS y revisar valores extremos; plantilla Excel
