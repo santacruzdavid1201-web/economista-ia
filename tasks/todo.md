@@ -1,25 +1,18 @@
-# Tareas: almacen-datos
+# Tareas: calendario
 
-Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del commit,
-con y sin `TEST_DATABASE_URL`.
+Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del commit.
 
-- [x] **0. Requisito previo (usuario)**: usuario `economista`, bases `economista_ia` y
-  `economista_ia_test`, y las dos variables en `.env` (SQL en el plan).
-- [x] **1. Esquema y conexión**: `db/init.sql` con las tres tablas y sus
-  restricciones; `conectar`, `crear_esquema` (idempotente) y `guardar_empresa`;
-  `python -m data_sources.almacen`; `DATABASE_URL` en la configuración; fixture de
-  la base de prueba que se salta sin la variable y se niega con una base que no
-  termine en `_test` (criterio 1).
-  Archivos: `db/init.sql`, `data_sources/almacen.py`, `app/config.py`, `.env.example`,
-  `requirements.txt`, `tests/data_sources/test_almacen.py`.
-- [x] **2. Carga incremental**: `cargar_pms` con upsert por tabla temporal, conteo de
-  nuevas, actualizadas e iguales, registro en `carga`, atomicidad con el error en
-  español (fecha y regla) y huecos (criterios 2 a 4).
-  Archivos: `data_sources/almacen.py`, `tests/data_sources/test_almacen.py`.
-- [x] **3. Lectura**: `leer_pms` con índice de fechas, rango opcional y tipos
-  convertidos (criterio 5).
-  Archivos: `data_sources/almacen.py`, `tests/data_sources/test_almacen.py`.
+- [ ] **1. Festivos**: `config/calendario.yaml` con las reglas y su vigencia (Ley 2578
+  desde 2026) y `festivos(anio)`: los 19 de 2026 conciliados; 2025 con 18 festivos en
+  17 días (30/6 con los dos nombres) y Reyes que ya cae en lunes; error fuera de
+  1984-2100.
+  Archivos: `config/calendario.yaml`, `modules/econometria/calendario.py`,
+  `tests/modules/econometria/test_calendario.py`.
+- [ ] **2. Calendario diario**: `calendario(desde, hasta, ciudad)` con día de la
+  semana, festivo, víspera, puente, Semana Santa y eventos de la ciudad (Carnaval en
+  Pasto, sin tildes ni mayúsculas); rango invertido con error claro; bordes del rango.
+  Archivos: `config/calendario.yaml`, `modules/econometria/calendario.py`,
+  `tests/modules/econometria/test_calendario.py`.
 
 ### Punto de control: completo
-- [x] El usuario ve las tablas y una carga de prueba en pgAdmin; suite en verde con y
-  sin `TEST_DATABASE_URL` (criterio 6); documentación de cierre (16/10/2026).
+- [ ] Criterios de éxito de la especificación; suite en verde; documentación de cierre.
