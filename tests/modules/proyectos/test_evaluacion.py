@@ -10,9 +10,10 @@ EJEMPLO = dict(nombre="Remodelación", inversion=100_000_000, vida_util=5, horiz
                costos_fijos=10_000_000, capital_trabajo=0.10, tarifa_renta=0.35)
 
 
-def evaluacion(tasa: float, tasas_inflacion: list[float] | None = None, **cambios):
+def evaluacion(tasa: float, tasas_inflacion: list[float] | None = None, tipo="nominal",
+               **cambios):
     p = crear_proyecto(**{**EJEMPLO, **cambios})
-    return evaluar(flujo_caja(p, Senda(tasas_inflacion or [0] * p.horizonte, [])), tasa)
+    return evaluar(flujo_caja(p, Senda(tasas_inflacion or [0] * p.horizonte, [])), tasa, tipo)
 
 
 def test_caso_a_mano_sin_inflacion_al_10_por_ciento():
@@ -86,3 +87,66 @@ def test_el_indice_de_rentabilidad_en_palabras():
             "uno, por eso no crea valor.") in evaluacion(0.15, [0.03] * 5).hallazgos
     assert ("Devuelve 1,03 pesos de hoy por cada peso invertido (índice de rentabilidad): más de "
             "uno, por eso crea valor.") in evaluacion(0.10).hallazgos
+
+
+# --------------------------------------------------------------------------- #
+# Tasa real y WACC: flujos en pesos de hoy, TIR real
+# --------------------------------------------------------------------------- #
+def test_con_tasa_real_descuenta_los_flujos_en_pesos_de_hoy():
+    f = flujo_caja(crear_proyecto(**EJEMPLO), Senda([0.03] * 5, []))
+    assert evaluar(f, 0.08, "real").valor("vpn") == pytest.approx(
+        vpn(0.08, [fila.flujo_libre for fila in f.real]))
+
+
+def test_tasa_real_constante_equivale_a_la_nominal_de_cada_anio():
+    senda = [0.043, 0.03, 0.03, 0.03, 0.03]
+    f = flujo_caja(crear_proyecto(**EJEMPLO), Senda(senda, []))
+    factor, nominal = 1.0, 0.0
+    for t, fila in enumerate(f.corriente):
+        if t:
+            factor *= 1.08 * (1 + senda[t - 1])           # (1 + r)(1 + π_t): nominal del año t
+        nominal += fila.flujo_libre / factor
+    assert evaluar(f, 0.08, "real").valor("vpn") == pytest.approx(nominal)
+
+
+def test_la_tir_real_es_la_nominal_sin_la_inflacion():
+    f = flujo_caja(crear_proyecto(**EJEMPLO), Senda([0.03] * 5, []))
+    nominal = evaluar(f, 0.15).valor("tir")
+    real = evaluar(f, 0.08, "real").valor("tir")
+    assert 1 + nominal == pytest.approx((1 + real) * 1.03)            # Fisher
+
+
+def test_con_tasa_real_los_hallazgos_y_la_tir_dicen_real():
+    r = evaluacion(0.10, tipo="real")                     # sin inflación: las cifras del caso a mano
+    assert r.hallazgos[0] == ("Con una tasa de oportunidad de 10 % real, el proyecto crea valor: "
+                              "deja $ 3.109.400 más, en pesos de hoy, que invertir esa plata en la "
+                              "alternativa.")
+    assert ("La TIR real es 11,11 %, mayor que la tasa de oportunidad de 10 % real: el proyecto "
+            "rinde más que la alternativa.") in r.hallazgos
+    assert "real" in next(i.nombre for i in r.indicadores if i.clave == "tir")
+
+
+def test_con_el_wacc_compara_contra_lo_que_cuesta_el_capital():
+    r = evaluacion(0.10, tipo="wacc")
+    assert r.hallazgos[0] == ("Con el costo de capital de la empresa (WACC) de 10 % real, el "
+                              "proyecto crea valor: deja $ 3.109.400 más, en pesos de hoy, de lo "
+                              "que exigen los dueños y los bancos que lo financian.")
+    assert ("La TIR real es 11,11 %, mayor que el WACC de 10 %: el proyecto rinde más de lo que "
+            "cuesta su capital.") in r.hallazgos
+    assert "Recupera la inversión, con el costo de su capital, en 4,9 años de 5." in r.hallazgos
+
+
+def test_con_el_wacc_y_vpn_negativo():
+    r = evaluacion(0.12, tipo="wacc")
+    assert r.hallazgos[0].startswith("Con el costo de capital de la empresa (WACC) de 12 % real, el "
+                                     "proyecto no crea valor: deja $ ")
+    assert r.hallazgos[0].endswith("menos, en pesos de hoy, de lo que exigen los dueños y los "
+                                   "bancos que lo financian.")
+    assert ("La TIR real es 11,11 %, menor que el WACC de 12 %: el proyecto rinde, pero menos de lo "
+            "que cuesta su capital.") in r.hallazgos
+
+
+def test_con_el_wacc_supone_el_riesgo_y_la_financiacion_de_siempre():
+    r = evaluacion(0.10, tipo="wacc")
+    assert any("mismo riesgo" in s and "deuda y patrimonio" in s for s in r.supuestos)
+    assert any("TIRM" in s and "WACC" in s for s in r.supuestos)

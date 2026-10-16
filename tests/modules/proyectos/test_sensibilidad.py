@@ -2,8 +2,15 @@
 import pytest
 
 from modules.proyectos.flujo import Senda, crear_proyecto, flujo_caja
-from modules.proyectos.matematica_financiera import tir
-from modules.proyectos.sensibilidad import POR_CLAVE, critico_de, escenario, movimiento, sensibilidad
+from modules.proyectos.matematica_financiera import tir, vpn
+from modules.proyectos.sensibilidad import (
+    POR_CLAVE,
+    critico_de,
+    escenario,
+    movimiento,
+    sensibilidad,
+    texto_critico,
+)
 
 EJEMPLO = dict(nombre="Remodelación", inversion=100_000_000, vida_util=5, horizonte=5,
                ingresos=60_000_000, crecimiento_real=0, costos_variables=0.30,
@@ -11,8 +18,8 @@ EJEMPLO = dict(nombre="Remodelación", inversion=100_000_000, vida_util=5, horiz
 SIN_INFLACION = Senda([0] * 5, [])
 
 
-def tornado(tasa: float = 0.10, **cambios):
-    return sensibilidad(crear_proyecto(**{**EJEMPLO, **cambios}), SIN_INFLACION, tasa)
+def tornado(tasa: float = 0.10, real: bool = False, **cambios):
+    return sensibilidad(crear_proyecto(**{**EJEMPLO, **cambios}), SIN_INFLACION, tasa, real)
 
 
 def test_caso_a_mano_ordenado_de_mayor_a_menor_efecto():
@@ -106,3 +113,23 @@ def test_valor_critico_de_un_dato_en_palabras():
                                          "3,1 % (a $ 58.156.737), con todo lo demás igual.")
     assert critico_de(tornado(tasa=0.15), "ingresos").startswith(
         "El proyecto pasa a crear valor si los ingresos suben")
+
+
+def test_con_tasa_real_usa_los_flujos_de_hoy_y_la_tasa_critica_es_la_tir_real():
+    proyecto, senda = crear_proyecto(**EJEMPLO), Senda([0.03] * 5, [])
+    reales = [f.flujo_libre for f in flujo_caja(proyecto, senda).real]
+    s = sensibilidad(proyecto, senda, 0.08, real=True)
+    assert s.vpn_base == pytest.approx(vpn(0.08, reales))
+    tasa = next(f for f in s.filas if f.variable == "tasa")
+    assert tasa.valor_critico == pytest.approx(tir(reales)[0], abs=1e-6)
+    assert tasa.nombre == "Tasa de oportunidad real"
+
+
+def test_con_tasa_real_la_tasa_se_dice_real():
+    s = tornado(real=True)
+    fila = next(f for f in s.filas if f.variable == "tasa")
+    assert texto_critico(fila, real=True) == "la tasa de oportunidad real sube a 11,11 %"
+    assert critico_de(s, "tasa") == ("El proyecto deja de crear valor si la tasa de oportunidad "
+                                     "real sube a 11,11 %, con todo lo demás igual.")
+    r = escenario(crear_proyecto(**EJEMPLO), SIN_INFLACION, 0.10, "tasa", 0.10, real=True)
+    assert "la tasa de oportunidad real sube a 11,00 %" in r.hallazgos[1]
