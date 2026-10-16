@@ -171,9 +171,10 @@ Se reemplaza al cerrar cada pieza; no se acumula (la historia va en
 
 - Módulo 3 hecho: matemática financiera, flujo, evaluación y sensibilidad del
   proyecto, conciliados a mano por el usuario.
-- Siguiente: `costo-capital`. `SPEC-costo-capital.md` en borrador, pendiente
-  de dos respuestas del usuario (beta del sector; qué mostrar sin estados
-  financieros). Monte Carlo después del módulo 2.
+- En curso: `costo-capital` (especificación aprobada el 16/10/2026, plan en
+  `tasks/`). Falta que el usuario lea la beta sin deuda de "Hotel/Gaming" en
+  `betaemerg.xls` de Damodaran (bloquea la tarea 3). Monte Carlo después del
+  módulo 2.
 - Pendientes: cargar el Informe de Política Monetaria de octubre (sale a fin
   de mes); bajar el contexto de LM Studio a 8.192 si vuelve a caerse; validar
   la referencia contra el SIIS y revisar valores extremos; plantilla Excel
