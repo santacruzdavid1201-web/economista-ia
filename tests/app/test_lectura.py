@@ -2,6 +2,7 @@
 import pytest
 
 from app.orchestrator.lectura import (
+    pide_wacc,
     direccion,
     monto_en_pesos,
     montos,
@@ -138,3 +139,14 @@ def test_variable_del_proyecto(pregunta, esperado):
 ])
 def test_direccion(pregunta, esperado):
     assert direccion(pregunta) == esperado
+
+
+@pytest.mark.parametrize("pregunta, esperado", [
+    ("¿Mi proyecto crea valor con el WACC?", True),
+    ("¿Y con el costo de capital de la empresa?", True),
+    ("Evalúalo con el costo del capital", True),
+    ("¿Me conviene el proyecto?", False),
+    ("¿Y si mi tasa de oportunidad es 12 %?", False),
+])
+def test_pide_evaluar_con_el_wacc(pregunta, esperado):
+    assert pide_wacc(pregunta) is esperado

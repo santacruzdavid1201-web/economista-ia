@@ -176,6 +176,15 @@ def variable_del_proyecto(pregunta: str) -> tuple[str | None, bool]:
     return None, False
 
 
+# "¿Crea valor con el WACC?": la tasa la calcula Python; el modelo no tiene cifra que pasar
+WACC = r"\bwacc\b|costo (?:promedio ponderado )?del? capital"
+
+
+def pide_wacc(pregunta: str) -> bool:
+    """La pregunta pide evaluar con el WACC (el costo de capital) de la empresa."""
+    return bool(re.search(WACC, sin_tildes(pregunta)))
+
+
 def direccion(pregunta: str) -> int | None:
     """1 si el dato sube, -1 si baja, None si la pregunta no lo dice (o dice las dos cosas)."""
     texto = sin_tildes(pregunta)

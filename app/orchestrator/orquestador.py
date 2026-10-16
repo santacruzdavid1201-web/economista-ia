@@ -257,7 +257,8 @@ def _redactar(cliente: ClienteChat, sistema: str, usuario: str, permitidas: list
             usuario += ("\n\nTu respuesta anterior calificaba el resultado sin una comparación "
                         "con el sector que lo respalde. Reescríbela sin calificativos: no uses "
                         "«significativo», «significativamente», «preocupante», «alarmante», "
-                        "«grave», «conviene» ni «rentable»; describe las cifras.")
+                        "«grave», «conviene», «rentable», «debes usar» ni «debes utilizar»; "
+                        "describe las cifras.")
     return None
 
 

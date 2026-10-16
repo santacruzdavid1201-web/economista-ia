@@ -30,17 +30,25 @@ ANIO = re.compile(r"(?:19|20)\d\d")
 def cifras_no_respaldadas(respuesta: str, *fuentes: str, anios_libres: bool = False) -> list[str]:
     """Cifras de la respuesta que no aparecen en ninguna de las fuentes."""
     permitidas = set().union(*(numeros(f) for f in fuentes))
-    return sorted({n for peso, n, pct in CIFRA.findall(respuesta) if n not in permitidas
-                   and (n not in LIBRES or peso or pct)
-                   and not (anios_libres and ANIO.fullmatch(n) and not (peso or pct))})
+    sobrantes = set()
+    for peso, n, pct in CIFRA.findall(respuesta):
+        if peso and pct:          # "$ 8,17 %": ni monto ni tasa; se nombra tal cual para corregirla
+            sobrantes.add(f"$ {n} %")
+        elif (n not in permitidas and (n not in LIBRES or peso or pct)
+              and not (anios_libres and ANIO.fullmatch(n) and not (peso or pct))):
+            sobrantes.add(n)
+    return sorted(sobrantes)
 
 
 # Sin comparación sectorial no hay con qué calificar un resultado; el 7B lo hacía igual
 # ("incremento significativo"), aunque el prompt y un hallazgo lo prohibían. Raíces, sin
 # tildes; la lista crece con los errores que aparezcan en la evaluación.
 # "conviene" y "rentable" (15/10/2026): con "¿me conviene el proyecto?" el 7B contestó
-# "el proyecto no conviene"; crear valor es un criterio, no una recomendación
-CALIFICATIVOS = ("significativ", "preocupante", "alarmante", "grave", "conviene", "rentable")
+# "el proyecto no conviene"; crear valor es un criterio, no una recomendación.
+# "debes usar" (16/10/2026): con "¿con qué tasa debo descontar?" presentó el WACC como la tasa
+# correcta; es una referencia. En el reintento cambió "usar" por "utilizar"
+CALIFICATIVOS = ("significativ", "preocupante", "alarmante", "grave", "conviene", "rentable",
+                 "debes usar", "debe usar", "debes utilizar", "debe utilizar")
 
 
 def calificativos(texto: str) -> list[str]:

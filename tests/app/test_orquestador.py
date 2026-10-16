@@ -257,6 +257,8 @@ def test_verificador():
     assert cifras_no_respaldadas("Suben 5 % con inflación del 3%: crecen 2 %", datos) == [
         "2", "3", "5"]
     assert cifras_no_respaldadas("Cuesta $ 7 en 2 días", datos) == ["7"]
+    # Con $ y % a la vez no es ni monto ni tasa: el 7B escribió "WACC de $ 8,17 % real"
+    assert cifras_no_respaldadas("Un WACC de $ 8,17 % real", "WACC: 8,17 %") == ["$ 8,17 %"]
 
 
 def test_datos_incluyen_glosario_solo_de_lo_usado(ctx):
@@ -588,6 +590,11 @@ def test_evaluar_proyecto_solo_pide_la_tasa():
 def test_recomendar_o_calificar_un_proyecto_es_un_calificativo():
     # Con "¿me conviene el proyecto?" el 7B contestó "el proyecto no conviene"
     assert calificativos("El proyecto no conviene y no es rentable.") == ["conviene", "rentable"]
+    # El WACC es una referencia: el 7B contestó "debes usar una tasa real del 8,17 %"
+    assert calificativos("Debes usar el 8 %; la empresa debe usar otra") == ["debes usar",
+                                                                             "debe usar"]
+    # En el reintento cambió "usar" por "utilizar"
+    assert calificativos("Debes utilizar una tasa real") == ["debes utilizar"]
     assert calificativos("La rentabilidad del patrimonio es 12 %.") == []
 
 
@@ -674,3 +681,66 @@ def test_sensibilidad_con_tasa_real_usa_los_flujos_de_hoy():
     leido = leer_proyecto(proyecto, HOY)
     reales = [f.flujo_libre for f in flujo_caja(leido.proyecto, leido.senda).real]
     assert r.resultados[0].valor("vpn") == pytest.approx(vpn(0.15, reales))
+
+
+
+# --------------------------------------------------------------------------- #
+# Costo de capital (WACC)
+# --------------------------------------------------------------------------- #
+from app.orchestrator import tools_registry  # noqa: E402
+from app.orchestrator.proyecto import costo_capital_de  # noqa: E402
+
+
+def serie_costo(variable, geografia="nacional", desde=None, hoy=None):
+    from data_sources.externos.series.modelo import Serie
+    obs = {"tes_uvr_10": [(date(2026, 10, 9), 6.74)],
+           "ipc": [(date(2023, 12, 31), 100.0), (date(2024, 12, 31), 105.1)],
+           "meta_inflacion": [(date(2026, 12, 31), 3.0)]}[variable]
+    return Serie(clave=f"{variable}_nacional", nombre=variable, fuente=f"BanRep {variable}",
+                 unidad="%", frecuencia="diaria", geografia="nacional", consultada=HOY,
+                 observaciones=obs)
+
+
+def test_costo_capital_de_la_empresa_con_pocas_tasas_para_el_modelo():
+    ctx = ContextoEmpresa(historial=hacer_historial(), serie=serie_costo)
+    llm = LLMFalso(herramienta("calcular_costo_capital"), texto("Es una referencia."))
+    r = responder("¿Cuál es el costo de capital de mi empresa?", ctx, llm, HOY)
+    assert r.origen == "llm" and r.herramienta == "calcular_costo_capital"
+    assert [i.clave for i in r.resultados[0].indicadores] == [
+        "costo_patrimonio", "costo_deuda_real", "peso_deuda", "wacc", "wacc_nominal"]
+    usuario = llm.llamadas[1]["usuario"]
+    assert "Costo de capital promedio ponderado" in usuario and "Tasa sin riesgo" not in usuario
+
+
+def test_costo_capital_sin_empresa_da_el_costo_de_los_activos(monkeypatch):
+    monkeypatch.setattr(tools_registry.catalogo, "serie", serie_costo)
+    llm = LLMFalso(herramienta("calcular_costo_capital"), texto("Es una referencia."))
+    r = responder("¿Cuál es mi costo de capital?", None, llm, HOY)
+    assert r.origen == "llm"
+    assert [i.clave for i in r.resultados[0].indicadores] == ["costo_activos",
+                                                              "costo_activos_nominal"]
+
+
+def test_costo_capital_no_pide_periodo():
+    e = next(e for e in esquema_openai() if e["function"]["name"] == "calcular_costo_capital")
+    assert "periodo" not in e["function"]["parameters"]["properties"]
+
+
+def test_evaluar_con_el_wacc_que_pide_la_pregunta():
+    ctx = ContextoEmpresa(historial=hacer_historial(), serie=serie_costo)
+    llm = LLMFalso(herramienta("evaluar_proyecto"), texto("Con el WACC, el proyecto crea valor."))
+    r = responder("¿Mi proyecto crea valor con el WACC?", ctx, llm, HOY, proyecto=PROYECTO_3)
+    wacc = costo_capital_de(ctx.historial, date.today(), 0.35, serie=serie_costo).valor("wacc")
+    escrita = f"{wacc * 100:.2f}".replace(".", ",")
+    assert r.resultados[0].hallazgos[0].startswith(
+        f"Con el costo de capital de la empresa (WACC) de {escrita} % real")
+    assert any("WACC de la empresa calculado" in s for s in r.resultados[0].supuestos)
+
+
+def test_evaluar_con_el_wacc_sin_empresa_usa_el_costo_de_los_activos(monkeypatch):
+    monkeypatch.setattr(tools_registry.catalogo, "serie", serie_costo)
+    llm = LLMFalso(herramienta("evaluar_proyecto"), texto("El proyecto crea valor."))
+    r = responder("¿Mi proyecto crea valor con el WACC?", None, llm, HOY, proyecto=PROYECTO_3)
+    assert r.resultados[0].hallazgos[0].startswith("Con una tasa de oportunidad de ")
+    assert " real, el proyecto" in r.resultados[0].hallazgos[0]
+    assert any("costo de capital de los activos" in s for s in r.resultados[0].supuestos)

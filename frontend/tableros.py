@@ -9,7 +9,13 @@ from collections.abc import Mapping
 from datetime import date
 
 from app.orchestrator.lectura import montos
-from app.orchestrator.proyecto import PROYECTO_EJEMPLO, costo_capital_de, leer_proyecto, numero
+from app.orchestrator.proyecto import (
+    PROYECTO_EJEMPLO,
+    costo_capital_de,
+    leer_proyecto,
+    numero,
+    tarifa_de,
+)
 from app.orchestrator.tools_registry import (
     PANORAMA,
     POR_NOMBRE,
@@ -515,10 +521,8 @@ def referencia(ctx: ContextoEmpresa | None, valores: Mapping[str, object],
     tasa al formulario: el WACC como "wacc"; el costo de los activos como tasa "real", porque no
     es el WACC de la empresa. Usa la tarifa de renta del formulario (35 % si no es válida).
     """
-    tarifa = numero(str(valores.get("tarifa_renta", "")))
-    tarifa = tarifa / 100 if tarifa is not None and 0 <= tarifa <= 100 else 0.35
     try:
-        r = costo_capital_de(ctx.historial if ctx else None, hoy or date.today(), tarifa,
+        r = costo_capital_de(ctx.historial if ctx else None, hoy or date.today(), tarifa_de(valores),
                              serie=ctx.serie if ctx else catalogo.serie)
     except ErrorProyecto as e:
         return {"errores": e.mensajes}

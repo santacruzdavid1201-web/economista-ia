@@ -45,6 +45,15 @@ def _inflacion(valor: float) -> str:
     return formatear(valor, "proporcion")          # "4,3 %": como la publican el BanRep y el DANE
 
 
+def _uso(nombre: str, tasa: float) -> str:
+    """Con qué tasa se descuenta: el 7B contestó "debes usar 12,82 %, equivalente nominal del
+    primer año" para descontar flujos en pesos de hoy."""
+    # Dicho como referencia: el 7B copia la redacción y la pregunta trae "¿con qué tasa debo…?"
+    return (f"La referencia para descontar los flujos en pesos de hoy es {nombre}, {_pct(tasa)}; "
+            "el equivalente nominal del primer año solo sirve para compararlo con tasas en pesos "
+            "corrientes, como las de los bancos.")
+
+
 def _nominal(real: float, inflacion_1: float) -> float:
     return (1 + real) * (1 + inflacion_1) - 1
 
@@ -117,7 +126,7 @@ def costo_capital(tes_uvr: Serie, p: Parametros, tarifa: float, inflacion_1: flo
             hallazgos=[hallazgo + f" Como referencia, el costo de capital de un negocio del sector "
                        f"sin deuda (costo de los activos) es {_pct(ku)} en términos reales; "
                        f"equivale a {_pct(_nominal(ku, inflacion_1))} en pesos corrientes el "
-                       "primer año.", REFERENCIA])
+                       "primer año.", _uso("el costo de los activos", ku), REFERENCIA])
 
     if historial is None:
         return sin_wacc("Sin estados financieros no se puede calcular el costo de capital de su "
@@ -161,7 +170,8 @@ def costo_capital(tes_uvr: Serie, p: Parametros, tarifa: float, inflacion_1: flo
     if deuda <= 0:
         hallazgos = [f"La empresa no tiene deuda financiera: su costo de capital es el de sus "
                      f"dueños, {_pct(ke)} en términos reales; equivale a "
-                     f"{_pct(_nominal(ke, inflacion_1))} en pesos corrientes el primer año."]
+                     f"{_pct(_nominal(ke, inflacion_1))} en pesos corrientes el primer año.",
+                     _uso("el WACC real", ke)]
         wacc = ke
     else:
         kd, es_promedio = tasa_implicita(historial, i)
@@ -214,6 +224,7 @@ def costo_capital(tes_uvr: Serie, p: Parametros, tarifa: float, inflacion_1: flo
         hallazgos = ([] if wacc is None else [
             f"El costo de capital de la empresa (WACC) es {_pct(wacc)} en términos reales; "
             f"equivale a {_pct(_nominal(wacc, inflacion_1))} en pesos corrientes el primer año.",
+            _uso("el WACC real", wacc),
             f"Es lo mínimo que debe rendir un proyecto con el riesgo del negocio de siempre para "
             f"pagarles a los dueños y a los bancos lo que exigen: los dueños exigen {_pct(ke)} "
             f"real (costo del patrimonio) y la deuda cuesta {_pct(kd_real)} real después de "

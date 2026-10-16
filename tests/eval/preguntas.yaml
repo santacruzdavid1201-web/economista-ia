@@ -27,7 +27,7 @@
 
 criterios:
   # Reglas duras: deben pasar al 100 %
-  bloques_duros: [A, B, C, F, G, H, I, J, K, L, M, N]
+  bloques_duros: [A, B, C, F, G, H, I, J, K, L, M, N, O]
   # Si más de esta fracción de las respuestas redactables sale de respaldo,
   # hay que ajustar el prompt de redacción
   max_respaldo: 0.20
@@ -47,6 +47,7 @@ bloques:
   L: Matemática financiera
   M: Evaluación de proyectos
   N: Sensibilidad del proyecto
+  O: Costo de capital
 
 casos:
   # ------------------------------------------------------------------------ #
@@ -690,3 +691,64 @@ casos:
     espera:
       herramienta: consulta_conceptual
       fuentes: [Evaluación de proyectos]
+
+  # ------------------------------------------------------------------------ #
+  # O. Costo de capital (16/10/2026): WACC del hotel de demostración, 8,17 %
+  # real (12,82 % nominal el primer año). Con el WACC el proyecto de ejemplo crea
+  # valor; con el 15 % nominal del formulario, no. Nunca es "la" tasa correcta.
+  # ------------------------------------------------------------------------ #
+  - id: "70"
+    bloque: O
+    pregunta: ¿Cuál es el costo de capital de mi empresa?
+    espera:
+      herramienta: calcular_costo_capital
+      origen: [llm, respaldo]
+      cifra_de: [wacc]
+      contiene: [real]
+      no_contiene: [conviene, rentable, recomiendo]
+    revisar: Dice que el WACC es real, da su equivalente nominal y que es una referencia, no una regla.
+
+  - id: "71"
+    bloque: O
+    pregunta: ¿Cuál es mi WACC?
+    espera:
+      herramienta: calcular_costo_capital
+      origen: [llm, respaldo]
+      cifra_de: [wacc]
+
+  - id: "72"
+    bloque: O
+    pregunta: ¿Cuánto le cuesta a mi empresa la deuda y cuánto el patrimonio?
+    espera:
+      herramienta: calcular_costo_capital
+      origen: [llm, respaldo]
+      cifra_de: [costo_patrimonio, costo_deuda_real]
+    revisar: No confunde el costo real de la deuda con la tasa que cobra el banco.
+
+  - id: "73"
+    bloque: O
+    pregunta: ¿Con qué tasa debo descontar mi proyecto?
+    espera:
+      herramienta: [calcular_costo_capital, consulta_conceptual]
+      # El 7B contestó "debes usar una tasa del 12,82 %, equivalente nominal del primer
+      # año" (16/10/2026): receta y tasa equivocada para flujos en pesos de hoy
+      # En el reintento cambió "usar" por "utilizar"
+      no_contiene: [debes usar, debe usar, debes utilizar, debe utilizar, tienes que usar]
+    revisar: Si calcula, da el WACC real como referencia para flujos en pesos de hoy, no el nominal ni como la tasa correcta.
+
+  - id: "74"
+    bloque: O
+    pregunta: ¿Mi proyecto crea valor con el WACC de la empresa?
+    espera:
+      herramienta: evaluar_proyecto
+      origen: [llm, respaldo]
+      contiene: [crea valor, WACC]
+      no_contiene: [no crea valor, rentable, conviene]
+    revisar: Compara con lo que cuesta su capital (lo que exigen los dueños y los bancos); la TIR es real.
+
+  - id: "75"
+    bloque: O
+    pregunta: ¿Qué es el WACC?
+    espera:
+      herramienta: consulta_conceptual
+      fuentes: ["Costo de capital (WACC): con qué tasa descontar un proyecto"]

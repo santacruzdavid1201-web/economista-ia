@@ -152,6 +152,31 @@ recuperacion: >-
 indice_rentabilidad: >-
   Índice de rentabilidad: cuántos pesos de hoy devuelve el proyecto por cada
   peso invertido. Mayor que uno, crea valor; menor que uno, no.
+wacc: >-
+  Costo de capital promedio ponderado (WACC): lo que le cuesta a la empresa la
+  plata con que se financia, mezclando lo que exigen los dueños y lo que cobran
+  los bancos según cuánto pone cada uno. Va en términos reales (sin la
+  inflación) y es una referencia para evaluar proyectos con el riesgo del
+  negocio de siempre.
+wacc_nominal: >-
+  El WACC con la inflación esperada del primer año, para compararlo con tasas
+  que se cotizan en pesos corrientes, como las de los bancos.
+costo_patrimonio: >-
+  Lo que los dueños exigen ganar por poner su plata en la empresa, en términos
+  reales: una tasa sin riesgo más una prima por el riesgo del negocio y del país.
+costo_deuda_real: >-
+  Lo que le cuesta a la empresa su deuda con los bancos, después del ahorro de
+  impuestos que dan los intereses y sin la inflación.
+peso_deuda: >-
+  Qué parte de la financiación de la empresa (deuda financiera más patrimonio)
+  es deuda, en valores en libros.
+costo_activos: >-
+  Costo de capital de un negocio del sector sin deuda: lo que el mercado le
+  exigiría a esa inversión por su riesgo, en términos reales. Es la referencia
+  cuando no hay estados financieros para calcular el WACC.
+costo_activos_nominal: >-
+  El costo de capital de los activos con la inflación esperada del primer año,
+  para compararlo con tasas en pesos corrientes.
 vpn_escenario: >-
   El valor presente neto del proyecto si el dato cambia como dice la pregunta,
   con todo lo demás igual.

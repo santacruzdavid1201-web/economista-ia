@@ -102,6 +102,16 @@ def test_con_perdida_advierte_que_no_aprovecha_el_ahorro_de_impuestos():
     assert any("ahorro de impuestos" in a for a in r.advertencias)
 
 
+def test_con_que_tasa_se_descuenta_lo_dice_python():
+    # El 7B contestó "debes usar una tasa del 12,82 %, equivalente nominal del primer año"
+    assert ("La referencia para descontar los flujos en pesos de hoy es el WACC real, 10,77 %; "
+            "el equivalente nominal del primer año solo sirve para compararlo con tasas en pesos "
+            "corrientes, como las de los bancos.") in calcular().hallazgos
+    sin_ef = costo_capital(TES_UVR, PARAMETROS, tarifa=0.35, inflacion_1=0.043)
+    assert any(h.startswith("La referencia para descontar los flujos en pesos de hoy es el "
+                            "costo de los activos, 11,95 %") for h in sin_ef.hallazgos)
+
+
 def test_hallazgos_dicen_real_y_nominal_y_que_es_una_referencia():
     texto = " ".join(calcular().hallazgos)
     assert "10,77 %" in texto and "15,53 %" in texto

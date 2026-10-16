@@ -36,7 +36,10 @@ Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del 
 ### Punto de control: tablero
 - [ ] Criterio de éxito 2 con la interfaz real.
 
-- [ ] **5. Chat, glosario, nota y bloque O**: herramienta `calcular_costo_capital`,
+- [x] **5. Chat, glosario, nota y bloque O**: herramienta `calcular_costo_capital`;
+  si una pregunta de evaluación o de sensibilidad dice "WACC" o "costo de capital",
+  Python calcula el WACC de la empresa y evalúa con él (tipo "wacc"; sin empresa, el
+  costo de los activos como tasa real, dicho), sin importar la tasa del formulario;
   reglas del enrutador, glosario (WACC, costo del patrimonio, costo de la deuda,
   beta, costo de los activos, prima de riesgo país), nota
   `conocimiento/costo-de-capital.md` para revisión del usuario, índice RAG, casos 70

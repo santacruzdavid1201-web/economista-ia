@@ -57,7 +57,8 @@ de pregunta:
    remite al profesional.
 
 Sin empresa cargada (se sube en la portada) el chat no calcula sobre la
-empresa; el panorama macro, el crédito y las tasas no la necesitan.
+empresa; el panorama macro, el crédito, las tasas y el proyecto no la
+necesitan (sin ella, el costo de capital es el de los activos).
 
 ## Módulos del MVP
 
@@ -114,9 +115,13 @@ Lecciones de las corridas del set de evaluación (`tests/eval/preguntas.yaml`).
   sin su nombre.
 - El benchmark es "empresas reportantes a Supersociedades", nunca el sector
   completo.
-- Nunca recomendar. "Conviene", "rentable" y los calificativos sin comparación
-  sectorial están en `CALIFICATIVOS` (`verificador.py`): se pide reescribir y,
-  si insiste, sale el respaldo.
+- Nunca recomendar. "Conviene", "rentable", las recetas ("debes usar") y los
+  calificativos sin comparación sectorial están en `CALIFICATIVOS`
+  (`verificador.py`): se pide reescribir y, si insiste, sale el respaldo. En el
+  reintento el 7B cambia la palabra por un sinónimo ("usar" → "utilizar"): la
+  lista lleva los dos.
+- Una cifra con "$" y "%" a la vez ("$ 8,17 %") se rechaza y se nombra tal cual
+  en el reintento.
 - Ninguna cifra de memoria. El verificador acepta cifras de la pregunta, salvo
   en la charla, donde solo valen las de la conversación previa (los años son
   libres). Los enteros 0-10 con % o $ no quedan libres.
@@ -171,12 +176,15 @@ Lecciones de las corridas del set de evaluación (`tests/eval/preguntas.yaml`).
 Se reemplaza al cerrar cada pieza; no se acumula (la historia va en
 `docs/decisiones.md` y en git; la anterior al 16/10/2026, en `docs/bitacora.md`).
 
-- Módulo 3 hecho: matemática financiera, flujo, evaluación y sensibilidad del
-  proyecto, conciliados a mano por el usuario.
-- En curso: `costo-capital` (especificación aprobada y ejemplo conciliado el
-  16/10/2026, plan en `tasks/`). Monte Carlo después del módulo 2.
-- Pendientes: cargar el Informe de Política Monetaria de octubre (sale a fin
-  de mes); bajar el contexto de LM Studio a 8.192 si vuelve a caerse; validar
+- Módulo 3 hecho: matemática financiera, flujo, evaluación, sensibilidad y
+  costo de capital (WACC, 16/10/2026), conciliados a mano por el usuario.
+  Monte Carlo después del módulo 2. Opción abierta: beta total (Damodaran)
+  para el dueño de pyme no diversificado.
+- Siguiente: módulo 2 (econometría), empezando por la capa de datos: series
+  propias de mayor frecuencia (ventas, precios, ocupación) y externas; probable
+  disparador de PostgreSQL. Incluye `sector-hotelero`.
+- Pendientes: revisar `conocimiento/costo-de-capital.md` (`revisado: false`);
+  cargar el Informe de Política Monetaria de octubre (sale a fin de mes); bajar el contexto de LM Studio a 8.192 si vuelve a caerse; validar
   la referencia contra el SIIS y revisar valores extremos; plantilla Excel
   para empresas sin software contable.
 

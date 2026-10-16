@@ -16,13 +16,14 @@ from app.orchestrator.lectura import (
     direccion,
     monto_en_pesos,
     periodicidad,
+    pide_wacc,
     sistema,
     tipo_de_tasa,
     tipo_destino,
     unidad_plazo,
     variable_del_proyecto,
 )
-from app.orchestrator.proyecto import ProyectoLeido, leer_proyecto
+from app.orchestrator.proyecto import ProyectoLeido, costo_capital_de, leer_proyecto, tarifa_de
 from data_sources.externos.referencia import homologar_empresa
 from data_sources.externos.series import catalogo
 from data_sources.externos.series.modelo import Serie
@@ -190,14 +191,57 @@ SIN_PROYECTO = ("Para evaluar su proyecto, primero escríbalo en la pestaña «S
                 "módulo Evaluación de proyectos y pulse Calcular (también sirve con el ejemplo).")
 
 
-def _proyecto_leido(argumentos: dict) -> ProyectoLeido:
-    """El último proyecto válido de la sesión, con la tasa de la pregunta si la da."""
+def _costo_de_hoy(ctx: ContextoEmpresa | None, valores: dict) -> ResultadoModulo:
+    """El costo de capital del día, con la tarifa de renta del proyecto de la sesión."""
+    try:
+        return costo_capital_de(ctx.historial if ctx else None, date.today(), tarifa_de(valores),
+                                serie=ctx.serie if ctx else catalogo.serie)
+    except ErrorProyecto as e:
+        raise ErrorHerramienta(" ".join(e.mensajes)) from e
+    except catalogo.ErrorSerie as e:
+        raise ErrorHerramienta(str(e)) from e
+
+
+def _tasa_wacc(ctx: ContextoEmpresa | None, valores: dict) -> tuple[dict, str]:
+    """
+    La pregunta pide el WACC: se calcula hoy y reemplaza la tasa del formulario, con dos
+    decimales como la copia el botón del tablero. Sin WACC (sin estados financieros o con
+    patrimonio negativo), el costo de los activos como tasa real: no es el WACC de la empresa.
+    """
+    r = _costo_de_hoy(ctx, valores)
+    valor = {i.clave: i.valor for i in r.indicadores}
+    if valor.get("wacc") is not None:
+        tasa, tipo = valor["wacc"], "wacc"
+        supuesto = "Se evaluó con el WACC de la empresa calculado hoy, como pide la pregunta."
+    elif valor.get("costo_activos") is not None:
+        tasa, tipo = valor["costo_activos"], "real"
+        supuesto = ("No hay WACC de la empresa (" + ("faltan sus estados financieros" if ctx is None
+                    else "su patrimonio en libros no es positivo") + "): se evaluó con el costo "
+                    "de capital de los activos, el de un negocio del sector sin deuda, como tasa "
+                    "real.")
+    else:
+        raise ErrorHerramienta(" ".join(r.advertencias[-1:]) or
+                               "No se pudo calcular el WACC de la empresa.")
+    escrita = f"{tasa * 100:.2f}".replace(".", ",")
+    return {**valores, "tasa_oportunidad": escrita, "tasa_tipo": tipo}, supuesto
+
+
+def _proyecto_leido(argumentos: dict,
+                    ctx: ContextoEmpresa | None = None) -> tuple[ProyectoLeido, list[str]]:
+    """
+    El último proyecto válido de la sesión, con la tasa de la pregunta si la da, o con el
+    WACC de la empresa si la pregunta lo pide; y los supuestos de esa elección.
+    """
     valores = argumentos.get("proyecto")
     if not valores:
         raise ErrorHerramienta(SIN_PROYECTO)
+    supuestos = []
     tasa = argumentos.get("tasa")
     if tasa not in (None, ""):                    # la de la pregunta es nominal, efectiva anual
         valores = {**valores, "tasa_oportunidad": str(tasa), "tasa_tipo": "nominal"}
+    elif pide_wacc(argumentos.get("pregunta", "")):
+        valores, supuesto = _tasa_wacc(ctx, valores)
+        supuestos.append(supuesto)
     try:
         leido = leer_proyecto(valores, date.today())
     except ErrorProyecto as e:
@@ -205,30 +249,31 @@ def _proyecto_leido(argumentos: dict) -> ProyectoLeido:
     if leido.tasa is None:
         raise ErrorHerramienta("Su proyecto no tiene tasa de oportunidad. Escríbala en la pestaña "
                                "«Su proyecto» o en la pregunta, por ejemplo: ¿y si mi tasa es 18 %?")
-    return leido
+    return leido, supuestos
 
 
-def _con_el_proyecto(r: ResultadoModulo, leido: ProyectoLeido, que: str) -> list[ResultadoModulo]:
+def _con_el_proyecto(r: ResultadoModulo, leido: ProyectoLeido, que: str,
+                     supuestos: list[str] = ()) -> list[ResultadoModulo]:
     """Dice qué proyecto se usó (el nombre lo escribió el usuario: va en las notas, nunca en el
     prompt) y suma las fuentes y avisos de la inflación."""
-    r.supuestos.insert(0, f"Se {que} el proyecto «{leido.proyecto.nombre}» de la pestaña Su "
-                          "proyecto, con flujos a precios de hoy.")
+    r.supuestos[:0] = [f"Se {que} el proyecto «{leido.proyecto.nombre}» de la pestaña Su "
+                       "proyecto, con flujos a precios de hoy.", *supuestos]
     r.fuentes, r.advertencias = leido.fuentes, r.advertencias + leido.avisos
     return [r]
 
 
 def _evaluar_proyecto(ctx: ContextoEmpresa | None, i: int | None,
                       argumentos: dict) -> list[ResultadoModulo]:
-    leido = _proyecto_leido(argumentos)
+    leido, supuestos = _proyecto_leido(argumentos, ctx)
     return _con_el_proyecto(evaluar(flujo_caja(leido.proyecto, leido.senda), leido.tasa,
-                                    leido.tipo), leido, "evaluó")
+                                    leido.tipo), leido, "evaluó", supuestos)
 
 
 def _sensibilidad_proyecto(ctx: ContextoEmpresa | None, i: int | None,
                            argumentos: dict) -> list[ResultadoModulo]:
     """Con cifra, el escenario pedido; sin ella, el resumen. La variable y si sube o baja las lee
     Python; el modelo solo da el porcentaje."""
-    leido = _proyecto_leido(argumentos)
+    leido, supuestos = _proyecto_leido(argumentos, ctx)
     pregunta = argumentos.get("pregunta", "")
     variable, asumida = variable_del_proyecto(pregunta)
     cambio = argumentos.get("cambio")
@@ -254,7 +299,21 @@ def _sensibilidad_proyecto(ctx: ContextoEmpresa | None, i: int | None,
             r.hallazgos.insert(0, frase)
     if asumida:
         r.supuestos.insert(0, "La pregunta dice «costos» sin más: se tomaron los costos variables.")
-    return _con_el_proyecto(r, leido, "analizó")
+    return _con_el_proyecto(r, leido, "analizó", supuestos)
+
+
+# Pocas tasas para el 7B, que mezcla cifras parecidas: la tasa sin riesgo, las primas y las
+# betas quedan en el desglose del tablero
+COSTO_CAPITAL_CHAT = {"costo_patrimonio", "costo_deuda_real", "peso_deuda", "wacc", "wacc_nominal",
+                      "costo_activos", "costo_activos_nominal"}
+
+
+def _costo_capital(ctx: ContextoEmpresa | None, i: int | None,
+                   argumentos: dict) -> list[ResultadoModulo]:
+    """Con empresa, su WACC del último balance; sin ella, el costo de los activos."""
+    r = _costo_de_hoy(ctx, argumentos.get("proyecto") or {})
+    r.indicadores = [x for x in r.indicadores if x.clave in COSTO_CAPITAL_CHAT]
+    return [r]
 
 
 def _convertir(ctx: ContextoEmpresa | None, i: int | None, argumentos: dict) -> list[ResultadoModulo]:
@@ -393,6 +452,13 @@ HERRAMIENTAS: list[Herramienta] = [
             "type": "number",
             "description": "Tasa de oportunidad en porcentaje, solo si la pregunta da una cifra; "
                            "p. ej. 18."}}),
+    Herramienta(
+        "calcular_costo_capital",
+        "¿Cuál es el costo de capital (WACC) de mi empresa? ¿Con qué tasa descuento o evalúo mis "
+        "proyectos? ¿Cuánto me cuesta financiarme con deuda y con patrimonio? Calcula el WACC con "
+        "los estados financieros; sin ellos, el costo de capital de un negocio del sector sin "
+        "deuda.",
+        _costo_capital, usa_periodo=False),
     Herramienta(
         "comparar_con_sector",
         "¿Cómo está la empresa frente a empresas similares de su sector? Ubica cada "

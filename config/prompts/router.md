@@ -30,6 +30,12 @@ Reglas:
   en cuánto recupera la inversión o qué pasa con otra tasa de oportunidad),
   usa evaluar_proyecto. Si pregunta qué es el VPN o la TIR, sin hablar de su
   proyecto, usa consulta_conceptual.
+- Si pregunta cuál es el costo de capital o el WACC de su empresa, con qué
+  tasa descontar o evaluar sus proyectos, o cuánto le cuesta financiarse con
+  deuda y con patrimonio, usa calcular_costo_capital. Si pregunta si su
+  proyecto crea valor con el WACC o con el costo de capital, usa
+  evaluar_proyecto. Si pregunta qué es el WACC o la beta, sin pedir la cifra
+  de su empresa, usa consulta_conceptual.
 - Si pregunta qué pasa con su proyecto si un dato cambia (vende menos, suben
   los costos, la inversión sale más cara), hasta cuánto puede caer un dato o
   qué variable pesa más, usa analizar_sensibilidad_proyecto. Si cambia la tasa

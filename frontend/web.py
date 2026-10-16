@@ -75,6 +75,7 @@ ANALISIS = {
     "analizar_crecimiento_real": "crecimiento real de los ingresos",
     "analizar_sensibilidad_tasas": "sensibilidad a las tasas de interés",
     "consultar_panorama_macro": "panorama de la economía",
+    "calcular_costo_capital": "costo de capital (WACC)",
     "comparar_con_sector": "comparación con el sector",
     "diagnostico_general": "diagnóstico general",
 }

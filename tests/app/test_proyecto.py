@@ -8,6 +8,7 @@ from app.orchestrator.proyecto import (
     costo_capital_de,
     leer_proyecto,
     parametros_costo_capital,
+    tarifa_de,
 )
 from data_sources.externos.pronostico_banrep import ErrorPronostico, Pronostico
 from data_sources.externos.series.modelo import Serie
@@ -122,3 +123,8 @@ def test_costo_capital_sin_tes_lo_dice():
         return series(variable)
     with pytest.raises(ErrorSerie, match="tes_uvr_10"):
         costo_capital_de(None, HOY, 0.35, serie=sin_tes, pronostico=pronostico)
+
+
+def test_tarifa_de_renta_del_formulario():
+    assert tarifa_de({"tarifa_renta": "9"}) == pytest.approx(0.09)
+    assert tarifa_de({"tarifa_renta": "abc"}) == 0.35 and tarifa_de({}) == 0.35

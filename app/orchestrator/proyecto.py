@@ -134,6 +134,12 @@ def senda_banrep(hoy: date, horizonte: int, serie: Callable = catalogo.serie,
     return senda_inflacion(hoy, horizonte, inflacion, vigente / 100), fuentes, avisos
 
 
+def tarifa_de(valores: Mapping[str, object]) -> float:
+    """La tarifa de renta del formulario del proyecto (fracción); 35 % si no hay o no es válida."""
+    tarifa = numero(str(valores.get("tarifa_renta", "")))
+    return tarifa / 100 if tarifa is not None and 0 <= tarifa <= 100 else 0.35
+
+
 def parametros_costo_capital() -> Parametros:
     """Spread, prima y beta de Damodaran, escritos a mano en config/costo_capital.yaml."""
     c = yaml.safe_load(COSTO_CAPITAL.read_text(encoding="utf-8"))
