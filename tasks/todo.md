@@ -34,7 +34,7 @@ Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del 
   `tests/frontend/test_tableros.py`.
 
 ### Punto de control: tablero
-- [ ] Criterio de éxito 2 con la interfaz real.
+- [x] Criterio de éxito 2 con la interfaz real: revisado por el usuario el 16/10/2026.
 
 - [x] **5. Chat, glosario, nota y bloque O**: herramienta `calcular_costo_capital`;
   si una pregunta de evaluación o de sensibilidad dice "WACC" o "costo de capital",
@@ -49,5 +49,6 @@ Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del 
   `tests/eval/preguntas.yaml`, tests.
 
 ### Punto de control: completo
-- [ ] Bloque O al 100 % con el modelo real; set completo; suite en verde;
-  documentación de cierre (criterios 3 y 4).
+- [x] Bloque O al 100 % con el modelo real; set completo; suite en verde;
+  documentación de cierre (criterios 3 y 4): set completo (77 casos) el 16/10/2026,
+  todos los bloques al 100 %, respaldo 1 %.

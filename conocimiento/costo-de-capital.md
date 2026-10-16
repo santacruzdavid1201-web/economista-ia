@@ -2,7 +2,7 @@
 titulo: "Costo de capital (WACC): con qué tasa descontar un proyecto"
 temas: [WACC, costo de capital, costo promedio ponderado, tasa de descuento, con qué tasa descontar, costo del patrimonio, lo que exigen los dueños, CAPM, beta, prima de riesgo, riesgo país, TES, costo de la deuda, Hamada, costo de los activos, tasa real, tasa nominal]
 fuente: Elaboración propia con base en Damodaran (Applied Corporate Finance) y Brealey, Myers y Allen (Principios de finanzas corporativas)
-revisado: false
+revisado: true
 ---
 El costo de capital es la rentabilidad mínima que debe dar una inversión para
 pagarles a quienes la financian lo que exigen por el riesgo que corren: los
@@ -22,12 +22,24 @@ pyme se usan los valores en libros, porque no tiene precio en bolsa. Lo que
 cobran los bancos (Kd) sale de los gastos financieros del año entre la deuda
 financiera promedio.
 
+Esa es la fórmula en pesos corrientes (nominal). Para descontar flujos en
+pesos de hoy, todo va en términos reales: el ahorro de impuestos se calcula
+sobre el interés nominal, que es el que se deduce de la renta, y después se le
+quita la inflación del año:
+
+Kd real = (1 + Kd × (1 − t)) / (1 + inflación) − 1
+
+En palabras: 1 más la tasa de la deuda después de impuestos, dividido entre 1
+más la inflación del año, menos 1. El WACC real mezcla el Ke real con ese Kd
+real, con los mismos pesos de deuda y patrimonio.
+
 Lo que exigen los dueños (Ke) se estima con el modelo CAPM:
 
 Ke = tasa sin riesgo + β × prima de riesgo
 
-En palabras: lo que paga una inversión sin riesgo, más una prima por el riesgo
-del negocio. La beta (β) mide cuánto se mueve el negocio con el mercado: 1 es
+En palabras: lo que paga una inversión sin riesgo (en Colombia, el TES menos
+el spread de incumplimiento, como se explica abajo), más una prima por el
+riesgo del negocio. La beta (β) mide cuánto se mueve el negocio con el mercado: 1 es
 como el promedio; menos de 1, menos. Una pyme no cotiza en bolsa, así que se
 usa la beta de su sector y se ajusta a su propia deuda con la fórmula de
 Hamada: β con deuda = β sin deuda × (1 + (1 − t) × D / P). Más deuda, más
@@ -37,7 +49,9 @@ En Colombia el bono del gobierno (TES) no está libre de riesgo: paga un spread
 por el riesgo de que el país no pague. El método de Damodaran le resta ese
 spread al TES y suma el riesgo país dentro de la prima de las acciones,
 multiplicado por la beta. Sumar la prima completa al TES completo contaría el
-riesgo país dos veces.
+riesgo país dos veces. El TES en UVR ya es una tasa real; las primas de
+Damodaran se miden en dólares, y aplicarlas a una tasa real en pesos es una
+aproximación.
 
 Real o nominal: los flujos y la tasa van en la misma moneda. Flujos en pesos
 de hoy se descuentan con una tasa real; flujos en pesos corrientes, con una
@@ -47,8 +61,9 @@ con una tasa nominal subvalora el proyecto: le descuenta una inflación que sus
 flujos no traen.
 
 Sin deuda, el costo de capital es el de los activos: lo que el mercado le
-exige a un negocio del sector solo por su riesgo. Es la referencia cuando no
-hay estados financieros para calcular el WACC.
+exige a un negocio del sector solo por su riesgo. Cuando no hay estados
+financieros para calcular el WACC, se muestra como referencia, no como el WACC
+de la empresa.
 
 Cuándo sirve: el WACC es la tasa adecuada para un proyecto con el mismo riesgo
 del negocio de siempre y que se financia con la misma mezcla de deuda y

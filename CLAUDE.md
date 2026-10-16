@@ -179,12 +179,13 @@ Se reemplaza al cerrar cada pieza; no se acumula (la historia va en
 - Módulo 3 hecho: matemática financiera, flujo, evaluación, sensibilidad y
   costo de capital (WACC, 16/10/2026), conciliados a mano por el usuario.
   Monte Carlo después del módulo 2. Opción abierta: beta total (Damodaran)
-  para el dueño de pyme no diversificado.
+  para el dueño de pyme no diversificado. Set completo (77 casos, bloques
+  A-O) el 16/10/2026: todos al 100 %, respaldo 1 %.
 - Siguiente: módulo 2 (econometría), empezando por la capa de datos: series
   propias de mayor frecuencia (ventas, precios, ocupación) y externas; probable
   disparador de PostgreSQL. Incluye `sector-hotelero`.
-- Pendientes: revisar `conocimiento/costo-de-capital.md` (`revisado: false`);
-  cargar el Informe de Política Monetaria de octubre (sale a fin de mes); bajar el contexto de LM Studio a 8.192 si vuelve a caerse; validar
+- Pendientes: cargar el Informe de Política Monetaria de octubre (sale a fin
+  de mes); bajar el contexto de LM Studio a 8.192 si vuelve a caerse; validar
   la referencia contra el SIIS y revisar valores extremos; plantilla Excel
   para empresas sin software contable.
 
