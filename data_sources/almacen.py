@@ -9,8 +9,12 @@ parámetros (%s), nunca con el texto de una entrada pegado al SQL.
 """
 from __future__ import annotations
 
+import re
 import sys
+from datetime import date
+from typing import NamedTuple
 
+import pandas as pd
 import psycopg
 
 from app.config import RAIZ, config
@@ -28,6 +32,8 @@ RESTRICCIONES = {
     "huespedes_no_negativos": "Los huéspedes no pueden ser negativos.",
     "vendidas_no_superan_disponibles": "Un día no puede vender más habitaciones de las que tiene "
                                        "disponibles.",
+    "carga_nit_fkey": "La empresa no está registrada en la base: guarde primero su NIT y su "
+                      "razón social.",
 }
 
 
@@ -78,6 +84,102 @@ def guardar_empresa(conexion: psycopg.Connection, nit: str, razon_social: str,
         conexion.rollback()
         raise traducir(e) from None
     conexion.commit()
+
+
+COLUMNAS = ("habitaciones_disponibles", "habitaciones_vendidas", "ingresos_habitaciones",
+            "tarifa_publicada", "tarifa_competencia", "promocion", "huespedes")
+OBLIGATORIAS = COLUMNAS[:3]
+FECHA = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+class ResultadoCarga(NamedTuple):
+    carga_id: int
+    desde: date
+    hasta: date
+    nuevas: int
+    actualizadas: int                  # días que el PMS corrigió
+    iguales: int                       # días que ya estaban, sin cambios
+    faltantes: list[date]              # huecos de la empresa después de la carga
+
+
+def _nativo(valor: object) -> object:
+    """numpy y pandas → tipos de Python, que es lo que psycopg sabe escribir; vacío → None."""
+    if valor is None or (not isinstance(valor, str) and pd.isna(valor)):
+        return None
+    if isinstance(valor, pd.Timestamp):
+        return valor.date()
+    return valor.item() if hasattr(valor, "item") else valor
+
+
+def _filas(nit: str, filas: pd.DataFrame, carga_id: int) -> list[tuple]:
+    opcionales = {c: filas[c] if c in filas else None for c in COLUMNAS}
+    return [(nit, _nativo(f), *(_nativo(opcionales[c].iloc[k]) if opcionales[c] is not None
+                                else None for c in COLUMNAS), carga_id)
+            for k, f in enumerate(filas["fecha"])]
+
+
+def cargar_pms(conexion: psycopg.Connection, nit: str, filas: pd.DataFrame,
+               archivo: str) -> ResultadoCarga:
+    """
+    Guarda los días del PMS de una empresa: los nuevos se agregan, los que el PMS corrigió
+    se actualizan y los iguales no se tocan, así que cargar dos veces el mismo archivo no
+    cambia nada. Todo o nada: si un día viola una regla, no se guarda ninguno.
+    """
+    if filas.empty:
+        raise ErrorAlmacen("El archivo no tiene días para cargar.")
+    faltan = [c for c in ("fecha", *OBLIGATORIAS) if c not in filas]
+    if faltan:
+        raise ErrorAlmacen(f"Faltan columnas obligatorias: {', '.join(faltan)}.")
+    fechas = pd.to_datetime(filas["fecha"]).dt.date
+    repetidas = sorted(set(fechas[fechas.duplicated()]))
+    if repetidas:
+        raise ErrorAlmacen(f"La fecha {repetidas[0]} aparece más de una vez en el archivo.")
+    filas = filas.assign(fecha=fechas)
+    desde, hasta = min(fechas), max(fechas)
+    lista = ", ".join(COLUMNAS)
+    distinto = (f"({', '.join(f'pms_diario.{c}' for c in COLUMNAS)}) IS DISTINCT FROM "
+                f"({', '.join(f'EXCLUDED.{c}' for c in COLUMNAS)})")
+    try:
+        cur = conexion.cursor()
+        carga_id = cur.execute(
+            "INSERT INTO carga (nit, archivo, desde, hasta, filas_nuevas, filas_actualizadas, "
+            "filas_iguales) VALUES (%s, %s, %s, %s, 0, 0, 0) RETURNING id",
+            (nit, archivo, desde, hasta)).fetchone()[0]
+        cur.execute("CREATE TEMP TABLE entrada (LIKE pms_diario INCLUDING DEFAULTS) ON COMMIT DROP")
+        with cur.copy(f"COPY entrada (nit, fecha, {lista}, carga_id) FROM STDIN") as copia:
+            for fila in _filas(nit, filas, carga_id):
+                copia.write_row(fila)
+        # Un solo INSERT: el día nuevo entra, el corregido se actualiza y el igual no se
+        # toca (el WHERE). xmax = 0 en las filas insertadas y ≠ 0 en las actualizadas.
+        escritas = cur.execute(
+            f"""INSERT INTO pms_diario (nit, fecha, {lista}, carga_id)
+                SELECT nit, fecha, {lista}, carga_id FROM entrada
+                ON CONFLICT (nit, fecha) DO UPDATE SET
+                    {', '.join(f'{c} = EXCLUDED.{c}' for c in COLUMNAS)},
+                    carga_id = EXCLUDED.carga_id, actualizado_en = now()
+                WHERE {distinto}
+                RETURNING (xmax = 0)""").fetchall()
+        nuevas = sum(1 for (insertada,) in escritas if insertada)
+        actualizadas, iguales = len(escritas) - nuevas, len(filas) - len(escritas)
+        cur.execute("UPDATE carga SET filas_nuevas = %s, filas_actualizadas = %s, "
+                    "filas_iguales = %s WHERE id = %s", (nuevas, actualizadas, iguales, carga_id))
+        faltantes = [f for (f,) in cur.execute(
+            """SELECT d::date FROM generate_series(
+                   (SELECT min(fecha) FROM pms_diario WHERE nit = %s),
+                   (SELECT max(fecha) FROM pms_diario WHERE nit = %s), interval '1 day') AS d
+               WHERE NOT EXISTS (SELECT 1 FROM pms_diario WHERE nit = %s AND fecha = d::date)
+               ORDER BY d""", (nit, nit, nit)).fetchall()]
+        conexion.commit()
+    except psycopg.errors.IntegrityError as e:
+        conexion.rollback()
+        error = traducir(e)
+        # La fila rechazada viene en el detalle de PostgreSQL: su fecha ubica el error
+        fecha = FECHA.search(e.diag.message_detail or "")
+        raise ErrorAlmacen(f"{error} Día: {fecha.group()}." if fecha else str(error)) from None
+    except Exception:
+        conexion.rollback()
+        raise
+    return ResultadoCarga(carga_id, desde, hasta, nuevas, actualizadas, iguales, faltantes)
 
 
 def main() -> int:

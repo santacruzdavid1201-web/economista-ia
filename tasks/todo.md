@@ -12,7 +12,7 @@ con y sin `TEST_DATABASE_URL`.
   termine en `_test` (criterio 1).
   Archivos: `db/init.sql`, `data_sources/almacen.py`, `app/config.py`, `.env.example`,
   `requirements.txt`, `tests/data_sources/test_almacen.py`.
-- [ ] **2. Carga incremental**: `cargar_pms` con upsert por tabla temporal, conteo de
+- [x] **2. Carga incremental**: `cargar_pms` con upsert por tabla temporal, conteo de
   nuevas, actualizadas e iguales, registro en `carga`, atomicidad con el error en
   español (fecha y regla) y huecos (criterios 2 a 4).
   Archivos: `data_sources/almacen.py`, `tests/data_sources/test_almacen.py`.
