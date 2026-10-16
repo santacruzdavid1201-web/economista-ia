@@ -37,6 +37,7 @@ class Config:
     # nomic exige prefijos de tarea; otros modelos (p. ej. bge-m3) van vacíos
     embeddings_prefijo_consulta: str = "search_query: "
     embeddings_prefijo_documento: str = "search_document: "
+    db_url: str | None = None          # PostgreSQL del módulo 2; sin ella, nada cambia
 
 
 def config() -> Config:
@@ -54,6 +55,7 @@ def config() -> Config:
                                                             "search_query: ")),
         embeddings_prefijo_documento=_prefijo(os.environ.get("EMBEDDINGS_PREFIJO_DOCUMENTO",
                                                              "search_document: ")),
+        db_url=os.environ.get("DATABASE_URL") or None,
     )
 
 

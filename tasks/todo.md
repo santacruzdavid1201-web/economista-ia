@@ -3,9 +3,9 @@
 Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del commit,
 con y sin `TEST_DATABASE_URL`.
 
-- [ ] **0. Requisito previo (usuario)**: usuario `economista`, bases `economista_ia` y
+- [x] **0. Requisito previo (usuario)**: usuario `economista`, bases `economista_ia` y
   `economista_ia_test`, y las dos variables en `.env` (SQL en el plan).
-- [ ] **1. Esquema y conexión**: `db/init.sql` con las tres tablas y sus
+- [x] **1. Esquema y conexión**: `db/init.sql` con las tres tablas y sus
   restricciones; `conectar`, `crear_esquema` (idempotente) y `guardar_empresa`;
   `python -m data_sources.almacen`; `DATABASE_URL` en la configuración; fixture de
   la base de prueba que se salta sin la variable y se niega con una base que no
