@@ -9,7 +9,7 @@ Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del 
   una función compartida y los tests de sensibilidad-tasas siguen en verde.
   Archivos: `modules/proyectos/wacc.py`, `modules/balance/comun.py`,
   `modules/macro/sensibilidad_tasas.py`, `tests/modules/proyectos/test_wacc.py`.
-- [ ] **2. Evaluación y sensibilidad con tasa real**: `tasa_tipo` en el formulario y
+- [x] **2. Evaluación y sensibilidad con tasa real**: `tasa_tipo` en el formulario y
   en `ProyectoLeido`; con tasa real r, el VPN de los flujos en pesos de hoy es igual
   al de los flujos corrientes descontados con (1 + r)(1 + π_t) − 1 de cada año
   (test de consistencia); TIR real; los hallazgos dicen "real"; una tasa escrita en

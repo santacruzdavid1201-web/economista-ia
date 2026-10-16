@@ -453,14 +453,14 @@ def flujo(formulario: Mapping[str, object] | None = None, hoy: date | None = Non
     except ErrorProyecto as e:
         return {"v": v, "errores": e.mensajes}
     f = flujo_caja(leido.proyecto, leido.senda)
-    r = evaluar(f, leido.tasa) if leido.tasa is not None else None
+    r = evaluar(f, leido.tasa, leido.tipo) if leido.tasa is not None else None
 
     def celda(valor: float) -> str:
         return "—" if abs(valor) < 0.5 else formatear(valor, "pesos")
 
     return {
         "v": v, "errores": [], "proyecto": leido.proyecto.nombre,
-        "evaluacion": _evaluacion(r, leido.tasa, leido.proyecto.horizonte) if r else None,
+        "evaluacion": _evaluacion(r, leido.tasa, leido.tipo, leido.proyecto.horizonte) if r else None,
         "anios": [fila.anio for fila in f.real],
         "filas": [{"clave": clave, "etiqueta": etiqueta, "total": clave == "flujo_libre",
                    "valores": [celda(getattr(fila, clave)) for fila in f.real]}
@@ -473,17 +473,25 @@ def flujo(formulario: Mapping[str, object] | None = None, hoy: date | None = Non
     }
 
 
-def _evaluacion(r: ResultadoModulo, tasa: float, horizonte: int) -> dict:
+# Contra qué se compara la TIR en su tarjeta, según el tipo de tasa
+FRENTE = {"nominal": "Frente a {} de oportunidad", "real": "Frente a {} real de oportunidad",
+          "wacc": "Frente al WACC de {} real"}
+
+
+def _evaluacion(r: ResultadoModulo, tasa: float, tipo: str, horizonte: int) -> dict:
     """Tarjetas de la evaluación. El resultado va en palabras, no solo en el color."""
     ind = {i.clave: i for i in r.indicadores}
+    real = tipo != "nominal"
 
     vpn, recuperacion = ind["vpn"].valor, ind["recuperacion"].valor
     return {
         "tarjetas": [
             _tarjeta(ind["vpn"], "VPN", "Crea valor" if vpn >= 0 else "No crea valor"),
-            _tarjeta(ind["tir"], "TIR", f"Frente a {como_la_escribio(tasa)} de oportunidad"
-                    if ind["tir"].valor is not None else "No hay una TIR única"),
-            _tarjeta(ind["tirm"], "TIRM", "Reinvierte a la tasa de oportunidad"),
+            _tarjeta(ind["tir"], "TIR real" if real else "TIR",
+                     FRENTE[tipo].format(como_la_escribio(tasa)) if ind["tir"].valor is not None
+                     else "No hay una TIR única"),
+            _tarjeta(ind["tirm"], "TIRM real" if real else "TIRM",
+                     "Reinvierte al WACC" if tipo == "wacc" else "Reinvierte a la tasa de oportunidad"),
             _tarjeta(ind["recuperacion"], "Recuperación", f"De {horizonte} años" if recuperacion
                     is not None else f"No se recupera en {horizonte} años"),
             _tarjeta(ind["indice_rentabilidad"], "Índice de rentabilidad",
@@ -493,9 +501,9 @@ def _evaluacion(r: ResultadoModulo, tasa: float, horizonte: int) -> dict:
     }
 
 
-def _critico(fila: FilaTornado) -> str:
+def _critico(fila: FilaTornado, real: bool) -> str:
     """En palabras, como los hallazgos: 'los ingresos caen 3,1 % (a $ 58.157.973)'."""
-    return texto_critico(fila) or "no llega a cero aunque el dato se mueva entre −99 % y +200 %"
+    return texto_critico(fila, real) or "no llega a cero aunque el dato se mueva entre −99 % y +200 %"
 
 
 def sensibilidad_tab(valores: Mapping[str, object] | None = None, hoy: date | None = None) -> dict:
@@ -510,7 +518,7 @@ def sensibilidad_tab(valores: Mapping[str, object] | None = None, hoy: date | No
     if leido.tasa is None:
         return {**salida, "errores": ["Escriba su tasa de oportunidad en la pestaña Su proyecto "
                                       "para ver la sensibilidad."]}
-    s = sensibilidad(leido.proyecto, leido.senda, leido.tasa)
+    s = sensibilidad(leido.proyecto, leido.senda, leido.tasa, leido.real)
     escala = max(abs(x - s.vpn_base) for f in s.filas for x in f.vpn.values()) or 1.0
 
     def posicion(valor: float) -> float:
@@ -524,14 +532,16 @@ def sensibilidad_tab(valores: Mapping[str, object] | None = None, hoy: date | No
             "nombre": f.nombre,
             "actual": formatear(f.actual, "tasa" if variable.en_nivel else "pesos"),
             "vpn": [formatear(f.vpn[c], "pesos") for c in CAMBIOS],
-            "critico": _critico(f),
+            "critico": _critico(f, s.real),
             "barra": {"izquierda": izquierda, "derecha": derecha},
             "descripcion": (f"{f.nombre}: con 20 % menos, VPN de {formatear(f.vpn[-0.2], 'pesos')}; "
                             f"con 20 % más, {formatear(f.vpn[0.2], 'pesos')}"),
         })
     cero = posicion(0)
     return {**salida, "proyecto": leido.proyecto.nombre,
-            "vpn": formatear(s.vpn_base, "pesos"), "tasa": como_la_escribio(leido.tasa),
+            "vpn": formatear(s.vpn_base, "pesos"),
+            "tasa": como_la_escribio(leido.tasa) + {"nominal": "", "real": " real",
+                                                    "wacc": " real (WACC)"}[leido.tipo],
             "filas": filas, "cero": cero if 0 <= cero <= 100 else None,
             "hallazgos": s.resultado.hallazgos,
             "avisos": leido.avisos + s.resultado.supuestos, "fuentes": leido.fuentes}

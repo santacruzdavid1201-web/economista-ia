@@ -24,9 +24,10 @@ Especificación: [SPEC-costo-capital.md](../SPEC-costo-capital.md)
   el actualizador la incluye solo. El TES en pesos (15274) queda fuera: ninguna
   fórmula lo usa y sería otra cifra parecida para el 7B. Se agrega si se quiere
   mostrar la inflación que espera el mercado.
-- La evaluación admite tasa real: un campo `tasa_tipo` (nominal / real) en el
-  formulario viaja con el proyecto de la sesión al tablero, a la sensibilidad y
-  al chat. Con tasa real se descuentan los flujos en pesos de hoy y la TIR sale
+- La evaluación admite tasa real: un campo `tasa_tipo` (nominal / real / wacc)
+  en el formulario viaja con el proyecto de la sesión al tablero, a la
+  sensibilidad y al chat. Con "wacc" los hallazgos comparan con lo que cuesta
+  el capital. Con tasa real se descuentan los flujos en pesos de hoy y la TIR sale
   real. Una tasa en la pregunta ("¿y si mi tasa es 18 %?") vuelve a nominal.
 - La senda del BanRep se extrae de `leer_proyecto` para que el costo de capital
   use el mismo π₁ que el flujo.

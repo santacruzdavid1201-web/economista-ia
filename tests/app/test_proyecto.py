@@ -52,9 +52,16 @@ def test_tasa_de_oportunidad_vacia_deja_el_flujo_sin_evaluar():
     assert leer(tasa_oportunidad="").tasa is None
 
 
+def test_el_tipo_de_tasa_es_nominal_por_defecto_y_se_puede_elegir():
+    assert leer().tipo == "nominal"
+    assert leer(tasa_tipo="").tipo == "nominal"          # proyectos guardados antes del campo
+    assert leer(tasa_tipo="real").tipo == "real" and leer(tasa_tipo="wacc").tipo == "wacc"
+
+
 @pytest.mark.parametrize("cambio, mensaje", [
     ({"tasa_oportunidad": "abc"}, "Tasa de oportunidad: escriba un porcentaje, por ejemplo 30."),
     ({"tasa_oportunidad": "150"}, "La tasa de oportunidad debe estar entre 0 % y 100 %."),
+    ({"tasa_tipo": "mensual"}, "Tipo de tasa: elija nominal, real o el WACC de la empresa."),
     ({"inversion": "mucho"}, "Escriba la inversión en pesos, por ejemplo 100 millones o 100.000.000."),
     ({"horizonte": "0"}, "El horizonte debe estar entre 1 y 30 años."),
 ])

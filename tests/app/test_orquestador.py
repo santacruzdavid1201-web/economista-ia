@@ -527,7 +527,9 @@ def test_sin_la_empresa_en_los_datos_de_lo_que_no_es_de_la_empresa(ctx):
 # Evaluación del proyecto de la sesión: sin empresa
 # --------------------------------------------------------------------------- #
 from app.orchestrator.orquestador import SIN_PROYECTO  # noqa: E402
-from app.orchestrator.proyecto import PROYECTO_EJEMPLO  # noqa: E402
+from app.orchestrator.proyecto import PROYECTO_EJEMPLO, leer_proyecto  # noqa: E402
+from modules.proyectos.flujo import flujo_caja  # noqa: E402
+from modules.proyectos.matematica_financiera import vpn  # noqa: E402
 
 # Inflación fija: la herramienta no necesita la red
 PROYECTO_3 = {**PROYECTO_EJEMPLO, "inflacion": "3"}            # tasa de ejemplo: 15 %
@@ -555,6 +557,22 @@ def test_evaluar_descarta_una_tasa_que_no_esta_en_la_pregunta():
     r = responder("¿Me conviene el proyecto?", None, llm, HOY, proyecto=PROYECTO_3)
     assert "tasa" not in r.argumentos
     assert r.resultados[0].hallazgos[0].startswith("Con una tasa de oportunidad de 15 %")
+
+
+def test_evaluar_con_el_wacc_del_proyecto():
+    llm = LLMFalso(herramienta("evaluar_proyecto"), texto("Con el WACC, el proyecto crea valor."))
+    proyecto = {**PROYECTO_EJEMPLO, "inflacion": "0", "tasa_oportunidad": "10", "tasa_tipo": "wacc"}
+    r = responder("¿Me conviene el proyecto?", None, llm, HOY, proyecto=proyecto)
+    assert r.resultados[0].hallazgos[0].startswith(
+        "Con el costo de capital de la empresa (WACC) de 10 % real")
+
+
+def test_la_tasa_de_la_pregunta_es_nominal_aunque_el_proyecto_use_el_wacc():
+    llm = LLMFalso(herramienta("evaluar_proyecto", tasa=10), texto("Al 10 %, crea valor."))
+    proyecto = {**PROYECTO_EJEMPLO, "inflacion": "0", "tasa_tipo": "wacc"}
+    r = responder("¿Y si mi tasa de oportunidad es 10 %?", None, llm, HOY, proyecto=proyecto)
+    assert r.resultados[0].hallazgos[0].startswith(
+        "Con una tasa de oportunidad de 10 % efectiva anual")
 
 
 def test_evaluar_sin_proyecto_remite_a_la_pestana():
@@ -647,3 +665,12 @@ def test_sensibilidad_sin_proyecto_remite_a_la_pestana():
     r = responder("¿Y si vendo 10 % menos?", None,
                   LLMFalso(herramienta("analizar_sensibilidad_proyecto", cambio=10)), HOY)
     assert r.texto == SIN_PROYECTO
+
+
+def test_sensibilidad_con_tasa_real_usa_los_flujos_de_hoy():
+    llm = LLMFalso(herramienta("analizar_sensibilidad_proyecto"), texto("Pesan más los ingresos."))
+    proyecto = {**PROYECTO_3, "tasa_tipo": "real"}
+    r = responder("¿Qué variable pesa más en mi proyecto?", None, llm, HOY, proyecto=proyecto)
+    leido = leer_proyecto(proyecto, HOY)
+    reales = [f.flujo_libre for f in flujo_caja(leido.proyecto, leido.senda).real]
+    assert r.resultados[0].valor("vpn") == pytest.approx(vpn(0.15, reales))

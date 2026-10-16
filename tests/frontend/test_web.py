@@ -376,6 +376,7 @@ def test_las_dos_pestanas_dicen_que_los_valores_son_un_ejemplo(cliente):
 def test_la_pestana_de_su_proyecto_abre_evaluada(cliente):
     r = cliente.get("/modulo/proyectos").text
     assert 'name="tasa_oportunidad"' in r and "Valor presente neto (VPN)" in r
+    assert 'name="tasa_tipo"' in r and 'value="wacc"' in r
 
 
 def test_sin_tasa_de_oportunidad_pide_escribirla(cliente):

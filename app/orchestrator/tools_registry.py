@@ -196,8 +196,8 @@ def _proyecto_leido(argumentos: dict) -> ProyectoLeido:
     if not valores:
         raise ErrorHerramienta(SIN_PROYECTO)
     tasa = argumentos.get("tasa")
-    if tasa not in (None, ""):
-        valores = {**valores, "tasa_oportunidad": str(tasa)}
+    if tasa not in (None, ""):                    # la de la pregunta es nominal, efectiva anual
+        valores = {**valores, "tasa_oportunidad": str(tasa), "tasa_tipo": "nominal"}
     try:
         leido = leer_proyecto(valores, date.today())
     except ErrorProyecto as e:
@@ -220,8 +220,8 @@ def _con_el_proyecto(r: ResultadoModulo, leido: ProyectoLeido, que: str) -> list
 def _evaluar_proyecto(ctx: ContextoEmpresa | None, i: int | None,
                       argumentos: dict) -> list[ResultadoModulo]:
     leido = _proyecto_leido(argumentos)
-    return _con_el_proyecto(evaluar(flujo_caja(leido.proyecto, leido.senda), leido.tasa), leido,
-                            "evaluó")
+    return _con_el_proyecto(evaluar(flujo_caja(leido.proyecto, leido.senda), leido.tasa,
+                                    leido.tipo), leido, "evaluó")
 
 
 def _sensibilidad_proyecto(ctx: ContextoEmpresa | None, i: int | None,
@@ -244,9 +244,10 @@ def _sensibilidad_proyecto(ctx: ContextoEmpresa | None, i: int | None,
             raise ErrorHerramienta("¿Qué dato del proyecto cambia? Por ejemplo: ¿y si vendo 10 % "
                                    "menos? o ¿y si los costos fijos suben 20 %?")
         signo = direccion(pregunta) or (1 if float(cambio) > 0 else -1)
-        r = escenario(leido.proyecto, leido.senda, leido.tasa, variable, signo * magnitud / 100)
+        r = escenario(leido.proyecto, leido.senda, leido.tasa, variable, signo * magnitud / 100,
+                      leido.real)
     else:
-        s = sensibilidad(leido.proyecto, leido.senda, leido.tasa)
+        s = sensibilidad(leido.proyecto, leido.senda, leido.tasa, leido.real)
         r = s.resultado
         # "¿Hasta cuánto pueden caer las ventas?": primero el valor crítico de ese dato
         if variable and (frase := critico_de(s, variable)):

@@ -13,6 +13,7 @@ from typing import NamedTuple
 from app.orchestrator.lectura import montos
 from data_sources.externos import pronostico_banrep
 from data_sources.externos.series import catalogo
+from modules.proyectos.evaluacion import TASAS
 from modules.proyectos.flujo import ErrorProyecto, Proyecto, Senda, crear_proyecto, senda_inflacion
 
 # Valores con que abre el formulario; el aviso de la pestaña dice que son un ejemplo
@@ -20,7 +21,8 @@ PROYECTO_EJEMPLO = {
     "nombre": "Remodelación de 10 habitaciones", "inversion": "100 millones", "vida_util": "5",
     "horizonte": "5", "ingresos": "60 millones", "crecimiento_real": "0",
     "costos_variables": "30", "costos_fijos": "10 millones", "capital_trabajo": "10",
-    "tarifa_renta": "35", "inflacion": "", "salvamento": "", "tasa_oportunidad": "15"}
+    "tarifa_renta": "35", "inflacion": "", "salvamento": "", "tasa_oportunidad": "15",
+    "tasa_tipo": "nominal"}
 # campo → etiqueta en los mensajes; los opcionales pueden ir vacíos
 MONTOS = {"inversion": "la inversión", "ingresos": "los ingresos del primer año",
           "costos_fijos": "los costos fijos", "salvamento": "el valor de salvamento"}
@@ -38,6 +40,12 @@ class ProyectoLeido(NamedTuple):
     fija: bool                    # la inflación la escribió el usuario
     fuentes: list[str]
     avisos: list[str]
+    tipo: str = "nominal"         # de la tasa: "nominal", "real" o "wacc" (ver evaluacion.TASAS)
+
+    @property
+    def real(self) -> bool:
+        """La tasa es real (o el WACC): descuenta los flujos en pesos de hoy."""
+        return TASAS[self.tipo].real
 
 
 def numero(texto: str) -> float | None:
@@ -81,6 +89,9 @@ def leer_proyecto(valores: Mapping[str, object], hoy: date,
     tasa = datos.pop("tasa_oportunidad", None)
     if tasa is not None and not 0 <= tasa <= 1:
         errores.append("La tasa de oportunidad debe estar entre 0 % y 100 %.")
+    tipo = v["tasa_tipo"] or "nominal"            # vacío: proyectos guardados antes del campo
+    if tipo not in TASAS:
+        errores.append("Tipo de tasa: elija nominal, real o el WACC de la empresa.")
     if errores:
         raise ErrorProyecto(errores)
     fija = datos.pop("inflacion", None)
@@ -88,7 +99,7 @@ def leer_proyecto(valores: Mapping[str, object], hoy: date,
 
     if fija is not None:
         return ProyectoLeido(proyecto, senda_inflacion(hoy, proyecto.horizonte, None, 0, fija=fija),
-                             tasa, True, [], [])
+                             tasa, True, [], [], tipo)
     try:
         meta = serie("meta_inflacion", hoy=hoy)
     except catalogo.ErrorSerie as e:
@@ -105,4 +116,4 @@ def leer_proyecto(valores: Mapping[str, object], hoy: date,
     vigente = meta.valor_al(hoy)
     vigente = meta.observaciones[-1][1] if vigente is None else vigente
     senda = senda_inflacion(hoy, proyecto.horizonte, inflacion, vigente / 100)
-    return ProyectoLeido(proyecto, senda, tasa, False, fuentes, avisos)
+    return ProyectoLeido(proyecto, senda, tasa, False, fuentes, avisos, tipo)

@@ -62,8 +62,15 @@ de mi empresa?").
    equivalente nominal del primer año, (1 + WACC) × (1 + π₁) − 1, para
    compararlo con tasas que el gerente conoce.
 7. **La evaluación con el WACC descuenta los flujos en pesos de hoy con la
-   tasa real** (la evaluación pasa a admitir tasa real; la TIR se muestra
-   real en ese caso). La tasa que escribe el usuario sigue siendo nominal.
+   tasa real.** El formulario tiene un tipo de tasa: nominal (efectiva anual,
+   la de siempre), real o WACC de la empresa. Con real o WACC, flujos en pesos
+   de hoy y TIR real (flujos y tasa en la misma moneda). Con el WACC, el
+   proyecto se compara con lo que cuesta su capital ("deja $ X más de lo que
+   exigen los dueños y los bancos"), con el supuesto de que tiene el riesgo y
+   la financiación de siempre. La tasa escrita en una pregunta del chat es
+   nominal. La sensibilidad sigue diciendo "tasa de oportunidad" (el WACC es
+   el costo de oportunidad del capital), con "real" cuando lo es (decidido el
+   16/10/2026).
 8. **Sin estados financieros no hay WACC** (faltan la deuda, su costo y el
    patrimonio): se muestra el costo de capital de los activos, Ku = (TES UVR −
    spread) + β sin deuda × prima total, que es lo que el mercado le exigiría a

@@ -150,6 +150,22 @@ def test_evaluacion_que_no_crea_valor_lo_dice_en_palabras():
     assert recuperacion["valor"] == "—" and recuperacion["detalle"] == "No se recupera en 5 años"
 
 
+def test_evaluacion_con_tasa_real_lo_dice_en_las_tarjetas():
+    c = tableros.flujo({**tableros.PROYECTO_EJEMPLO, "inflacion": "0", "tasa_oportunidad": "10",
+                        "tasa_tipo": "real"})
+    tarjetas = {t["titulo"]: t for t in c["evaluacion"]["tarjetas"]}
+    assert tarjetas["TIR real"]["detalle"] == "Frente a 10 % real de oportunidad"
+
+
+def test_evaluacion_con_el_wacc_lo_dice_en_las_tarjetas():
+    c = tableros.flujo({**tableros.PROYECTO_EJEMPLO, "inflacion": "0", "tasa_oportunidad": "10",
+                        "tasa_tipo": "wacc"})
+    tarjetas = {t["titulo"]: t for t in c["evaluacion"]["tarjetas"]}
+    assert tarjetas["TIR real"]["detalle"] == "Frente al WACC de 10 % real"
+    assert tarjetas["TIRM real"]["detalle"] == "Reinvierte al WACC"
+    assert c["evaluacion"]["hallazgos"][0].startswith("Con el costo de capital de la empresa (WACC)")
+
+
 def test_sin_tasa_de_oportunidad_hay_flujo_pero_no_evaluacion():
     c = tableros.flujo({**tableros.PROYECTO_EJEMPLO, "tasa_oportunidad": ""})
     assert c["errores"] == [] and c["evaluacion"] is None and c["filas"]
@@ -183,3 +199,10 @@ def test_sensibilidad_con_el_ejemplo_lo_dice():
 def test_sensibilidad_sin_tasa_remite_a_su_proyecto():
     c = tableros.sensibilidad_tab({**CASO_A_MANO, "tasa_oportunidad": ""})
     assert any("tasa de oportunidad" in e for e in c["errores"]) and "filas" not in c
+
+
+def test_sensibilidad_con_tasa_real():
+    c = tableros.sensibilidad_tab({**CASO_A_MANO, "tasa_tipo": "real"})
+    tasa = next(f for f in c["filas"] if f["nombre"] == "Tasa de oportunidad real")
+    assert tasa["critico"] == "la tasa de oportunidad real sube a 11,11 %"
+    assert c["tasa"] == "10 % real"

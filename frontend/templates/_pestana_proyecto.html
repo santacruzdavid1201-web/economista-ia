@@ -54,9 +54,14 @@
         <input name="inflacion" value="{{ v.inflacion }}" inputmode="decimal" autocomplete="off"
                placeholder="Senda del BanRep">
         <span class="ayuda">Vacío: pronóstico del Banco de la República y meta después</span></label>
-      <label>Tasa de oportunidad (% efectiva anual)
+      <label>Tasa de oportunidad (% al año)
         <input name="tasa_oportunidad" value="{{ v.tasa_oportunidad }}" inputmode="decimal" autocomplete="off">
         <span class="ayuda">Lo que le exigiría a otra inversión de riesgo parecido</span></label>
+      <label>Tipo de tasa
+        <select name="tasa_tipo">
+          {% for clave, nombre in [("nominal", "Nominal (efectiva anual)"), ("real", "Real (sin inflación)"), ("wacc", "WACC de la empresa (real)")] %}<option value="{{ clave }}"{% if clave == (v.tasa_tipo or "nominal") %} selected{% endif %}>{{ nombre }}</option>{% endfor %}
+        </select>
+        <span class="ayuda">Nominal: como cotizan los bancos. Real o WACC: sobre los flujos en pesos de hoy</span></label>
       <label>Valor de salvamento al final
         <input name="salvamento" value="{{ v.salvamento }}" inputmode="decimal" autocomplete="off"
                placeholder="Valor en libros">
