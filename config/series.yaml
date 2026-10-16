@@ -61,3 +61,10 @@ meta_inflacion:
   nombre: meta de inflación              # porcentaje anual, Banco de la República
   ids:
     nacional: 853
+
+# Costo de capital (16/10/2026): tasa sin riesgo real del WACC. El TES en UVR
+# paga sobre un valor que sigue al IPC, así que su tasa ya es real.
+tes_uvr_10:
+  nombre: TES cero cupón en UVR a 10 años   # tasa efectiva anual, diaria
+  ids:
+    nacional: 15277

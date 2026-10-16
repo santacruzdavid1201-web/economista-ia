@@ -18,9 +18,9 @@ Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del 
   `modules/proyectos/sensibilidad.py`, `app/orchestrator/tools_registry.py`, tests.
 
 ### Punto de control: cálculos
-- [ ] El usuario concilia el ejemplo a mano (criterio de éxito 1).
+- [x] El usuario concilia el ejemplo a mano (criterio de éxito 1): conciliado el 16/10/2026.
 
-- [ ] **3. Datos del costo de capital** (necesita la beta): `tes_uvr_10` en el catálogo
+- [x] **3. Datos del costo de capital** (necesita la beta): `tes_uvr_10` en el catálogo
   con su copia de respaldo; `config/costo_capital.yaml` con fuente y fecha; la senda
   del BanRep extraída de `leer_proyecto`; una función arma el costo de capital para
   el tablero y el chat (sin red en los tests).

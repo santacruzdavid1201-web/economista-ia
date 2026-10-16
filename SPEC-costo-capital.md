@@ -81,7 +81,7 @@ de mi empresa?").
    a un proyecto más riesgoso que el negocio de siempre. Se dice en un
    hallazgo.
 
-## Ejemplo (para conciliar; la beta es hipotética)
+## Ejemplo (conciliado a mano por el usuario el 16/10/2026; la beta es hipotética)
 
 β sin deuda 1,00; D/P = 0,5; t = 35 %; Kd = 14 % nominal; inflación del año
 del balance 5,1 %; TES UVR 6,74 %; spread de incumplimiento 1,87 %; prima
@@ -104,8 +104,9 @@ total 7,08 %; π₁ = 4,3 %.
 - `modules/proyectos/wacc.py`: costo de capital puro -> `ResultadoModulo` con
   Ke, Kd, pesos y WACC (real y su equivalente nominal), o Ku sin estados
   financieros, con hallazgos y supuestos.
-- `modules/proyectos/evaluacion.py`: `evaluar(..., real=True)` descuenta los
-  flujos en pesos de hoy.
+- `modules/proyectos/evaluacion.py`: `evaluar(flujo, tasa, tipo)` con tipo
+  "nominal", "real" o "wacc"; con los dos últimos descuenta los flujos en
+  pesos de hoy.
 - Pestaña "Su proyecto": con empresa cargada, un bloque "Tasa recomendada:
   WACC de su empresa" con el desglose y la opción de evaluar con ella.
 - Chat: herramienta `calcular_costo_capital` (necesita la empresa) y bloque O

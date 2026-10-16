@@ -1,0 +1,13 @@
+# Parámetros del costo de capital (SPEC-costo-capital.md). Se escriben a mano
+# una vez al año, en enero, cuando Damodaran publica sus datos: Damodaran
+# Online → Current Data (pages.stern.nyu.edu/~adamodar). Sin dependencia para
+# leer su .xls: son tres números al año.
+fuente: Damodaran, datos actualizados el 5 de enero de 2026
+
+# ctryprem (Country Default Spreads and Risk Premiums), fila de Colombia (Baa3)
+spread_incumplimiento: 0.0187   # "Adj. Default Spread"
+prima_total: 0.0708             # "Total Equity Risk Premium": madura 4,23 % + país 2,85 %
+
+# betaemerg.xls (mercados emergentes), hoja "Industry Averages"; leída por el usuario
+sector: Hotel/Gaming
+beta_sin_deuda: 0.58            # "Unlevered beta corrected for cash"

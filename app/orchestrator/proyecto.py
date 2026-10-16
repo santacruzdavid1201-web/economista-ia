@@ -1,8 +1,9 @@
 """
 Lectura del proyecto que escribe el usuario en la pestaña "Su proyecto": montos
 con palabras, porcentajes, años, la inflación (vacía: senda del BanRep) y la
-tasa de oportunidad. La usan el tablero y la herramienta del chat, así que los
-dos leen el proyecto igual y el orquestador no depende de la interfaz.
+tasa de oportunidad. También arma el costo de capital con los datos del día.
+Los usan el tablero y la herramienta del chat, así que los dos leen igual y el
+orquestador no depende de la interfaz.
 """
 from __future__ import annotations
 
@@ -10,11 +11,16 @@ from collections.abc import Callable, Mapping
 from datetime import date
 from typing import NamedTuple
 
+import yaml
+
 from app.orchestrator.lectura import montos
 from data_sources.externos import pronostico_banrep
 from data_sources.externos.series import catalogo
 from modules.proyectos.evaluacion import TASAS
+from modules.base import ResultadoModulo
+from modules.esquema_financiero import HistorialFinanciero
 from modules.proyectos.flujo import ErrorProyecto, Proyecto, Senda, crear_proyecto, senda_inflacion
+from modules.proyectos.wacc import Parametros, costo_capital
 
 # Valores con que abre el formulario; el aviso de la pestaña dice que son un ejemplo
 PROYECTO_EJEMPLO = {
@@ -31,6 +37,7 @@ PORCENTAJES = {"crecimiento_real": "Crecimiento real", "costos_variables": "Cost
                "inflacion": "Inflación esperada", "tasa_oportunidad": "Tasa de oportunidad"}
 ANIOS = {"vida_util": "Vida útil", "horizonte": "Horizonte"}
 OPCIONALES = {"salvamento", "inflacion", "tasa_oportunidad"}
+COSTO_CAPITAL = catalogo.RAIZ / "config" / "costo_capital.yaml"
 
 
 class ProyectoLeido(NamedTuple):
@@ -100,6 +107,15 @@ def leer_proyecto(valores: Mapping[str, object], hoy: date,
     if fija is not None:
         return ProyectoLeido(proyecto, senda_inflacion(hoy, proyecto.horizonte, None, 0, fija=fija),
                              tasa, True, [], [], tipo)
+    senda, fuentes, avisos = senda_banrep(hoy, proyecto.horizonte, serie, pronostico)
+    return ProyectoLeido(proyecto, senda, tasa, False, fuentes, avisos, tipo)
+
+
+def senda_banrep(hoy: date, horizonte: int, serie: Callable = catalogo.serie,
+                 pronostico: Callable = pronostico_banrep.pronostico
+                 ) -> tuple[Senda, list[str], list[str]]:
+    """La inflación esperada de cada año (pronóstico del BanRep y meta después), con sus
+    fuentes y avisos; ErrorProyecto si no hay meta de inflación."""
     try:
         meta = serie("meta_inflacion", hoy=hoy)
     except catalogo.ErrorSerie as e:
@@ -115,5 +131,30 @@ def leer_proyecto(valores: Mapping[str, object], hoy: date,
     # La meta del año puede venir fechada al cierre (futuro): entonces, la última publicada
     vigente = meta.valor_al(hoy)
     vigente = meta.observaciones[-1][1] if vigente is None else vigente
-    senda = senda_inflacion(hoy, proyecto.horizonte, inflacion, vigente / 100)
-    return ProyectoLeido(proyecto, senda, tasa, False, fuentes, avisos, tipo)
+    return senda_inflacion(hoy, horizonte, inflacion, vigente / 100), fuentes, avisos
+
+
+def parametros_costo_capital() -> Parametros:
+    """Spread, prima y beta de Damodaran, escritos a mano en config/costo_capital.yaml."""
+    c = yaml.safe_load(COSTO_CAPITAL.read_text(encoding="utf-8"))
+    return Parametros(c["beta_sin_deuda"], c["spread_incumplimiento"], c["prima_total"],
+                      c["fuente"], c["sector"])
+
+
+def costo_capital_de(historial: HistorialFinanciero | None, hoy: date, tarifa: float,
+                     serie: Callable = catalogo.serie,
+                     pronostico: Callable = pronostico_banrep.pronostico,
+                     parametros: Parametros | None = None) -> ResultadoModulo:
+    """
+    El costo de capital con los datos del día: TES UVR, IPC, Damodaran y la inflación
+    esperada del primer año (la misma senda del flujo). Sin empresa, el costo de los
+    activos. ErrorSerie o ErrorProyecto si falta una serie y no hay copia guardada.
+    """
+    senda, fuentes, avisos = senda_banrep(hoy, 1, serie, pronostico)
+    tes = serie("tes_uvr_10", hoy=hoy)
+    ipc = serie("ipc", hoy=hoy) if historial is not None else None
+    r = costo_capital(tes, parametros or parametros_costo_capital(), tarifa, senda.tasas[0],
+                      historial, -1, ipc)
+    r.fuentes += fuentes
+    r.advertencias += avisos + tes.advertencias + (ipc.advertencias if ipc else [])
+    return r
