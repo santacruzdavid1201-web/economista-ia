@@ -185,3 +185,32 @@ def test_los_opcionales_ausentes_quedan_vacios_y_los_presentes_se_guardan(hotel)
 def test_entradas_que_no_sirven(hotel, filas, mensaje):
     with pytest.raises(almacen.ErrorAlmacen, match=mensaje):
         almacen.cargar_pms(hotel, NIT, filas, "x.csv")
+
+
+# --------------------------------------------------------------------------- #
+# Lectura (criterio 5)
+# --------------------------------------------------------------------------- #
+def test_leer_devuelve_la_serie_ordenada_y_con_tipos_para_los_modelos(hotel):
+    desordenados = dias(date(2025, 1, 1), 5, tarifa_publicada=160_000.0).iloc[[3, 0, 4, 1, 2]]
+    almacen.cargar_pms(hotel, NIT, desordenados, "enero.csv")
+    serie = almacen.leer_pms(hotel, NIT)
+    assert isinstance(serie.index, pd.DatetimeIndex) and serie.index.is_monotonic_increasing
+    assert serie.index[0] == pd.Timestamp("2025-01-01") and len(serie) == 5
+    assert serie.dtypes.to_dict() == {
+        "habitaciones_disponibles": "int64", "habitaciones_vendidas": "int64",
+        "ingresos_habitaciones": "float64", "tarifa_publicada": "float64",
+        "tarifa_competencia": "float64", "promocion": "boolean", "huespedes": "Int64"}
+    assert serie["ingresos_habitaciones"].iloc[0] == 1_500_000.0
+    assert serie["tarifa_competencia"].isna().all() and serie["huespedes"].isna().all()
+
+
+def test_leer_un_rango_de_fechas(hotel):
+    almacen.cargar_pms(hotel, NIT, dias(date(2025, 1, 1), 31), "enero.csv")
+    serie = almacen.leer_pms(hotel, NIT, desde=date(2025, 1, 10), hasta=date(2025, 1, 12))
+    assert list(serie.index.day) == [10, 11, 12]
+    assert len(almacen.leer_pms(hotel, NIT, desde=date(2025, 1, 30))) == 2
+
+
+def test_leer_una_empresa_sin_datos_da_una_tabla_vacia(hotel):
+    serie = almacen.leer_pms(hotel, NIT)
+    assert serie.empty and list(serie.columns) == list(almacen.COLUMNAS)

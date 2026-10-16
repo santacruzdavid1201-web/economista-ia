@@ -16,7 +16,7 @@ con y sin `TEST_DATABASE_URL`.
   nuevas, actualizadas e iguales, registro en `carga`, atomicidad con el error en
   español (fecha y regla) y huecos (criterios 2 a 4).
   Archivos: `data_sources/almacen.py`, `tests/data_sources/test_almacen.py`.
-- [ ] **3. Lectura**: `leer_pms` con índice de fechas, rango opcional y tipos
+- [x] **3. Lectura**: `leer_pms` con índice de fechas, rango opcional y tipos
   convertidos (criterio 5).
   Archivos: `data_sources/almacen.py`, `tests/data_sources/test_almacen.py`.
 

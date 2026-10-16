@@ -182,6 +182,26 @@ def cargar_pms(conexion: psycopg.Connection, nit: str, filas: pd.DataFrame,
     return ResultadoCarga(carga_id, desde, hasta, nuevas, actualizadas, iguales, faltantes)
 
 
+# NUMERIC llega como Decimal: los modelos esperan float. Los opcionales vacíos, NaN o <NA>
+TIPOS = {"habitaciones_disponibles": "int64", "habitaciones_vendidas": "int64",
+         "ingresos_habitaciones": "float64", "tarifa_publicada": "float64",
+         "tarifa_competencia": "float64", "promocion": "boolean", "huespedes": "Int64"}
+
+
+def leer_pms(conexion: psycopg.Connection, nit: str, desde: date | None = None,
+             hasta: date | None = None) -> pd.DataFrame:
+    """La serie diaria de la empresa, ordenada y con la fecha como índice; vacía si no hay."""
+    filas = conexion.execute(
+        f"""SELECT fecha, {', '.join(COLUMNAS)} FROM pms_diario
+            WHERE nit = %s AND fecha >= COALESCE(%s::date, fecha)
+                           AND fecha <= COALESCE(%s::date, fecha)
+            ORDER BY fecha""", (nit, desde, hasta)).fetchall()
+    conexion.commit()                  # una lectura no deja abierta la transacción
+    serie = pd.DataFrame(filas, columns=["fecha", *COLUMNAS])
+    serie["fecha"] = pd.to_datetime(serie["fecha"])
+    return serie.set_index("fecha").astype(TIPOS)
+
+
 def main() -> int:
     try:
         with conectar() as conexion:
