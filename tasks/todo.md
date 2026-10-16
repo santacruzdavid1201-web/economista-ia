@@ -2,7 +2,7 @@
 
 Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del commit.
 
-- [ ] **1. Costo de capital (puro)**: el caso a mano de la especificación (β apalancada
+- [x] **1. Costo de capital (puro)**: el caso a mano de la especificación (β apalancada
   1,325; Ke 14,25 %; Kd real 3,81 %; WACC real 10,77 %; equivalente nominal 15,53 %;
   Ku 11,95 %); sin deuda, WACC = Ke = Ku; deuda sin gastos financieros → Kd y WACC
   `None` con advertencia; patrimonio ≤ 0 → WACC `None`. La tasa implícita queda en

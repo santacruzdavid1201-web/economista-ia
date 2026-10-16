@@ -1,6 +1,7 @@
 """Utilidades compartidas por los análisis del módulo de balance."""
 from __future__ import annotations
 
+from modules.base import division_segura
 from modules.esquema_financiero import EstadoFinanciero, HistorialFinanciero
 
 SUPUESTO_SIN_PROMEDIO = (
@@ -42,3 +43,17 @@ def promedios(historial: HistorialFinanciero, i: int,
         valores[cuenta] = valor
         todos_reales = todos_reales and es_promedio
     return valores, todos_reales
+
+
+def tasa_implicita(historial: HistorialFinanciero, i: int) -> tuple[float | None, bool]:
+    """
+    Gastos financieros anuales / deuda financiera promedio, y True si el saldo es
+    un promedio real. None sin deuda, o con deuda y sin gastos financieros: los
+    intereses quedaron en otra cuenta y la tasa no se conoce.
+    """
+    ef = historial.periodos[i]
+    deuda_prom, es_promedio = historial.saldo_promedio("deuda_financiera", i)
+    if ef.balance.deuda_financiera <= 0 or ef.resultados.gastos_financieros == 0:
+        return None, es_promedio
+    gastos = ef.resultados.gastos_financieros * factor_anual(ef)
+    return division_segura(gastos, deuda_prom), es_promedio

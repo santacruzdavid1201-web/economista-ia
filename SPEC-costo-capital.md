@@ -2,7 +2,7 @@
 
 Módulo del [mapa de proyectos](SPEC-mapa-proyectos.md). Estado: propuesta del
 15/10/2026, aprobada por el usuario el 16/10/2026 (riesgo país con el método
-de Damodaran). Falta el valor de la beta, que el usuario lee del Excel.
+de Damodaran). Beta leída por el usuario: 0,58.
 
 ## Objetivo
 
@@ -24,7 +24,7 @@ de mi empresa?").
 | Prima de riesgo de un mercado maduro | Damodaran, `ctryprem.xlsx` o `ctryprem.html` (anual, enero) | 4,23 % (enero de 2026) |
 | Spread de incumplimiento de Colombia (Baa3) | Damodaran, `ctryprem` ("Adj. Default Spread") | 1,87 % (enero de 2026) |
 | Prima total de Colombia (madura + riesgo país 2,85 %) | Damodaran, `ctryprem` ("Total Equity Risk Premium") | 7,08 % (enero de 2026) |
-| Beta del sector hotelero en mercados emergentes | Damodaran, `betaemerg.xls` ("Hotel/Gaming", "Unlevered beta corrected for cash"); la lee el usuario | Pendiente |
+| Beta del sector hotelero en mercados emergentes | Damodaran, `betaemerg.xls` ("Hotel/Gaming", "Unlevered beta corrected for cash"); la leyó el usuario | 0,58 (5 de enero de 2026) |
 | Costo de la deuda | Balance de la empresa: tasa implícita (gastos financieros / deuda financiera promedio), ya calculada en `sensibilidad-tasas` | Según la empresa |
 | Pesos de deuda y patrimonio | Balance: deuda financiera y patrimonio, en libros | Según la empresa |
 

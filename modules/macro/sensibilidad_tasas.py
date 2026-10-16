@@ -20,7 +20,12 @@ from __future__ import annotations
 from datetime import date
 
 from data_sources.externos.series.modelo import Serie
-from modules.balance.comun import SUPUESTO_SIN_PROMEDIO, contexto_base, factor_anual
+from modules.balance.comun import (
+    SUPUESTO_SIN_PROMEDIO,
+    contexto_base,
+    factor_anual,
+    tasa_implicita,
+)
 from modules.base import Indicador, ResultadoModulo, division_segura, formatear
 from modules.esquema_financiero import HistorialFinanciero
 
@@ -103,7 +108,7 @@ def sensibilidad_tasas(historial: HistorialFinanciero, i: int, tasa_politica: Se
         advertencias += s.advertencias
 
     deuda = ef.balance.deuda_financiera
-    deuda_prom, es_promedio = historial.saldo_promedio("deuda_financiera", i)
+    implicita, es_promedio = tasa_implicita(historial, i)
     gastos = r.gastos_financieros * factor_anual(ef)
     uo = r.utilidad_operacional * factor_anual(ef)
     hay_deuda = deuda > 0
@@ -122,7 +127,6 @@ def sensibilidad_tasas(historial: HistorialFinanciero, i: int, tasa_politica: Se
         return division_segura(uo, g) if g is not None and uo > 0 else None
 
     por_punto = deuda * 0.01 if hay_deuda else None
-    implicita = division_segura(gastos, deuda_prom) if con_base else None
     cobertura_hoy = cobertura(gastos) if con_base else None
     alza_uno = (division_segura(uo - gastos, deuda)
                 if cobertura_hoy is not None and cobertura_hoy >= 1 else None)
