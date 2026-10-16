@@ -2,7 +2,7 @@
 
 Plan: [plan.md](plan.md). Verificación común: `python -m pytest -v` antes del commit.
 
-- [ ] **1. Hotel simulado**: `config/pms_simulado.yaml` con los parámetros verdaderos y
+- [x] **1. Hotel simulado**: `config/pms_simulado.yaml` con los parámetros verdaderos y
   `simular_pms(parametros, semilla)`: misma semilla, misma serie; ocupación media
   40 % ± 3; Carnaval central > 90 % y al menos tres días llenos por Carnaval; nunca
   más vendidas que disponibles; ingresos 2023 y 2024 entre 60 % y 80 % del balance;

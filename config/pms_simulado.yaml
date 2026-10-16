@@ -1,0 +1,53 @@
+# Hotel Demo Andino S.A.S. (FICTICIO): parámetros VERDADEROS del proceso generador de
+# su PMS diario (SPEC-series-empresa.md, revisados por el usuario el 16/10/2026). Los
+# tests de cada estimador del módulo 2 deben recuperarlos. Si se cambia algo, regenerar
+# el CSV de la demostración:
+#     python -m data_sources.empresa.pms_simulado
+#
+# Demanda latente en logaritmos:
+#   ln D_t = alfa + Fourier anual + día de la semana + calendario
+#            + elasticidad · ln(tarifa real / base) + cruzada · ln(competencia real / base)
+#            + tendencia · años + promoción + remodelación + u_t,   u_t = rho · u_{t-1} + e_t
+# Vendidas = min(disponibles, Poisson(D_t)): con el hotel lleno la demanda queda censurada.
+# Los efectos se escriben como cambios porcentuales (0.25 = +25 %); entran como ln(1 + x).
+
+empresa: {nit: "900111222", razon_social: Hotel Demo Andino S.A.S., ciiu: "5511", municipio: Pasto}
+desde: 2023-01-01
+hasta: 2026-09-30
+semilla: 1
+habitaciones: 45
+mantenimiento: {probabilidad: 0.05, maximo: 2}      # días con 1 o 2 habitaciones fuera de servicio
+
+demanda:
+  alfa: 2.74                  # calibrado: 40,1 % de ocupación (EMA, región Pacífico) con la semilla 1
+  fourier: {cos1: 0.08, sen1: 0.0, cos2: 0.10, sen2: 0.0}   # alto en diciembre-enero, repunte en junio-julio, bajo en abril-mayo y septiembre-octubre
+  dia_semana: [-0.05, 0.10, 0.10, 0.10, 0.05, 0.0, -0.25]  # lunes … domingo
+  puente: 0.25
+  vispera_festivo: 0.15
+  semana_santa: 0.30
+  carnaval: 2.0               # × 3,0 del 2 al 7 de enero
+  carnaval_central: 0.35      # + 35 % el 5 y el 6 (Negros y Blancos)
+  tendencia_anual: 0.03       # real
+  # Demanda elástica: el hotel compite con otros hoteles y con apartamentos turísticos
+  elasticidad: -1.2
+  elasticidad_cruzada: 0.4
+  ar1: {rho: 0.5, sigma: 0.12}
+  # Efecto de la promoción más allá de su descuento (visibilidad): heterogéneo
+  promocion: {entre_semana: 0.10, fin_de_semana: 0.0}   # fin de semana: viernes a domingo
+  remodelacion: {desde: 2025-07-01, efecto: 0.08}
+
+tarifa:
+  base: 170000                # pesos de enero de 2023; se indexa al IPC nacional
+  # Revenue management: el hotel sube la tarifa cuando ESPERA demanda (lo observable)
+  carnaval: 0.40
+  puente: 0.15                # también Semana Santa
+  diciembre: 0.10
+  ruido: 0.03
+  # Respuesta a lo que el modelo no observa (u_t): 0 aquí; el escenario de falla de la
+  # elasticidad la activa para mostrar que el estimador no la puede corregir
+  respuesta_no_observable: 0.0
+  promocion: {descuento: 0.15, prob_baja: 0.15, prob_resto: 0.04}  # baja: lun-jue fuera de dic, ene, jun y jul
+  descuento_corporativo_maximo: 0.08   # el ADR realizado queda por debajo de la tarifa
+
+competencia: {base: 165000, ruido: 0.05}
+huespedes_por_habitacion: 1.6
