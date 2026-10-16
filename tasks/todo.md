@@ -21,5 +21,5 @@ con y sin `TEST_DATABASE_URL`.
   Archivos: `data_sources/almacen.py`, `tests/data_sources/test_almacen.py`.
 
 ### Punto de control: completo
-- [ ] El usuario ve las tablas y una carga de prueba en pgAdmin; suite en verde con y
-  sin `TEST_DATABASE_URL` (criterio 6); documentación de cierre.
+- [x] El usuario ve las tablas y una carga de prueba en pgAdmin; suite en verde con y
+  sin `TEST_DATABASE_URL` (criterio 6); documentación de cierre (16/10/2026).

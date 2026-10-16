@@ -19,8 +19,9 @@ y redacta el resultado. Todo número sale de funciones de Python probadas.
 - `modules/esquema_financiero.py`: esquema canónico de estados financieros
   (presentación NIIF corriente / no corriente). Toda fuente (PUC, Excel,
   Supersociedades) se traduce a este esquema; las fórmulas solo lo conocen.
-- `data_sources/`: cargadores de datos de empresa (`empresa/puc.py`) y fuentes
-  externas (`externos/`: Supersociedades, referencia sectorial, `series/` del
+- `data_sources/`: cargadores de datos de empresa (`empresa/puc.py`), el
+  almacén en PostgreSQL (`almacen.py`: series diarias del PMS por NIT, carga
+  incremental idempotente, lectura como `DataFrame`) y fuentes externas (`externos/`: Supersociedades, referencia sectorial, `series/` del
   BanRep y el DANE, pronóstico del BanRep).
 - `config/`: mapeos (PUC y NIIF → esquema), grupos CIIU, catálogo de series,
   glosario y prompts (`config/prompts/`).
@@ -148,6 +149,9 @@ Lecciones de las corridas del set de evaluación (`tests/eval/preguntas.yaml`).
 - `python -m app.demo "pregunta"`: una pregunta con el hotel ficticio
   (`data/demo/`, generado con `data/demo/generar_demo.py`).
 - `python -m app.rag.ingest`: reconstruye el índice tras editar `conocimiento/`.
+- `python -m data_sources.almacen`: crea o completa el esquema de PostgreSQL
+  (`db/init.sql`). Conexión en `.env` (`DATABASE_URL`); los tests de la base usan
+  `TEST_DATABASE_URL` (una base `*_test`) y se saltan sin ella.
 - `python -m data_sources.externos.series.catalogo Pasto`: refresca las series.
 - `python -m data_sources.externos.pronostico_banrep <archivo.xlsx>`: carga el
   pronóstico del Informe de Política Monetaria.
@@ -183,8 +187,9 @@ Se reemplaza al cerrar cada pieza; no se acumula (la historia va en
   para el dueño de pyme no diversificado. Set completo (77 casos, bloques
   A-O) el 16/10/2026: todos al 100 %, respaldo 1 %.
 - En curso: módulo 2 (econometría), mapa aprobado el 16/10/2026 en
-  `SPEC-mapa-econometria.md`; sigue la especificación de `almacen-datos`
-  (PostgreSQL 18 local del usuario, NIT como llave, carga incremental).
+  `SPEC-mapa-econometria.md`. Hecho `almacen-datos` (16/10/2026, revisado por
+  el usuario en pgAdmin; queda un "Hotel de prueba (borrar)", NIT 900000001:
+  preguntar antes de borrarlo). Sigue `calendario`.
 - Pendientes: cargar el Informe de Política Monetaria de octubre (sale a fin
   de mes); bajar el contexto de LM Studio a 8.192 si vuelve a caerse; validar
   la referencia contra el SIIS y revisar valores extremos; plantilla Excel
