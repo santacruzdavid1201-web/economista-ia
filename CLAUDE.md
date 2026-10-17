@@ -191,7 +191,11 @@ Se reemplaza al cerrar cada pieza; no se acumula (la historia va en
   el usuario en pgAdmin) y `calendario` (16/10/2026; festivos con reglas
   y vigencia en `config/calendario.yaml`, Ley 2578 de 2026 incluida y conciliada
   por el usuario; Carnaval de Pasto; revisar la decisión de la Corte sobre la
-  Ley 2578 antes de 2027). En curso `series-empresa` (especificación aprobada).
+  Ley 2578 antes de 2027). En curso `series-empresa`: hechas las tareas 1-3
+  (hotel simulado en `config/pms_simulado.yaml` y `data/demo/`, cargador del
+  PMS, indicadores); falta el punto de control de datos (el usuario concilia la
+  semana a mano del plan y revisa el simulado) y las tareas 4-5 (NIT en "Su
+  empresa" y pestaña "Sus datos" con la gráfica). Plan en `tasks/`.
 - Pendientes: cargar el Informe de Política Monetaria de octubre (sale a fin
   de mes); bajar el contexto de LM Studio a 8.192 si vuelve a caerse; validar
   la referencia contra el SIIS y revisar valores extremos; plantilla Excel

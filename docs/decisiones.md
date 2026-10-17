@@ -58,5 +58,8 @@ tags: [economista-ia, bitacora]
 - El Carnaval de Negros y Blancos se modela como estacionalidad determinística (variables de evento del calendario), no con diferencias estacionales: diferenciar a 365 días se come un año de datos y trata como aleatorio algo que se conoce de antemano.
 - La evaluación de impacto se partió en dos piezas: eventos únicos (series interrumpidas y diferencias en diferencias contra la MMH) y promociones recurrentes (Double ML y bosque causal). Con una sola unidad tratada y una sola fecha, el ML causal no tiene variación para estimar.
 - Los datos del sector salen solo de fuentes oficiales (DANE, CITUR, Supersociedades); la tarifa de la competencia es una columna opcional del archivo, porque los sitios de reservas prohíben el raspado.
+- Las reglas de los festivos viven en `config/calendario.yaml`, cada una con su vigencia: en 2026 la Ley 2578 creó el festivo del 9 de julio (lo detectó el economista al conciliar) y hay una demanda en la Corte que podría tumbarlo desde 2027; así una ley nueva es una línea, no un cambio de código.
+- El hotel simulado es el mismo Hotel Demo Andino de los balances, calibrado a 40 % de ocupación (EMA del DANE, región Pacífico: Nariño no se publica aparte) y a 64-68 % de sus ingresos en habitaciones. El Carnaval multiplica la demanda por 3 (la revisión del economista mostró que 2,5 se quedaba corto frente a varios días de lleno total), y el ciclo anual se corrigió para que junio y julio repunten.
+- En el cargador del PMS, el orden de las fechas se decide con toda la columna, como el separador decimal en el del PUC: con `dayfirst`, pandas leía 2023-01-02 como el 1 de febrero, y los PMS en inglés exportan mes/día.
 ---
 Vuelve a [[resumen]]
